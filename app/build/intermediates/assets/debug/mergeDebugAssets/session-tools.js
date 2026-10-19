@@ -313,7 +313,8 @@
     panel.id = "session-backup-tools";
     panel.setAttribute("aria-label", "Session backup and restore");
 
-    var isCollapsed = false;
+    var isCollapsed = window.innerWidth <= 640;
+    if (isCollapsed) panel.classList.add("is-collapsed");
     var toolsContent = document.createElement("div");
     toolsContent.className = "session-tools-content";
 

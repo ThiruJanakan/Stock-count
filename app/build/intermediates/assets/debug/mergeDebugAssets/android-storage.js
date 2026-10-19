@@ -2,8 +2,6 @@
   "use strict";
 
   var bridge = window.AndroidStockStorage;
-  if (!bridge) return;
-
   var prefix = "lina-stock-count::";
   var storage = Storage.prototype;
   var originalGet = storage.getItem;
@@ -11,6 +9,7 @@
   var originalRemove = storage.removeItem;
   var originalKey = storage.key;
   var originalLength = Object.getOwnPropertyDescriptor(storage, "length").get;
+
   var gateStyle = document.createElement("style");
   gateStyle.textContent = "#root{visibility:hidden!important}#session-backup-tools{visibility:hidden!important}";
   document.head.appendChild(gateStyle);
@@ -21,8 +20,12 @@
   }
 
   function appKeys() {
-    if (!bridge.isAuthenticated()) return [];
-    return JSON.parse(bridge.keys());
+    if (!bridge || !bridge.isAuthenticated()) return [];
+    try {
+      return JSON.parse(bridge.keys());
+    } catch (e) {
+      return [];
+    }
   }
 
   function legacyKeys(target) {
@@ -51,28 +54,38 @@
 
   storage.getItem = function (key) {
     if (this !== window.localStorage || !isAppKey(key)) return originalGet.call(this, key);
-    if (!bridge.isAuthenticated()) return null;
-    var saved = bridge.getItem(String(key));
-    if (saved !== null) return saved;
-
-    var legacy = originalGet.call(this, key);
-    if (legacy !== null) {
-      if (!bridge.setItem(String(key), legacy)) throw new Error("Could not migrate local stock data");
-      originalRemove.call(this, key);
+    // 1. Try bridge if authenticated
+    if (bridge && bridge.isAuthenticated && bridge.isAuthenticated()) {
+      try {
+        var saved = bridge.getItem(String(key));
+        if (saved !== null && saved !== undefined) {
+          // Mirror to standard localStorage for extra redundancy
+          originalSet.call(this, key, saved);
+          return saved;
+        }
+      } catch (e) {}
     }
-    return legacy;
+    // 2. Fall back to standard localStorage
+    return originalGet.call(this, key);
   };
 
   storage.setItem = function (key, value) {
-    if (this !== window.localStorage || !isAppKey(key)) return originalSet.call(this, key, value);
-    if (!bridge.isAuthenticated()) throw new Error("Sign in before changing stock data");
-    if (!bridge.setItem(String(key), String(value))) throw new Error("Could not save local stock data");
+    // ALWAYS persist in standard localStorage
+    originalSet.call(this, key, value);
+    // AND persist in native SQLite database if bridge is active
+    if (bridge && bridge.isAuthenticated && bridge.isAuthenticated()) {
+      try {
+        bridge.setItem(String(key), String(value));
+      } catch (e) {}
+    }
   };
 
   storage.removeItem = function (key) {
-    if (this !== window.localStorage || !isAppKey(key)) return originalRemove.call(this, key);
-    if (!bridge.isAuthenticated()) throw new Error("Sign in before changing stock data");
-    if (!bridge.removeItem(String(key))) throw new Error("Could not remove local stock data");
     originalRemove.call(this, key);
+    if (bridge && bridge.isAuthenticated && bridge.isAuthenticated()) {
+      try {
+        bridge.removeItem(String(key));
+      } catch (e) {}
+    }
   };
 })();

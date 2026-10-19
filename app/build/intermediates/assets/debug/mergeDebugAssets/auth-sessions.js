@@ -183,7 +183,20 @@
       var result = bridge.authenticate(usernameInput.value.trim(), passwordInput.value);
       passwordInput.value = "";
       if (result === "OK") {
-        renderDashboard();
+        showApp();
+        try {
+          var keys = JSON.parse(bridge.keys());
+          keys.forEach(function (k) {
+            var val = bridge.getItem(k);
+            if (val !== null) window.localStorage.setItem(k, val);
+          });
+        } catch (e) {}
+        if (window.__reloadStockData) {
+          window.__reloadStockData();
+        } else {
+          window.sessionStorage.setItem("lina-open-active", "1");
+          window.location.reload();
+        }
         return;
       }
       submit.disabled = false;
@@ -669,8 +682,16 @@
     window.sessionStorage.removeItem("lina-open-active");
     showApp();
   } else if (bridge.isAuthenticated()) {
-    renderDashboard();
+    showApp();
+    if (window.__reloadStockData) window.__reloadStockData();
   } else {
     showLogin();
   }
 })();
+
+window.LinaLockApp = function () {
+  if (window.AndroidStockStorage && window.AndroidStockStorage.lock) {
+    window.AndroidStockStorage.lock();
+  }
+  window.location.reload();
+};
