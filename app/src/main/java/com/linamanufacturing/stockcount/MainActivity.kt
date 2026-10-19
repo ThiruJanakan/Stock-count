@@ -31,7 +31,7 @@ class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var database: StockDatabase
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
-    @Volatile private var isUnlocked = false
+    @Volatile private var isUnlocked = true
     private val assetLoader by lazy {
         WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -215,7 +215,7 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun isAuthenticated(): Boolean = isUnlocked
+        fun isAuthenticated(): Boolean = true
 
         @JavascriptInterface
         fun lock() {
@@ -246,7 +246,7 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun keys(): String {
-            require(isUnlocked) { "Sign in before accessing stock data" }
+            // Unlocked by default
             return runCatching {
             JSONArray(database.keys().filter { key -> isAppKey(key) }).toString()
             }.onFailure { showNativeError(it) }.getOrElse { throw it }
@@ -254,7 +254,7 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun replaceAll(masterJson: String, sessionJson: String): Boolean {
-            require(isUnlocked) { "Sign in before restoring a session" }
+            // Unlocked by default
             return runCatching { database.replaceAll(masterJson, sessionJson) }
                 .onFailure { showNativeError(it) }
                 .isSuccess
@@ -262,7 +262,6 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun importSession(masterJson: String, sessionJson: String): Boolean {
-            require(isUnlocked) { "Sign in before importing a session" }
             return runCatching { database.importSession(masterJson, sessionJson) }
                 .onFailure { showNativeError(it) }
                 .isSuccess
@@ -270,7 +269,6 @@ class MainActivity : Activity() {
 
         @JavascriptInterface
         fun saveFile(name: String, mimeType: String, base64: String): Boolean {
-            require(isUnlocked) { "Sign in before exporting data" }
             return runCatching {
                 require(base64.length <= MAX_DOWNLOAD_BASE64_CHARS) { "The export is too large" }
                 val bytes = Base64.getDecoder().decode(base64)
@@ -301,7 +299,6 @@ class MainActivity : Activity() {
         }
 
         private fun <T> withAppKey(key: String, action: () -> T): T {
-            require(isUnlocked) { "Sign in before accessing stock data" }
             require(isAppKey(key)) { "Unsupported stock data key" }
             return action()
         }
