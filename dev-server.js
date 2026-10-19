@@ -542,6 +542,16 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
+  if (reqUrl === '/favicon.ico') {
+    const iconPath = path.join(ROOT, 'lina-logo.png');
+    if (fs.existsSync(iconPath)) {
+      res.writeHead(200, { 'Content-Type': 'image/png' });
+      return fs.createReadStream(iconPath).pipe(res);
+    }
+    res.writeHead(204);
+    return res.end();
+  }
+
   // ==========================================
   // REST API ROUTES
   // ==========================================
