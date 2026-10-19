@@ -1,16 +1,17 @@
-com.linamanufacturing.stockcount.app-webkit-1.12.1-0 C:\Users\Janagan\.gradle\caches\8.9\transforms\1d36d9e5e957292c8b706821bfb09eaa\transformed\webkit-1.12.1\res
-com.linamanufacturing.stockcount.app-lifecycle-runtime-2.6.2-1 C:\Users\Janagan\.gradle\caches\8.9\transforms\2b6cda71f2c63e15028aecb216a7e1e3\transformed\lifecycle-runtime-2.6.2\res
-com.linamanufacturing.stockcount.app-startup-runtime-1.1.1-2 C:\Users\Janagan\.gradle\caches\8.9\transforms\310728483b1ffcc4b83ed17145c8c204\transformed\startup-runtime-1.1.1\res
-com.linamanufacturing.stockcount.app-core-1.15.0-3 C:\Users\Janagan\.gradle\caches\8.9\transforms\3e85dc3a27e7bbf172ac49206d18ddee\transformed\core-1.15.0\res
-com.linamanufacturing.stockcount.app-core-ktx-1.15.0-4 C:\Users\Janagan\.gradle\caches\8.9\transforms\3f37bae318e5fc6846a9ad9da520587e\transformed\core-ktx-1.15.0\res
-com.linamanufacturing.stockcount.app-profileinstaller-1.3.0-5 C:\Users\Janagan\.gradle\caches\8.9\transforms\68502a53e3187b71cbf963e02c0cc854\transformed\profileinstaller-1.3.0\res
-com.linamanufacturing.stockcount.app-annotation-experimental-1.4.1-6 C:\Users\Janagan\.gradle\caches\8.9\transforms\7ad2e1228cf93c43be30a655159cf03e\transformed\annotation-experimental-1.4.1\res
-com.linamanufacturing.stockcount.app-core-runtime-2.2.0-7 C:\Users\Janagan\.gradle\caches\8.9\transforms\7de4202b32b7b584b96361a782a8aa12\transformed\core-runtime-2.2.0\res
-com.linamanufacturing.stockcount.app-tracing-1.2.0-8 C:\Users\Janagan\.gradle\caches\8.9\transforms\91fe2a2a3554b68c83261e567d1a5015\transformed\tracing-1.2.0\res
+com.linamanufacturing.stockcount.app-core-ktx-1.15.0-0 C:\Users\Janagan\.gradle\caches\8.13\transforms\457f177fdad16609555a8460bfc8548b\transformed\core-ktx-1.15.0\res
+com.linamanufacturing.stockcount.app-core-runtime-2.2.0-1 C:\Users\Janagan\.gradle\caches\8.13\transforms\4f76ef4978223535766915e1327d2ced\transformed\core-runtime-2.2.0\res
+com.linamanufacturing.stockcount.app-tracing-1.2.0-2 C:\Users\Janagan\.gradle\caches\8.13\transforms\6838a734ce050a683291fc9bdcfa0bf1\transformed\tracing-1.2.0\res
+com.linamanufacturing.stockcount.app-startup-runtime-1.1.1-3 C:\Users\Janagan\.gradle\caches\8.13\transforms\9be7f1b9a21a6199bd9e2c2d974d66b7\transformed\startup-runtime-1.1.1\res
+com.linamanufacturing.stockcount.app-core-1.15.0-4 C:\Users\Janagan\.gradle\caches\8.13\transforms\d0b1d3278ffa52f6e765757fd3d0f793\transformed\core-1.15.0\res
+com.linamanufacturing.stockcount.app-webkit-1.12.1-5 C:\Users\Janagan\.gradle\caches\8.13\transforms\e3059d16341dda976f243d32b86ef51b\transformed\webkit-1.12.1\res
+com.linamanufacturing.stockcount.app-annotation-experimental-1.4.1-6 C:\Users\Janagan\.gradle\caches\8.13\transforms\eec59245b507cc3ed017ddb9a18829f4\transformed\annotation-experimental-1.4.1\res
+com.linamanufacturing.stockcount.app-profileinstaller-1.3.0-7 C:\Users\Janagan\.gradle\caches\8.13\transforms\efe639a4f2f0098857a2442be2ead84e\transformed\profileinstaller-1.3.0\res
+com.linamanufacturing.stockcount.app-lifecycle-runtime-2.6.2-8 C:\Users\Janagan\.gradle\caches\8.13\transforms\ffdae377b691eda029b81531437048c3\transformed\lifecycle-runtime-2.6.2\res
 com.linamanufacturing.stockcount.app-pngs-9 C:\Users\Janagan\Downloads\Stock count\app\build\generated\res\pngs\debug
 com.linamanufacturing.stockcount.app-resValues-10 C:\Users\Janagan\Downloads\Stock count\app\build\generated\res\resValues\debug
-com.linamanufacturing.stockcount.app-packageDebugResources-11 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
-com.linamanufacturing.stockcount.app-packageDebugResources-12 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
-com.linamanufacturing.stockcount.app-debug-13 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\merged_res\debug\mergeDebugResources
-com.linamanufacturing.stockcount.app-debug-14 C:\Users\Janagan\Downloads\Stock count\app\src\debug\res
-com.linamanufacturing.stockcount.app-main-15 C:\Users\Janagan\Downloads\Stock count\app\src\main\res
+com.linamanufacturing.stockcount.app-updated_navigation_xml-11 C:\Users\Janagan\Downloads\Stock count\app\build\generated\updated_navigation_xml\debug
+com.linamanufacturing.stockcount.app-packageDebugResources-12 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.linamanufacturing.stockcount.app-packageDebugResources-13 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.linamanufacturing.stockcount.app-debug-14 C:\Users\Janagan\Downloads\Stock count\app\build\intermediates\merged_res\debug\mergeDebugResources
+com.linamanufacturing.stockcount.app-debug-15 C:\Users\Janagan\Downloads\Stock count\app\src\debug\res
+com.linamanufacturing.stockcount.app-main-16 C:\Users\Janagan\Downloads\Stock count\app\src\main\res
