@@ -231,6 +231,13 @@ module.exports = async function handler(req, res) {
     return sendJson(200, { authenticated: true });
   }
 
+  // 4b. Logout
+  if (reqUrl.endsWith('/api/auth/logout') && reqMethod === 'POST') {
+    return sendJson(200, { success: true }, {
+      'Set-Cookie': 'LINA_AUTH_SESSION=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Secure'
+    });
+  }
+
   // 5. Stock Database Fetch
   if (reqUrl.endsWith('/api/stock/db') && reqMethod === 'GET') {
     const [usersRes, sesRes, itemsRes, logsRes, auditRes] = await Promise.all([
