@@ -142,7 +142,23 @@
     passwordInput.autocomplete = "current-password";
     passwordInput.maxLength = 1024;
     passwordInput.required = true;
-    passwordLabel.appendChild(passwordInput);
+    var passwordWrapper = document.createElement("div");
+    passwordWrapper.className = "auth-password-wrapper";
+    passwordWrapper.appendChild(passwordInput);
+    var toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "auth-password-toggle";
+    toggleBtn.setAttribute("aria-label", "Toggle password visibility");
+    toggleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    toggleBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var isPw = passwordInput.type === "password";
+      passwordInput.type = isPw ? "text" : "password";
+      toggleBtn.classList.toggle("is-active", isPw);
+    });
+    passwordWrapper.appendChild(toggleBtn);
+    passwordLabel.appendChild(passwordWrapper);
+
     var feedback = document.createElement("div");
     feedback.className = "auth-feedback";
     feedback.setAttribute("role", "alert");
@@ -400,10 +416,17 @@
     description.textContent = "Upload this month's stock sheet, or import a colleague's session backup to continue their count.";
     var actions = document.createElement("div");
     actions.className = "auth-actions";
-    actions.appendChild(createButton("Upload Excel stock sheet", "auth-primary", beginNewExcelSession));
-    actions.appendChild(createButton("Import session backup", "auth-secondary", function () {
+    
+    var uploadBtn = createButton("Upload Excel stock sheet", "auth-primary", beginNewExcelSession);
+    uploadBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg><span>Upload Excel stock sheet</span>';
+    
+    var importBtn = createButton("Import session backup", "auth-secondary", function () {
       backupInput.click();
-    }));
+    });
+    importBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Import session backup</span>';
+
+    actions.appendChild(uploadBtn);
+    actions.appendChild(importBtn);
     section.appendChild(title);
     section.appendChild(description);
     section.appendChild(actions);
@@ -481,16 +504,19 @@
 
     var header = document.createElement("header");
     header.className = "auth-dashboard-header";
+    var headerLeft = document.createElement("div");
+    headerLeft.className = "auth-header-left";
     var brand = document.createElement("div");
     brand.className = "auth-brand";
     brand.textContent = "LINA MANUFACTURING · WAREHOUSE";
     var title = document.createElement("h1");
-    title.textContent = "Stock count sessions";
+    title.textContent = "Stock verification sessions";
     var subtitle = document.createElement("p");
-    subtitle.textContent = "Choose a session to continue, or start a new count.";
-    header.appendChild(brand);
-    header.appendChild(title);
-    header.appendChild(subtitle);
+    subtitle.textContent = "Choose an active session to continue, or initialize a new verification.";
+    headerLeft.appendChild(brand);
+    headerLeft.appendChild(title);
+    headerLeft.appendChild(subtitle);
+    header.appendChild(headerLeft);
     addLockButton(header);
     overlay.appendChild(header);
 
@@ -548,7 +574,6 @@
       historySection.appendChild(noHistory);
     }
     overlay.appendChild(historySection);
-    addLockButton(overlay);
   }
 
   function continueCurrent() {
@@ -573,45 +598,58 @@
 
   var style = document.createElement("style");
   style.textContent = [
-    ".auth-screen,.auth-dashboard-screen{box-sizing:border-box;position:fixed;inset:0;z-index:10000;overflow:auto;padding:20px;background:#e9eef0;color:#16283a;font:15px system-ui,-apple-system,'Segoe UI',sans-serif}",
+    ".auth-screen,.auth-dashboard-screen{box-sizing:border-box;position:fixed;inset:0;z-index:10000;overflow:auto;padding:24px;background:#eef2f4;color:#16283a;font:15px system-ui,-apple-system,'Segoe UI',sans-serif}",
     ".auth-screen{display:grid;place-items:center}",
-    ".auth-card{box-sizing:border-box;width:min(100%,500px);padding:28px;border:1px solid #d4dde1;border-top:5px solid #1f6f63;border-radius:18px;background:#fff;box-shadow:0 12px 36px #16283a20}",
-    ".auth-brand{color:#1f6f63;font:600 12px ui-monospace,monospace;letter-spacing:.14em}",
-    ".auth-card h1,.auth-dashboard-header h1{margin:10px 0;font-size:clamp(23px,5vw,30px);letter-spacing:-.035em}",
-    ".auth-muted,.auth-dashboard-header p,.auth-new-session p{color:#5e6e7c;line-height:1.5}",
-    ".auth-form{display:grid;gap:14px;margin-top:22px}",
-    ".auth-form label,.session-password-dialog label{display:grid;gap:7px;font-weight:600}",
-    ".auth-form input{box-sizing:border-box;width:100%;min-height:48px;padding:10px 12px;border:1px solid #bac6cd;border-radius:9px;font:inherit}",
-    ".auth-primary,.auth-secondary{box-sizing:border-box;min-height:46px;padding:10px 15px;border:0;border-radius:10px;font:600 14px system-ui,sans-serif;cursor:pointer}",
-    ".auth-primary{background:#1f6f63;color:#fff}",
-    ".auth-primary:disabled{opacity:.65}",
-    ".auth-secondary{border:1px solid #cbd4d9;background:#fff;color:#16283a}",
-    ".auth-feedback{min-height:20px;color:#b5432e;font-size:14px}",
-    ".auth-dashboard-screen{padding:18px max(14px,calc((100vw - 860px)/2));padding-bottom:40px}",
-    ".auth-dashboard-header{position:relative;padding:22px 20px 18px;border-radius:16px;background:#fff;box-shadow:0 4px 18px #16283a12}",
+    ".auth-card{box-sizing:border-box;width:min(100%,460px);padding:32px 28px;border:1px solid #d4dde1;border-top:5px solid #1f6f63;border-radius:20px;background:#fff;box-shadow:0 18px 48px rgba(22,40,58,0.14)}",
+    ".auth-brand{color:#1f6f63;font:700 11.5px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}",
+    ".auth-card h1,.auth-dashboard-header h1{margin:10px 0 6px;font-size:clamp(22px,4vw,28px);font-weight:700;letter-spacing:-.03em;color:#0e1b26}",
+    ".auth-muted,.auth-dashboard-header p,.auth-new-session p{color:#5e6e7c;line-height:1.55;font-size:13.5px}",
+    ".auth-form{display:grid;gap:16px;margin-top:24px}",
+    ".auth-form label{display:grid;gap:6px;font-weight:600;font-size:13px;color:#16283a}",
+    ".auth-password-wrapper{position:relative;display:flex;align-items:center}",
+    ".auth-password-wrapper input{padding-right:44px}",
+    ".auth-password-toggle{position:absolute;right:8px;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:0;background:none;color:#8797a3;cursor:pointer;border-radius:6px;transition:color .18s}",
+    ".auth-password-toggle:hover,.auth-password-toggle.is-active{color:#1f6f63}",
+    ".auth-form input{box-sizing:border-box;width:100%;min-height:48px;padding:12px 14px;border:1.5px solid #bac6cd;border-radius:10px;font:inherit;font-size:16px;background:#f8fafb;transition:border-color .18s,box-shadow .18s}",
+    ".auth-form input:focus{outline:0;border-color:#1f6f63;background:#fff;box-shadow:0 0 0 3px rgba(31,111,99,0.18)}",
+    ".auth-primary,.auth-secondary{box-sizing:border-box;min-height:46px;padding:11px 18px;border:0;border-radius:11px;font:600 13.5px system-ui,-apple-system,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .18s ease;letter-spacing:0.01em}",
+    ".auth-primary{background:#1f6f63;color:#fff;box-shadow:0 4px 14px rgba(31,111,99,0.3)}",
+    ".auth-primary:hover{background:#155249;transform:translateY(-1px)}",
+    ".auth-primary:active{transform:scale(0.98)}",
+    ".auth-primary:disabled{opacity:.65;transform:none}",
+    ".auth-secondary{border:1px solid #c8d3d9;background:#fff;color:#16283a;box-shadow:0 1px 3px rgba(22,40,58,0.06)}",
+    ".auth-secondary:hover{background:#f3f7f8;border-color:#b4c2c9;transform:translateY(-1px)}",
+    ".auth-secondary:active{transform:scale(0.98)}",
+    ".auth-feedback{min-height:20px;color:#b5432e;font-size:13.5px;font-weight:500}",
+    ".auth-dashboard-screen{padding:20px max(16px,calc((100vw - 880px)/2));padding-bottom:50px}",
+    ".auth-dashboard-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:24px;border-radius:18px;background:#fff;border:1px solid #d4dde1;border-top:4px solid #1f6f63;box-shadow:0 6px 20px rgba(22,40,58,0.06);position:relative}",
+    ".auth-header-left{min-width:0;flex:1}",
     ".auth-dashboard-header p{margin:4px 0 0}",
-    ".auth-lock{position:absolute;top:17px;right:16px;min-height:38px;padding:8px 12px}",
-    ".auth-new-session,.auth-session-section{margin-top:16px;padding:18px;border:1px solid #d4dde1;border-radius:15px;background:#fff;box-shadow:0 4px 16px #16283a0b}",
-    ".auth-new-session h2,.auth-session-section h2{margin:0 0 8px;font-size:18px}",
-    ".auth-new-session p{margin:0 0 14px}",
-    ".auth-actions{display:flex;flex-wrap:wrap;gap:9px}",
-    ".auth-session-card{margin-top:10px;border:1px solid #d6dfe3;border-radius:12px;overflow:hidden}",
-    ".auth-session-heading{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:13px;text-align:left;border:0;background:#f9fbfb;color:#16283a;font:inherit;cursor:pointer}",
-    ".auth-session-title{display:grid;gap:5px;min-width:0}",
-    ".auth-session-title strong{overflow-wrap:anywhere}",
-    ".auth-session-title span{color:#5e6e7c;font-size:13px}",
-    ".auth-session-status{flex:none;padding:5px 9px;border-radius:999px;background:#e4eaed;color:#53636e;font-size:12px;font-weight:600}",
-    ".auth-session-status.status-in_progress{background:#fff0d7;color:#8a5a12}",
-    ".auth-session-status.status-completed{background:#dceee4;color:#1f6f63}",
-    ".auth-session-details{padding:13px;border-top:1px solid #e0e6e9}",
-    ".auth-session-details p{margin:0 0 8px;color:#5e6e7c;font-size:13px}",
-    ".auth-session-items{display:grid;gap:8px;margin:12px 0;max-height:360px;overflow:auto}",
-    ".auth-session-items>strong{font-size:14px}",
-    ".auth-item-row{display:grid;gap:3px;padding:8px;border-radius:8px;background:#f1f5f6;font-size:12px;overflow-wrap:anywhere}",
-    ".auth-item-row span+span{color:#5e6e7c}",
-    ".auth-continue{width:100%;margin-top:8px}",
-    ".auth-empty{margin:8px 0;color:#72818b;font-size:14px}",
-    "@media(max-width:480px){.auth-screen,.auth-dashboard-screen{padding:12px}.auth-card{padding:22px}.auth-dashboard-screen{padding-bottom:24px}.auth-session-heading{align-items:flex-start}.auth-session-status{max-width:96px;text-align:center}.auth-actions>*{flex:1 1 100%}}"
+    ".auth-lock{flex-shrink:0;min-height:40px;padding:8px 14px;border-radius:9px;font-size:13px}",
+    ".auth-new-session,.auth-session-section{margin-top:16px;padding:22px;border:1px solid #d4dde1;border-radius:16px;background:#fff;box-shadow:0 4px 16px rgba(22,40,58,0.04)}",
+    ".auth-new-session h2,.auth-session-section h2{margin:0 0 6px;font-size:18px;font-weight:700;color:#0e1b26}",
+    ".auth-new-session p{margin:0 0 16px}",
+    ".auth-actions{display:flex;flex-wrap:wrap;gap:10px}",
+    ".auth-session-card{margin-top:12px;border:1px solid #d6dfe3;border-radius:14px;overflow:hidden;background:#fff;transition:border-color .18s,box-shadow .18s}",
+    ".auth-session-card:hover{border-color:#b4c2c9;box-shadow:0 4px 16px rgba(22,40,58,0.06)}",
+    ".auth-session-heading{display:flex;width:100%;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;text-align:left;border:0;background:#fafcfc;color:#16283a;font:inherit;cursor:pointer;transition:background .15s}",
+    ".auth-session-heading:hover{background:#f1f6f7}",
+    ".auth-session-title{display:grid;gap:4px;min-width:0}",
+    ".auth-session-title strong{font-size:15px;color:#0e1b26;overflow-wrap:anywhere}",
+    ".auth-session-title span{color:#5e6e7c;font-size:13px;font-family:ui-monospace,monospace}",
+    ".auth-session-status{flex:none;padding:5px 11px;border-radius:999px;background:#e4eaed;color:#53636e;font-size:11.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase}",
+    ".auth-session-status.status-in_progress{background:#fef3c7;color:#92400e;border:1px solid #fde68a}",
+    ".auth-session-status.status-completed{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}",
+    ".auth-session-details{padding:18px;border-top:1px solid #e7ecef;background:#fff}",
+    ".auth-session-details p{margin:0 0 10px;color:#5e6e7c;font-size:13.5px}",
+    ".auth-session-items{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto;padding-right:4px}",
+    ".auth-session-items>strong{font-size:13.5px;color:#16283a;text-transform:uppercase;letter-spacing:0.04em}",
+    ".auth-item-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:#f4f7f8;border:1px solid #e7ecef;font-size:12.5px}",
+    ".auth-item-row span:first-child{font-weight:600;color:#0e1b26;overflow-wrap:anywhere}",
+    ".auth-item-row span+span{color:#5e6e7c;font-family:ui-monospace,monospace;white-space:nowrap;flex-shrink:0}",
+    ".auth-continue{width:100%;margin-top:12px;min-height:48px;font-size:14px}",
+    ".auth-empty{margin:10px 0;color:#8797a3;font-size:14px;font-style:italic}",
+    "@media(max-width:640px){.auth-screen,.auth-dashboard-screen{padding:14px}.auth-card{padding:24px 20px}.auth-dashboard-header{flex-direction:column;gap:14px;padding:18px}.auth-lock{align-self:flex-start;width:100%}.auth-actions>*{flex:1 1 100%}.auth-session-heading{flex-direction:column;align-items:flex-start;gap:10px}.auth-session-status{align-self:flex-start}.auth-item-row{flex-direction:column;align-items:flex-start;gap:4px}}"
   ].join("");
   document.head.appendChild(style);
 

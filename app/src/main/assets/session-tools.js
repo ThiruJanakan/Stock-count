@@ -312,8 +312,36 @@
     var panel = document.createElement("aside");
     panel.id = "session-backup-tools";
     panel.setAttribute("aria-label", "Session backup and restore");
-    panel.appendChild(button("Download session JSON", exportSession));
-    panel.appendChild(button("Restore JSON", restoreControl));
+
+    var isCollapsed = false;
+    var toolsContent = document.createElement("div");
+    toolsContent.className = "session-tools-content";
+
+    var exportBtn = button("Export JSON", exportSession);
+    exportBtn.className = "session-tool-btn session-export-btn";
+    exportBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export JSON</span>';
+
+    var restoreBtn = button("Restore", restoreControl);
+    restoreBtn.className = "session-tool-btn session-restore-btn";
+    restoreBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Restore</span>';
+
+    toolsContent.appendChild(exportBtn);
+    toolsContent.appendChild(restoreBtn);
+
+    var toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "session-tools-toggle";
+    toggleBtn.setAttribute("aria-label", "Toggle session tools panel");
+    toggleBtn.title = "Toggle session backup tools";
+    toggleBtn.innerHTML = '<svg class="toggle-icon-open" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><svg class="toggle-icon-closed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
+    
+    toggleBtn.addEventListener("click", function () {
+      isCollapsed = !isCollapsed;
+      panel.classList.toggle("is-collapsed", isCollapsed);
+    });
+
+    panel.appendChild(toolsContent);
+    panel.appendChild(toggleBtn);
     document.body.appendChild(panel);
   }
 
@@ -394,21 +422,43 @@
 
   var style = document.createElement("style");
   style.textContent = [
-    "#session-backup-tools{position:fixed;z-index:9999;right:12px;bottom:12px;display:flex;gap:8px;padding:8px;border:1px solid #c9d3d9;border-radius:14px;background:#fff;box-shadow:0 4px 18px #16283a26}",
-    "#session-backup-tools button{min-height:42px;padding:8px 12px;border:0;border-radius:9px;background:#16283a;color:#fff;font:600 13px system-ui,sans-serif}",
-    "#session-backup-tools button:focus-visible{outline:3px solid #2a6f97;outline-offset:2px}",
-    ".session-password-overlay{position:fixed;inset:0;z-index:10001;display:grid;place-items:center;padding:16px;background:#101c2acc}",
-    ".session-password-dialog{box-sizing:border-box;width:min(100%,420px);padding:22px;border-radius:16px;background:#fff;color:#16283a;font:15px system-ui,sans-serif;box-shadow:0 14px 48px #0005}",
-    ".session-password-dialog h2{margin:0 0 8px;font-size:20px}",
-    ".session-password-dialog p{margin:0 0 18px;color:#5e6e7c;line-height:1.45}",
-    ".session-password-dialog label{display:block;margin:12px 0 6px;font-weight:600}",
-    ".session-password-dialog input{box-sizing:border-box;width:100%;min-height:44px;margin-top:6px;padding:10px;border:1px solid #aebbc3;border-radius:8px;font:inherit}",
-    ".session-password-error{min-height:20px;margin:6px 0;color:#b5432e;font-size:13px}",
-    ".session-password-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}",
-    ".session-password-actions button{min-height:42px;padding:8px 14px;border:0;border-radius:9px;background:#16283a;color:#fff;font:600 14px system-ui,sans-serif}",
-    ".session-password-actions button:first-child{background:#e4eaed;color:#16283a}",
-    "@media(max-width:420px){#session-backup-tools{left:10px;right:10px;bottom:10px}#session-backup-tools button{flex:1;padding:8px 5px;font-size:12px}}",
-    "body{padding-bottom:72px!important}"
+    "#session-backup-tools{position:fixed;z-index:850;right:16px;bottom:max(16px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid rgba(22,40,58,0.14);border-radius:999px;background:rgba(255,255,255,0.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(16,28,40,0.14),0 2px 6px rgba(16,28,40,0.06);transition:all .24s cubic-bezier(0.16,1,0.3,1)}",
+    "#session-backup-tools:hover{border-color:rgba(31,111,99,0.3);box-shadow:0 10px 36px rgba(16,28,40,0.18),0 2px 8px rgba(31,111,99,0.1)}",
+    ".session-tools-content{display:flex;align-items:center;gap:6px}",
+    ".session-tool-btn{min-height:38px;padding:8px 14px;border:0;border-radius:999px;font:600 12.5px system-ui,-apple-system,'Segoe UI',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.01em;transition:all .18s ease;white-space:nowrap}",
+    ".session-export-btn{background:#16283a;color:#fff}",
+    ".session-export-btn:hover{background:#1f6f63;transform:translateY(-1px)}",
+    ".session-export-btn:active{transform:scale(0.97)}",
+    ".session-restore-btn{background:#edf2f4;color:#16283a;border:1px solid rgba(22,40,58,0.1)}",
+    ".session-restore-btn:hover{background:#e2e9ec;color:#0e1b26;transform:translateY(-1px)}",
+    ".session-restore-btn:active{transform:scale(0.97)}",
+    ".session-tools-toggle{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:rgba(22,40,58,0.08);color:#5e6e7c;cursor:pointer;transition:all .18s ease}",
+    ".session-tools-toggle:hover{background:rgba(22,40,58,0.15);color:#16283a}",
+    ".toggle-icon-closed{display:none}",
+    "#session-backup-tools.is-collapsed .session-tools-content{display:none}",
+    "#session-backup-tools.is-collapsed{padding:6px;border-radius:50%}",
+    "#session-backup-tools.is-collapsed .session-tools-toggle{width:36px;height:36px;background:#16283a;color:#fff}",
+    "#session-backup-tools.is-collapsed .toggle-icon-open{display:none}",
+    "#session-backup-tools.is-collapsed .toggle-icon-closed{display:block}",
+    ".session-password-overlay{position:fixed;inset:0;z-index:10001;display:grid;place-items:center;padding:16px;background:rgba(16,28,42,0.65);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:authFade .2s ease}",
+    ".session-password-dialog{box-sizing:border-box;width:min(100%,440px);padding:26px;border:1px solid rgba(255,255,255,0.8);border-radius:20px;background:#fff;color:#16283a;font:15px system-ui,-apple-system,'Segoe UI',sans-serif;box-shadow:0 24px 64px rgba(16,28,40,0.22),0 4px 12px rgba(16,28,40,0.08);animation:authPop .25s cubic-bezier(0.16,1,0.3,1)}",
+    ".session-password-dialog h2{margin:0 0 6px;font-size:20px;font-weight:700;letter-spacing:-0.02em}",
+    ".session-password-dialog p{margin:0 0 16px;color:#5e6e7c;line-height:1.5;font-size:13.5px}",
+    ".session-password-dialog label{display:block;margin:14px 0 6px;font-weight:600;font-size:13px;color:#16283a}",
+    ".session-password-dialog input{box-sizing:border-box;width:100%;min-height:46px;margin-top:6px;padding:11px 14px;border:1.5px solid #c9d3d9;border-radius:10px;font:inherit;font-size:16px;background:#f8fafb;transition:border-color .18s ease,box-shadow .18s ease}",
+    ".session-password-dialog input:focus{outline:0;border-color:#1f6f63;background:#fff;box-shadow:0 0 0 3px rgba(31,111,99,0.18)}",
+    ".session-password-error{min-height:20px;margin:8px 0 4px;color:#b5432e;font-size:13px;font-weight:500}",
+    ".session-password-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}",
+    ".session-password-actions button{min-height:44px;padding:10px 18px;border:0;border-radius:10px;font:600 14px system-ui,-apple-system,sans-serif;cursor:pointer;transition:all .18s ease}",
+    ".session-password-actions button:first-child{background:#edf2f4;color:#475569}",
+    ".session-password-actions button:first-child:hover{background:#e2e8eb;color:#1e293b}",
+    ".session-password-actions button:last-child{background:#1f6f63;color:#fff;box-shadow:0 4px 14px rgba(31,111,99,0.3)}",
+    ".session-password-actions button:last-child:hover{background:#124b42;transform:translateY(-1px)}",
+    "@keyframes authFade{from{opacity:0}to{opacity:1}}",
+    "@keyframes authPop{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}",
+    "@media(max-width:640px){#session-backup-tools{right:12px;bottom:max(12px,env(safe-area-inset-bottom));padding:4px 6px;gap:5px}.session-tool-btn{min-height:36px;padding:7px 11px;font-size:12px}}",
+    "@media(max-width:380px){.session-tool-btn span{display:none}.session-tool-btn{padding:8px 10px}}",
+    "body{padding-bottom:88px!important}"
   ].join("");
   document.head.appendChild(style);
 
