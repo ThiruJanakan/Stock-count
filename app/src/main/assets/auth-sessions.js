@@ -103,6 +103,11 @@
   function addBrand(parent, subtitle) {
     var card = document.createElement("section");
     card.className = "auth-card";
+    var logo = document.createElement("img");
+    logo.src = "lina-logo.png";
+    logo.alt = "Lina Logo";
+    logo.className = "auth-brand-logo";
+    card.appendChild(logo);
     var brand = document.createElement("div");
     brand.className = "auth-brand";
     brand.textContent = "LINA MANUFACTURING · WAREHOUSE";
@@ -504,6 +509,11 @@
 
     var header = document.createElement("header");
     header.className = "auth-dashboard-header";
+    var logo = document.createElement("img");
+    logo.src = "lina-logo.png";
+    logo.alt = "Lina Logo";
+    logo.className = "auth-header-logo";
+    header.appendChild(logo);
     var headerLeft = document.createElement("div");
     headerLeft.className = "auth-header-left";
     var brand = document.createElement("div");
@@ -598,6 +608,8 @@
 
   var style = document.createElement("style");
   style.textContent = [
+    ".auth-brand-logo{width:76px;height:76px;object-fit:contain;margin:0 auto 16px;display:block;border-radius:16px;background:#fff;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #d4dde1}",
+    ".auth-header-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;background:#fff;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #d4dde1;flex-shrink:0}",
     ".auth-screen,.auth-dashboard-screen{box-sizing:border-box;position:fixed;inset:0;z-index:10000;overflow:auto;padding:24px;background:#eef2f4;color:#16283a;font:15px system-ui,-apple-system,'Segoe UI',sans-serif}",
     ".auth-screen{display:grid;place-items:center}",
     ".auth-card{box-sizing:border-box;width:min(100%,460px);padding:32px 28px;border:1px solid #d4dde1;border-top:5px solid #1f6f63;border-radius:20px;background:#fff;box-shadow:0 18px 48px rgba(22,40,58,0.14)}",
