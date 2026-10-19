@@ -1,0 +1,20 @@
+{
+  "name": "lina-stock-count-central",
+  "version": "1.0.0",
+  "description": "Lina Manufacturing Centralized Stock Count & Admin System",
+  "main": "dev-server.js",
+  "scripts": {
+    "dev": "node dev-server.js",
+    "start": "node dev-server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "inventory",
+    "stock-count",
+    "warehouse",
+    "supabase",
+    "admin-portal"
+  ],
+  "author": "Lina Manufacturing",
+  "license": "UNLICENSED"
+}

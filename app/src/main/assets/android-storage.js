@@ -11,7 +11,7 @@
   var originalLength = Object.getOwnPropertyDescriptor(storage, "length").get;
 
   function isAppKey(key) {
-    return String(key).indexOf(prefix) === 0;
+    return String(key).indexOf(prefix) === 0 || key === "LINA_STOCK_CENTRAL_DB_V2";
   }
 
   function appKeys() {

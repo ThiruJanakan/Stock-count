@@ -1,1 +1,14 @@
 local.properties
+.gradle/
+build/
+app/build/
+*.apk
+*.log
+.DS_Store
+Thumbs.db
+data/
+*.tmp.*
+*.db
+.env
+scratch/
+

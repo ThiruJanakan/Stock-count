@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lina Stock Count - Centralized Architecture & UML Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1.5rem 5rem;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+    }
+
+    .card-header h2 {
+      font-size: 1.5rem;
+      color: var(--accent);
+    }
+
+    .card-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+
+    .mermaid {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .footer-tools {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-tools a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Lina Centralized Stock Count System</h1>
+      <p>Interactive Architecture, Use Case, and Entity Relationship (ER) Diagrams</p>
+    </header>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="scrollToSection('architecture')">1. System Architecture</button>
+      <button class="tab-btn" onclick="scrollToSection('usecase')">2. Use Case Diagram</button>
+      <button class="tab-btn" onclick="scrollToSection('er')">3. ER Diagram (Database)</button>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="card" id="architecture">
+      <div class="card-header">
+        <h2>1. System Architecture Diagram</h2>
+        <p>Three-tier architecture with offline-first mobile sync, worker queue, and centralized database</p>
+      </div>
+      <div class="mermaid">
+flowchart TB
+    subgraph Clients["Presentation Layer (Clients)"]
+        A1["Admin Web Portal\n(React / Next.js / Tailwind)\n• User Management\n• Sheet Upload & Validation\n• Live Counting Dashboard\n• Discrepancy & Variance Approval"]
+        A2["Counter Mobile App / Scanner\n(Android Kotlin / PWA / Handheld)\n• Offline SQLite / Local DB\n• Barcode / QR Scanner\n• Local Count Queue\n• Auto Background Sync"]
+    end
+
+    subgraph Gateway["API & Security Layer"]
+        GW["API Gateway / Reverse Proxy (Nginx / Cloudflare)\n• HTTPS / WSS Termination\n• Rate Limiting & Auth Header Check"]
+        AUTH["JWT / RBAC Middleware\n• Roles: Admin, Supervisor, Counter"]
+    end
+
+    subgraph Backend["Application Services Layer"]
+        API["Backend API Service (Node.js / FastAPI / Go)\n• REST API for CRUD & Assignments\n• WebSocket Server (Live Count Updates)"]
+        WORKER["Background Job Worker (BullMQ / Celery)\n• Excel / CSV Parser & Validator\n• Discrepancy Calculator\n• Final Report Generator"]
+        SYNC["Sync & Conflict Resolution Engine\n• Handles offline batch count submissions\n• Idempotent record deduplication"]
+    end
+
+    subgraph DataTier["Data & Storage Layer"]
+        DB[("PostgreSQL Database\n(ACID Compliant)\n• Users, Roles, Master Items\n• Sessions, Counts, Audit Trails")]
+        CACHE[("Redis Cache & Pub/Sub\n• Active Sessions Cache\n• Real-Time Counts Broadcast")]
+        STORAGE[("Object Storage (S3 / MinIO / Local Drive)\n• Raw Excel / CSV Uploads\n• Final PDF / Excel Reports")]
+    end
+
+    A1 -->|REST / HTTPS| GW
+    A2 -->|REST / HTTPS & WebSocket| GW
+    GW --> AUTH
+    AUTH --> API
+    API <--> CACHE
+    API --> DB
+    API --> WORKER
+    SYNC <--> DB
+    WORKER --> STORAGE
+    WORKER --> DB
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="card" id="usecase">
+      <div class="card-header">
+        <h2>2. Use Case Diagram</h2>
+        <p>Interaction between Admin, Warehouse Supervisor, Counter/Operator, and the Background System Engine</p>
+      </div>
+      <div class="mermaid">
+flowchart LR
+    subgraph Actors
+        Admin["Admin User"]
+        Supervisor["Supervisor"]
+        Counter["Stock Counter"]
+        Worker["Background Worker"]
+    end
+
+    subgraph UM["User & Access Management"]
+        UC1(["Create & Manage Users"])
+        UC2(["Assign Roles & Permissions"])
+        UC3(["Login & Authenticate (JWT)"])
+        UC4(["Audit User Activity"])
+    end
+
+    subgraph SM["Inventory & Sheet Management"]
+        UC5(["Upload Master Data Sheet (Excel/CSV)"])
+        UC6(["Validate & Map Columns"])
+        UC7(["Create Stock Count Session"])
+        UC8(["Assign Zones / Aisles to Counters"])
+    end
+
+    subgraph CM["Counting & Scanning Workflow"]
+        UC9(["Download Assigned Inventory / Cache"])
+        UC10(["Scan Barcode / QR Code"])
+        UC11(["Input Count / Serial Numbers"])
+        UC12(["Sync Local Counts to Server"])
+        UC13(["Trigger Recount for Flagged Items"])
+    end
+
+    subgraph RM["Monitoring & Reconciliation"]
+        UC14(["View Real-Time Counting Dashboard"])
+        UC15(["Calculate Variances & Discrepancies"])
+        UC16(["Approve / Reject Adjustments"])
+        UC17(["Export Final Reconciled Sheet"])
+    end
+
+    Admin --> UC1
+    Admin --> UC2
+    Admin --> UC3
+    Admin --> UC4
+    Admin --> UC5
+    Admin --> UC7
+    Admin --> UC14
+    Admin --> UC16
+    Admin --> UC17
+
+    Supervisor --> UC3
+    Supervisor --> UC7
+    Supervisor --> UC8
+    Supervisor --> UC13
+    Supervisor --> UC14
+    Supervisor --> UC15
+    Supervisor --> UC17
+
+    Counter --> UC3
+    Counter --> UC9
+    Counter --> UC10
+    Counter --> UC11
+    Counter --> UC12
+
+    Worker --> UC6
+    Worker --> UC12
+    Worker --> UC15
+
+    UC5 -.->|triggers| UC6
+    UC12 -.->|updates| UC14
+    UC12 -.->|triggers| UC15
+    UC15 -.->|may require| UC13
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="card" id="er">
+      <div class="card-header">
+        <h2>3. Entity Relationship (ER) Diagram</h2>
+        <p>Complete relational schema design for PostgreSQL (Users, Sessions, Sheets, Items, Counts, Variances, and Audits)</p>
+      </div>
+      <div class="mermaid">
+erDiagram
+    USERS ||--o{ SESSIONS_CREATED : "creates"
+    USERS ||--o{ AUDIT_LOGS : "generates"
+    USERS ||--o{ COUNT_ASSIGNMENTS : "assigned_to"
+    USERS ||--o{ COUNT_LOGS : "submits"
+
+    STOCK_SESSIONS ||--o{ SHEET_UPLOADS : "contains"
+    STOCK_SESSIONS ||--o{ MASTER_ITEMS : "holds"
+    STOCK_SESSIONS ||--o{ COUNT_ASSIGNMENTS : "divides_into"
+    STOCK_SESSIONS ||--o{ COUNT_LOGS : "records"
+    STOCK_SESSIONS ||--o{ DISCREPANCIES : "produces"
+
+    SHEET_UPLOADS ||--o{ MASTER_ITEMS : "populates"
+    MASTER_ITEMS ||--o{ COUNT_LOGS : "counted_as"
+    MASTER_ITEMS ||--o{ DISCREPANCIES : "evaluated_in"
+
+    USERS {
+        uuid id PK
+        string username UK
+        string email UK
+        string password_hash
+        string full_name
+        string role "ADMIN | SUPERVISOR | COUNTER"
+        string status "ACTIVE | INACTIVE | SUSPENDED"
+        timestamp last_login_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    STOCK_SESSIONS {
+        uuid id PK
+        string session_code UK
+        string title
+        string description
+        string status "DRAFT | READY | IN_PROGRESS | RECONCILING | CLOSED"
+        string count_type "BLIND_COUNT | OPEN_COUNT"
+        timestamp start_time
+        timestamp end_time
+        uuid created_by FK
+        timestamp created_at
+    }
+
+    SHEET_UPLOADS {
+        uuid id PK
+        uuid session_id FK
+        string original_filename
+        string storage_path
+        integer total_rows
+        integer valid_rows
+        integer error_rows
+        string parsing_status "PENDING | PROCESSING | COMPLETED | FAILED"
+        jsonb column_mapping
+        uuid uploaded_by FK
+        timestamp uploaded_at
+    }
+
+    MASTER_ITEMS {
+        uuid id PK
+        uuid session_id FK
+        uuid sheet_upload_id FK
+        string sku UK
+        string barcode
+        string item_name
+        string category
+        string uom "PCS | BOX | KG"
+        string zone_location
+        decimal system_qty
+        decimal unit_cost
+        boolean is_active
+        timestamp created_at
+    }
+
+    COUNT_ASSIGNMENTS {
+        uuid id PK
+        uuid session_id FK
+        uuid user_id FK
+        string zone_location
+        string status "ASSIGNED | IN_PROGRESS | COMPLETED"
+        timestamp assigned_at
+        timestamp completed_at
+    }
+
+    COUNT_LOGS {
+        uuid id PK
+        uuid session_id FK
+        uuid master_item_id FK
+        uuid user_id FK
+        string scanned_barcode
+        decimal counted_qty
+        string count_round "FIRST_COUNT | RECOUNT"
+        string device_id
+        string sync_batch_id
+        boolean is_offline_recorded
+        timestamp recorded_at
+        timestamp synced_at
+    }
+
+    DISCREPANCIES {
+        uuid id PK
+        uuid session_id FK
+        uuid master_item_id FK
+        decimal expected_qty
+        decimal total_counted_qty
+        decimal variance_qty
+        decimal variance_cost
+        string status "PENDING | RECOUNT_REQUESTED | APPROVED | REJECTED"
+        text resolution_notes
+        uuid reviewed_by FK
+        timestamp reviewed_at
+    }
+
+    AUDIT_LOGS {
+        uuid id PK
+        uuid user_id FK
+        string action "LOGIN | SHEET_UPLOAD | COUNT_SUBMIT | STATUS_CHANGE"
+        string target_entity "USERS | SESSIONS | COUNTS"
+        uuid target_id
+        jsonb details
+        string ip_address
+        timestamp created_at
+    }
+      </div>
+    </div>
+
+    <div class="footer-tools">
+      <p>Diagrams powered by Mermaid.js. You can also paste code directly into <a href="https://mermaid.live" target="_blank">Mermaid Live Editor</a> to export high-res PNG or SVG.</p>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+
+    function scrollToSection(id) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

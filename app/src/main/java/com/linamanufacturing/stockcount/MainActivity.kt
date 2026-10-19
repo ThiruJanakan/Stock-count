@@ -104,11 +104,11 @@ class MainActivity : Activity() {
                 val response = assetLoader.shouldInterceptRequest(request.url) ?: return blockedResponse()
                 val headers = HashMap(response.responseHeaders ?: emptyMap())
                 headers["Content-Security-Policy"] =
-                    "default-src 'self' data: blob:; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; " +
-                    "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
-                    "font-src 'self' data:; connect-src 'none'; object-src 'none'; " +
-                    "frame-src 'none'; base-uri 'self'; form-action 'none'"
+                    "default-src 'self' data: blob: https:; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://unpkg.com; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; " +
+                    "font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; " +
+                    "frame-src 'none'; base-uri 'self'; form-action 'self'"
                 val statusCode = response.statusCode.takeIf { it in 100..599 } ?: 200
                 return WebResourceResponse(
                     response.mimeType,
@@ -184,7 +184,6 @@ class MainActivity : Activity() {
                 val usernameMatches = cleanUser.equals(BuildConfig.AUTH_USERNAME, ignoreCase = true) ||
                     cleanUser.replace(" ", "_").equals(BuildConfig.AUTH_USERNAME, ignoreCase = true) ||
                     cleanUser.equals("admin", ignoreCase = true) ||
-                    cleanUser.equals("lina", ignoreCase = true) ||
                     cleanUser.equals("warehouse", ignoreCase = true)
 
                 var passwordMatches = false
@@ -195,18 +194,11 @@ class MainActivity : Activity() {
                     passwordMatches = MessageDigest.isEqual(supplied, expected)
                 } catch (_: Exception) {}
 
-                if (!passwordMatches) {
-                    passwordMatches = cleanPass.equals("Lina12345678", ignoreCase = true) ||
-                        cleanPass == "12345678" ||
-                        cleanPass == "Lina1234" ||
-                        cleanPass.equals(BuildConfig.AUTH_USERNAME, ignoreCase = true)
-                }
-
                 if (usernameMatches && passwordMatches) {
                     isUnlocked = true
                     "OK"
                 } else {
-                    "INVALID"
+                    recordFailedLogin()
                 }
             } catch (error: Exception) {
                 showNativeError(error)
@@ -215,7 +207,7 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun isAuthenticated(): Boolean = true
+        fun isAuthenticated(): Boolean = isUnlocked
 
         @JavascriptInterface
         fun lock() {
@@ -367,13 +359,16 @@ class MainActivity : Activity() {
     }
 
     private fun isAppKey(key: String): Boolean =
-        key.startsWith(APP_KEY_PREFIX) &&
-            key.removePrefix(APP_KEY_PREFIX).let {
-                it == "stock-master" ||
-                    it == "count-session" ||
-                    it == "history-index" ||
-                    it.matches(Regex("history-record-[A-Za-z0-9_-]{1,160}"))
-            }
+        key == "LINA_STOCK_CENTRAL_DB_V2" || (
+            key.startsWith(APP_KEY_PREFIX) &&
+                key.removePrefix(APP_KEY_PREFIX).let {
+                    it == "stock-master" ||
+                        it == "central-db-v2" ||
+                        it == "count-session" ||
+                        it == "history-index" ||
+                        it.matches(Regex("history-record-[A-Za-z0-9_-]{1,160}"))
+                }
+        )
 
     companion object {
         private const val BRIDGE_NAME = "AndroidStockStorage"
