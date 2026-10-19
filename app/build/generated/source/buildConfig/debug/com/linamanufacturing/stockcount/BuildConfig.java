@@ -10,11 +10,11 @@ public final class BuildConfig {
   public static final int VERSION_CODE = 1;
   public static final String VERSION_NAME = "1.0";
   // Field from default config.
-  public static final String AUTH_HASH_HEX = "518212696f8b30738c2e314ebb3df823ade748dd3b2baaa1f50052458eb34f3b";
+  public static final String AUTH_HASH_HEX = "0b5674ee02a131cfc31ace9f359b9faddc4c706861da8dbab539d6f0059561c7";
   // Field from default config.
   public static final int AUTH_PBKDF2_ITERATIONS = 310000;
   // Field from default config.
-  public static final String AUTH_SALT_HEX = "b16d22ddded0e0a53502a47aed1301aa";
+  public static final String AUTH_SALT_HEX = "bbd365187335aa06bd55db66a8ede20e";
   // Field from default config.
   public static final String AUTH_USERNAME = "Lina_Warehouse";
 }

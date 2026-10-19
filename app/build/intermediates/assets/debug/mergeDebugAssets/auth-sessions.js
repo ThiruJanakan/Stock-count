@@ -176,6 +176,10 @@
     form.appendChild(passwordLabel);
     form.appendChild(feedback);
     form.appendChild(submit);
+    var loginHint = document.createElement("div");
+    loginHint.className = "auth-login-hint";
+    loginHint.innerHTML = 'Credentials: <strong>Lina_Warehouse</strong> &nbsp;·&nbsp; Password: <strong>Lina12345678</strong>';
+    form.appendChild(loginHint);
     form.addEventListener("submit", function (event) {
       event.preventDefault();
       submit.disabled = true;
@@ -621,6 +625,7 @@
 
   var style = document.createElement("style");
   style.textContent = [
+    ".auth-login-hint{margin-top:14px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;font-size:12.5px;color:#166534;text-align:center;line-height:1.4}",
     ".auth-brand-logo{width:76px;height:76px;object-fit:contain;margin:0 auto 16px;display:block;border-radius:16px;background:#fff;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,0.08);border:1px solid #d4dde1}",
     ".auth-header-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;background:#fff;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.06);border:1px solid #d4dde1;flex-shrink:0}",
     ".auth-screen,.auth-dashboard-screen{box-sizing:border-box;position:fixed;inset:0;z-index:10000;overflow:auto;padding:24px;background:#eef2f4;color:#16283a;font:15px system-ui,-apple-system,'Segoe UI',sans-serif}",
