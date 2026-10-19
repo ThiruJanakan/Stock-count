@@ -3257,13 +3257,15 @@
 
     async function verifyPassword(password, salt, storedHash) {
       if (!salt || !storedHash) return false;
-      if (storedHash.startsWith("pbkdf2$")) {
-        const computed = await hashPassword(password, salt);
-        return computed === storedHash;
-      }
+      const cleanHash = storedHash.startsWith("pbkdf2$") ? storedHash.slice(7) : storedHash;
+      const computed = await hashPassword(password, salt);
+      const computedClean = computed.startsWith("pbkdf2$") ? computed.slice(7) : computed;
+
+      if (computedClean === cleanHash) return true;
+
       // Transparent upgrade from legacy single-pass SHA-256
       const legacy = await hashLegacySha256(password, salt);
-      if (legacy === storedHash) {
+      if (legacy === cleanHash || legacy === storedHash) {
         return "NEEDS_UPGRADE";
       }
       return false;

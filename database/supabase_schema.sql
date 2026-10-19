@@ -137,10 +137,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.count_logs;
 -- INITIAL ENTERPRISE SEED DATA
 -- ============================================================================
 INSERT INTO public.stock_users (id, username, full_name, role, password_salt, password_hash, is_active) VALUES
-('u-admin', 'admin', 'Central Admin', 'ADMIN', 'a8f5b2c1d0e9478291f038572bcae142', 'pbkdf2$e565cf7400deddb134e20c56b5f8fd27569eb2a6077e022b749fa8f295c9d69c', true),
-('u-sup', 'supervisor1', 'Floor Supervisor', 'SUPERVISOR', 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6', 'pbkdf2$5ea5f9ac90ee3e3054ec99177576012049b4e92f555147ce8e5820d4e0153709', true),
-('u-c1', 'counter1', 'Operator Alpha', 'COUNTER', 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', true),
-('u-c2', 'counter2', 'Operator Beta', 'COUNTER', 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'pbkdf2$cebe37c591e6e9dc92a53426a023d1abf4eaa000cc80fa19c50e4e6d67d530d2', true);
+('u-admin', 'admin', 'Central Admin', 'ADMIN', 'a8f5b2c1d0e9478291f038572bcae142', 'pbkdf2$9fd945ec65d80cefc9833968dd6022784fbce26da4771bb218008793f86c16ec', true),
+('u-sup', 'supervisor1', 'Floor Supervisor', 'SUPERVISOR', 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6', 'pbkdf2$956cb185650fba5f8e5f4e594f7e628694d05fe93900a4876039780bc3452132', true),
+('u-c1', 'counter1', 'Operator Alpha', 'COUNTER', 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'pbkdf2$041f65657070c30ebfd7fa94da3557c35cf60ad6e0e5344ac32e9677a0428ad7', true),
+('u-c2', 'counter2', 'Operator Beta', 'COUNTER', 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'pbkdf2$468d7c9a0745e7d70a9a841f6802d052445964ea34d646db550a489fe5c4ebed', true);
 
 INSERT INTO public.count_sessions (id, session_code, title, description, count_type, status, total_items, counted_items, progress_percent, created_by) VALUES
 ('ses-101', 'SES-20261019-01', 'Main Warehouse Stock Verification - Cycle 1', 'Centralized Count for Raw Materials and Finished Goods', 'BLIND_COUNT', 'ACTIVE', 8, 0, 0, 'u-admin');

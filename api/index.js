@@ -78,18 +78,26 @@ function deepScanPayload(obj) {
   return false;
 }
 
-// Password verification
+// Password verification (Supports PBKDF2-HMAC-SHA256 and salted SHA-256 fallback)
 function verifyPasswordPbkdf2(password, salt, storedHash) {
   return new Promise((resolve) => {
     if (!storedHash || !salt) return resolve(false);
     const cleanHash = storedHash.startsWith('pbkdf2$') ? storedHash.slice(7) : storedHash;
 
     crypto.pbkdf2(password, salt, 100000, 32, 'sha256', (err, derivedKey) => {
-      if (err) return resolve(false);
-      const computedHex = derivedKey.toString('hex');
-      if (computedHex.length === cleanHash.length && crypto.timingSafeEqual(Buffer.from(computedHex), Buffer.from(cleanHash))) {
+      if (!err) {
+        const computedHex = derivedKey.toString('hex');
+        if (computedHex.length === cleanHash.length && crypto.timingSafeEqual(Buffer.from(computedHex), Buffer.from(cleanHash))) {
+          return resolve(true);
+        }
+      }
+
+      // Fallback: Salted SHA-256 check
+      const legacyHex = crypto.createHash('sha256').update(salt + ':' + password).digest('hex');
+      if (legacyHex.length === cleanHash.length && crypto.timingSafeEqual(Buffer.from(legacyHex), Buffer.from(cleanHash))) {
         return resolve(true);
       }
+
       resolve(false);
     });
   });
