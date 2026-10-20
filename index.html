@@ -4403,76 +4403,88 @@
     }
 
     function onUserAuthenticated() {
-      document.body.classList.remove('is-login');
-      document.getElementById('loginView').style.display = 'none';
-      document.getElementById('appHeader').style.display = 'flex';
-      document.getElementById('appTabBar').style.display = 'block';
+      try {
+        document.body.classList.remove('is-login');
+        const loginView = document.getElementById('loginView');
+        if (loginView) loginView.style.display = 'none';
+        const appHeader = document.getElementById('appHeader');
+        if (appHeader) appHeader.style.display = 'flex';
+        const appTabBar = document.getElementById('appTabBar');
+        if (appTabBar) appTabBar.style.display = 'block';
 
-      const fBtn = document.getElementById('floatingBarcodeBtn');
-      if (fBtn) fBtn.style.display = 'flex';
+        const fBtn = document.getElementById('floatingBarcodeBtn');
+        if (fBtn) fBtn.style.display = 'flex';
 
-      const userName = currentUser.full_name || currentUser.username;
-      document.getElementById('navUserName').textContent = userName;
-      document.getElementById('navUserRole').textContent = currentUser.role;
-      document.getElementById('navUserInitial').textContent = userName.charAt(0).toUpperCase();
+        const userName = (currentUser && (currentUser.full_name || currentUser.username)) || 'User';
+        const navName = document.getElementById('navUserName');
+        if (navName) navName.textContent = userName;
+        const navRole = document.getElementById('navUserRole');
+        if (navRole) navRole.textContent = currentUser ? currentUser.role : '';
+        const navInit = document.getElementById('navUserInitial');
+        if (navInit) navInit.textContent = userName.charAt(0).toUpperCase();
 
-      // Update Mobile Drawer Profile
-      const mName = document.getElementById('mobileDrawerUserName');
-      if (mName) mName.textContent = userName;
-      const mRole = document.getElementById('mobileDrawerUserRole');
-      if (mRole) mRole.textContent = currentUser.role;
-      const mInit = document.getElementById('mobileDrawerUserInitial');
-      if (mInit) mInit.textContent = userName.charAt(0).toUpperCase();
+        // Update Mobile Drawer Profile
+        const mName = document.getElementById('mobileDrawerUserName');
+        if (mName) mName.textContent = userName;
+        const mRole = document.getElementById('mobileDrawerUserRole');
+        if (mRole) mRole.textContent = currentUser ? currentUser.role : '';
+        const mInit = document.getElementById('mobileDrawerUserInitial');
+        if (mInit) mInit.textContent = userName.charAt(0).toUpperCase();
 
-      const mBottom = document.getElementById('mobileBottomBar');
-      if (mBottom) {
-        mBottom.classList.add('active-session');
-        mBottom.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
-      }
-      updateMobileThemeLabels();
-
-      // Show/hide admin, manager & executive tabs
-      const isManager = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER';
-      const isExec = isExecutive(currentUser);
-      
-      // Admin, Manager & Executive shared (Live Dashboard, Counter scanning, Upload sheets, Reconciliation, Sessions list, Excel download, Lock session)
-      document.querySelectorAll('.admin-only').forEach(el => {
-        el.style.display = (isManager || isSuper) ? '' : 'none';
-      });
-
-      // Manager / Admin exclusive (User management, Blind mode rule configuration)
-      document.querySelectorAll('.admin-exclusive').forEach(el => {
-        el.style.display = isManager ? '' : 'none';
-      });
-
-      refreshActiveSession();
-
-      // Role based initial tab
-      if (currentUser.role === 'COUNTER') {
-        switchView('counting');
-      } else {
-        switchView('dashboard');
-      }
-
-      const sub = document.getElementById('userManagementSubtitle');
-      if (sub) {
-        if (isSuper) {
-          sub.textContent = 'Floor Executive Portal: Provision and manage Floor Counter operators for active counting.';
-        } else {
-          sub.textContent = 'Administrator Portal: Provision executives, counters, and manage system access.';
+        const mBottom = document.getElementById('mobileBottomBar');
+        if (mBottom) {
+          mBottom.classList.add('active-session');
+          mBottom.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
         }
-      }
+        updateMobileThemeLabels();
 
-      refreshActiveSession();
-      renderUsersTable();
-      renderSessionsTable();
-      renderAuditLogsTable();
-      updateBackupDatabaseMetaStats();
-      checkBroadcastAlerts();
-      if (!window._broadcastAlertInterval) {
-        window._broadcastAlertInterval = setInterval(checkBroadcastAlerts, 15000);
+        // Show/hide admin, manager & executive tabs
+        const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
+        const isExec = currentUser && isExecutive(currentUser);
+        const isSuper = isExec;
+        
+        // Admin, Manager & Executive shared
+        document.querySelectorAll('.admin-only').forEach(el => {
+          el.style.display = (isManager || isExec) ? '' : 'none';
+        });
+
+        // Manager / Admin exclusive
+        document.querySelectorAll('.admin-exclusive').forEach(el => {
+          el.style.display = isManager ? '' : 'none';
+        });
+
+        const sub = document.getElementById('userManagementSubtitle');
+        if (sub) {
+          if (isExec) {
+            sub.textContent = 'Floor Executive Portal: Provision and manage Floor Counter operators for active counting.';
+          } else {
+            sub.textContent = 'Administrator Portal: Provision executives, counters, and manage system access.';
+          }
+        }
+
+        // Switch to the target view IMMEDIATELY so screen is NEVER blank
+        if (currentUser && currentUser.role === 'COUNTER') {
+          switchView('counting');
+        } else {
+          switchView('dashboard');
+        }
+
+        // Secondary async refreshes
+        try { refreshActiveSession(); } catch (_) {}
+        try { renderUsersTable(); } catch (_) {}
+        try { renderSessionsTable(); } catch (_) {}
+        try { renderAuditLogsTable(); } catch (_) {}
+        try { updateBackupDatabaseMetaStats(); } catch (_) {}
+        try { checkBroadcastAlerts(); } catch (_) {}
+        if (!window._broadcastAlertInterval) {
+          window._broadcastAlertInterval = setInterval(checkBroadcastAlerts, 15000);
+        }
+        if (window.lucide) lucide.createIcons();
+      } catch (err) {
+        console.error('Error in onUserAuthenticated:', err);
+        // Fail-safe view switch so screen is never blank
+        try { switchView('dashboard'); } catch (e) {}
       }
-      lucide.createIcons();
     }
 
     // ==========================================
