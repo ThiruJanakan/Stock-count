@@ -883,13 +883,16 @@
     /* Production Login Screen with Enterprise Warehouse Backdrop */
     #loginView {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.82) 100%),
                   url('assets/warehouse_bg.jpg') center center / cover no-repeat;
-      padding: 2.5rem 1rem;
+      padding: 1.5rem 1rem;
       position: relative;
+      box-sizing: border-box;
+      width: 100%;
     }
 
     [data-theme="light"] #loginView {
@@ -897,10 +900,32 @@
                   url('assets/warehouse_bg.jpg') center center / cover no-repeat;
     }
 
+    /* Dedicated Perfect Viewport Centering when on Login Screen */
+    body.is-login {
+      overflow-y: auto;
+    }
+    body.is-login .main-content {
+      padding: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    body.is-login #loginView {
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+      margin: 0 !important;
+      padding: 1.5rem 1rem !important;
+    }
+
     .login-container {
       max-width: 440px;
       width: 100%;
-      margin: 0 auto;
+      margin: auto;
       background: var(--bg-card);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -911,6 +936,40 @@
       text-align: center;
       position: relative;
       z-index: 2;
+    }
+
+    /* Modern Responsive Session Banner */
+    .session-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      box-shadow: var(--shadow-xs);
+    }
+    .session-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      min-width: 0;
+      flex: 1 1 260px;
+    }
+    .session-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .session-banner-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .login-logo-container {
@@ -1280,14 +1339,48 @@
     }
 
     @media (max-width: 768px) {
+      /* Single unified Menu access: Bottom nav bar provides the thumb-friendly Menu tab */
       .mobile-menu-btn {
-        display: flex !important;
+        display: none !important;
       }
       .tab-bar-container {
         display: none !important;
       }
       .mobile-bottom-bar.active-session {
         display: flex !important;
+      }
+      .session-banner {
+        padding: 0.85rem !important;
+        gap: 0.65rem !important;
+      }
+      .session-banner-info {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+      }
+      .session-banner-actions {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+      }
+      .session-banner-actions-row {
+        display: flex !important;
+        gap: 0.4rem !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+      }
+      .session-banner-actions-row .btn {
+        flex: 1 1 calc(50% - 0.25rem) !important;
+        min-width: 120px !important;
+        justify-content: center !important;
+        padding: 0.45rem 0.5rem !important;
+        font-size: 0.76rem !important;
+      }
+      .session-banner-actions #sessionSelector {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        font-size: 0.8rem !important;
       }
       .top-nav {
         padding: 0.55rem 0.85rem !important;
@@ -2007,52 +2100,54 @@
       </div>
     </div>
 
-    <!-- Active Session Banner (When logged in) -->
-    <div id="sessionBanner" style="display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.35rem; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-      <div style="display: flex; align-items: center; gap: 1rem;">
-        <div style="width: 42px; height: 42px; background: rgba(14, 165, 233, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+    <!-- Active Session Banner (Shown only on Dashboard, Counter Scanning & Reconciliation) -->
+    <div id="sessionBanner" class="session-banner" style="display: none;">
+      <div class="session-banner-info">
+        <div style="width: 42px; height: 42px; background: rgba(14, 165, 233, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
           <i data-lucide="folder-kanban" style="width: 22px; height: 22px;"></i>
         </div>
-        <div>
+        <div style="min-width: 0;">
           <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 700;">Active Counting Session</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: var(--text);" id="activeSessionTitle">Loading Active Session...</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);" id="activeSessionCode">SES-INITIALIZING</div>
+          <div style="font-size: 1.12rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="activeSessionTitle">Loading Active Session...</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;" id="activeSessionCode">SES-INITIALIZING</div>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-        <!-- Add Unlisted Item button visible to ALL users! -->
-        <button class="btn btn-primary btn-sm" id="bannerAddUnlistedBtn" onclick="openUnlistedItemDrawer()">
-          <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i>
-          <span>+ Add Unlisted Floor Item</span>
-        </button>
-
-        <!-- Admin-exclusive Blind Mode (System Qty Visibility) Control -->
-        <button class="btn btn-secondary btn-sm admin-exclusive" id="bannerToggleBlindBtn" onclick="toggleActiveSessionBlindMode()" title="Admin Control: Toggle whether system quantities are hidden from floor counters">
-          <i data-lucide="eye-off" style="width: 15px; height: 15px; color: #f59e0b;" id="bannerBlindIcon"></i>
-          <span id="bannerBlindBtnText">System Qty: Hidden (Blind)</span>
-        </button>
-
-        <!-- Download Excel button for Supervisor and Manager/Admin -->
-        <button class="btn btn-secondary btn-sm admin-only" onclick="exportSessionAuditExcel()" title="Download Full Excel Audit Sheet">
-          <i data-lucide="file-spreadsheet" style="width: 15px; height: 15px; color: #34d399;"></i>
-          <span>Download Excel</span>
-        </button>
-
-        <!-- Lock/Unlock Session button for Supervisor and Manager/Admin -->
-        <button class="btn btn-secondary btn-sm admin-only" id="bannerLockSessionBtn" onclick="toggleActiveSessionLock()" title="Close and Lock or Reopen Session">
-          <i data-lucide="lock" style="width: 14px; height: 14px;" id="bannerLockIcon"></i>
-          <span id="bannerLockBtnText">Close & Lock</span>
-        </button>
-
-        <select class="form-select admin-only" id="sessionSelector" style="width: auto; min-width: 200px;" onchange="changeActiveSession(this.value)">
+      <div class="session-banner-actions">
+        <select class="form-select admin-only" id="sessionSelector" onchange="changeActiveSession(this.value)">
           <option value="">Loading Sessions...</option>
         </select>
-        
-        <button class="btn btn-secondary btn-sm admin-only" onclick="openNewSessionDrawer()">
-          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-          <span>New Session</span>
-        </button>
+
+        <div class="session-banner-actions-row">
+          <!-- Add Unlisted Item button visible to ALL users -->
+          <button class="btn btn-primary btn-sm" id="bannerAddUnlistedBtn" onclick="openUnlistedItemDrawer()" title="Add floor item not in sheet">
+            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+            <span>+ Add Unlisted</span>
+          </button>
+
+          <!-- Admin-exclusive Blind Mode Control -->
+          <button class="btn btn-secondary btn-sm admin-exclusive" id="bannerToggleBlindBtn" onclick="toggleActiveSessionBlindMode()" title="Admin Control: Toggle whether system quantities are hidden from floor counters">
+            <i data-lucide="eye-off" style="width: 14px; height: 14px; color: #f59e0b;" id="bannerBlindIcon"></i>
+            <span id="bannerBlindBtnText">Blind Mode</span>
+          </button>
+
+          <!-- Download Excel button (Governed by Admin approval for Supervisor) -->
+          <button class="btn btn-secondary btn-sm" id="bannerExportExcelBtn" onclick="exportSessionAuditExcel()" title="Download Full Excel Audit Sheet">
+            <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
+            <span>Download Excel</span>
+          </button>
+
+          <!-- Lock/Unlock Session button -->
+          <button class="btn btn-secondary btn-sm admin-only" id="bannerLockSessionBtn" onclick="toggleActiveSessionLock()" title="Close and Lock or Reopen Session">
+            <i data-lucide="lock" style="width: 14px; height: 14px;" id="bannerLockIcon"></i>
+            <span id="bannerLockBtnText">Close & Lock</span>
+          </button>
+
+          <button class="btn btn-secondary btn-sm admin-only" onclick="openNewSessionDrawer()" title="Create New Counting Session">
+            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+            <span>New Session</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2540,8 +2635,11 @@
       <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
           <span>Upload Master Inventory Sheet (Manager & Supervisor)</span>
-          <!-- Admin or Supervisor can delete / replace current sheet or delete an entire zone! -->
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="downloadStandardExcelTemplate()" title="Download Official Master Inventory Spreadsheet Template (.xlsx)">
+              <i data-lucide="download" style="width: 14px; height: 14px; color: var(--accent);"></i>
+              <span>Download Excel Template</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="openDeleteZoneModal()" title="Admin & Supervisor: Remove all items of a specific warehouse zone from this session">
               <i data-lucide="map-pin-off" style="width: 14px; height: 14px; color: var(--accent-rose);"></i>
               <span>Delete Zone from Session</span>
@@ -2554,7 +2652,7 @@
         </div>
 
         <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
-          Upload your ERP or warehouse spreadsheet. Columns will be auto-detected for SKU/Item Code, Description, Barcode, Book Stock, and Location. If you made a mistake, you can remove individual items, clear an entire zone, or re-upload anytime!
+          Upload your ERP or warehouse spreadsheet (.xlsx, .xls, .csv). Spreadsheets must be properly formatted with mandatory columns: <strong>SKU / Item Code</strong>, <strong>Item Name / Description</strong>, and <strong>System / Book Quantity</strong> (optional: Barcode, Zone / Location, UOM). Use the "Download Excel Template" button above to get the standardized template.
         </p>
 
         <!-- Dropzone -->
@@ -3121,8 +3219,8 @@
     </div>
   </div>
 
-  <!-- Floating Corner Scanner Trigger Button -->
-  <button class="floating-corner-scanner-btn" id="floatingBarcodeBtn" onclick="openBarcodeDrawer()" title="Open Barcode & Camera Scanner Tool">
+  <!-- Floating Corner Scanner Trigger Button (Visible only when authenticated) -->
+  <button class="floating-corner-scanner-btn" id="floatingBarcodeBtn" onclick="openBarcodeDrawer()" title="Open Barcode & Camera Scanner Tool" style="display: none;">
     <i data-lucide="scan-barcode" style="width: 22px; height: 22px;"></i>
   </button>
 
@@ -3149,6 +3247,38 @@
       <div class="modal-actions-footer">
         <button type="button" class="btn btn-secondary" id="customModalCancelBtn" onclick="closeCustomModal(false)">Cancel</button>
         <button type="button" class="btn btn-primary" id="customModalConfirmBtn" onclick="closeCustomModal(true)">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Duplicate SKU Upload Resolution Modal -->
+  <div class="modal-backdrop" id="duplicateSkuModalBackdrop" style="display: none;">
+    <div class="custom-modal-dialog" style="max-width: 520px;">
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <div class="modal-icon-badge warning">
+          <i data-lucide="copy" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <h3 style="font-size: 1.18rem; font-weight: 800; color: var(--text); margin: 0;">Existing Items Detected</h3>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.5;" id="duplicateSkuModalMessage">
+            We detected items in this spreadsheet that already exist in the active session. How would you like to handle them?
+          </p>
+          <div style="margin-top: 0.85rem; padding: 0.75rem 1rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;">
+            <div>• <strong>Update / Merge:</strong> Updates expected quantities and master details for existing SKUs, and adds new SKUs.</div>
+            <div style="margin-top: 4px;">• <strong>Replace All:</strong> Clears previously uploaded items in this session and replaces them with this new sheet.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions-footer" style="margin-top: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="resolveDuplicateSku('CANCEL')">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="resolveDuplicateSku('REPLACE')">
+          <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+          <span>Replace All</span>
+        </button>
+        <button type="button" class="btn btn-primary" onclick="resolveDuplicateSku('MERGE')">
+          <i data-lucide="git-merge" style="width: 14px; height: 14px;"></i>
+          <span>Update / Merge Quantities</span>
+        </button>
       </div>
     </div>
   </div>
@@ -4201,10 +4331,13 @@
     }
 
     function showLoginScreen() {
-      document.getElementById('loginView').style.display = 'block';
+      document.body.classList.add('is-login');
+      document.getElementById('loginView').style.display = 'flex';
       document.getElementById('appHeader').style.display = 'none';
       document.getElementById('appTabBar').style.display = 'none';
       document.getElementById('sessionBanner').style.display = 'none';
+      const fBtn = document.getElementById('floatingBarcodeBtn');
+      if (fBtn) fBtn.style.display = 'none';
       const mBottom = document.getElementById('mobileBottomBar');
       if (mBottom) {
         mBottom.classList.remove('active-session');
@@ -4215,10 +4348,13 @@
     }
 
     function onUserAuthenticated() {
+      document.body.classList.remove('is-login');
       document.getElementById('loginView').style.display = 'none';
       document.getElementById('appHeader').style.display = 'flex';
       document.getElementById('appTabBar').style.display = 'block';
-      document.getElementById('sessionBanner').style.display = 'flex';
+
+      const fBtn = document.getElementById('floatingBarcodeBtn');
+      if (fBtn) fBtn.style.display = 'flex';
 
       const userName = currentUser.full_name || currentUser.username;
       document.getElementById('navUserName').textContent = userName;
@@ -4253,6 +4389,8 @@
       document.querySelectorAll('.admin-exclusive').forEach(el => {
         el.style.display = isManager ? '' : 'none';
       });
+
+      refreshActiveSession();
 
       // Role based initial tab
       if (currentUser.role === 'COUNTER') {
@@ -4539,9 +4677,10 @@
       const targetBottomTab = document.querySelector(`.mobile-bottom-tab[data-view="${viewName}"]`);
 
       if (targetSec) targetSec.classList.add('active');
-      if (targetBtn) targetBtn.classList.add('active');
-      if (targetDrawerBtn) targetDrawerBtn.classList.add('active');
       if (targetBottomTab) targetBottomTab.classList.add('active');
+
+      // Dynamic Active Session Banner Scope: Only show on Dashboard, Counter Scanning & Reconciliation
+      updateSessionBannerVisibility(viewName);
 
       if (viewName === 'dashboard') {
         updateMetricsAndFeeds();
@@ -4570,6 +4709,17 @@
       }
 
       lucide.createIcons();
+    }
+
+    function updateSessionBannerVisibility(viewName) {
+      const banner = document.getElementById('sessionBanner');
+      if (!banner) return;
+      const allowedViews = ['dashboard', 'counting', 'reconciliation'];
+      if (currentUser && activeSession && allowedViews.includes(viewName)) {
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
     }
 
     // ==========================================
@@ -4698,6 +4848,36 @@
         if (addUnlistedTableBtn) {
           addUnlistedTableBtn.style.opacity = isClosed ? '0.5' : '1';
           addUnlistedTableBtn.title = isClosed ? 'Session is CLOSED and LOCKED' : 'Add Unlisted Floor Item';
+        }
+
+        // Supervisor Excel Download Authorization in Active Session Banner
+        const dlBtn = document.getElementById('bannerExportExcelBtn');
+        if (dlBtn && currentUser) {
+          if (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') {
+            dlBtn.style.display = '';
+            dlBtn.disabled = false;
+            dlBtn.style.opacity = '1';
+            dlBtn.style.cursor = 'pointer';
+            dlBtn.title = "Download Full Excel Audit Sheet";
+            dlBtn.innerHTML = `<i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i><span>Download Excel</span>`;
+          } else if (currentUser.role === 'SUPERVISOR') {
+            dlBtn.style.display = '';
+            if (activeSession && activeSession.supervisor_report_approved) {
+              dlBtn.disabled = false;
+              dlBtn.style.opacity = '1';
+              dlBtn.style.cursor = 'pointer';
+              dlBtn.title = "Download Excel Audit Sheet (Approved by Central Admin)";
+              dlBtn.innerHTML = `<i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i><span>Download Excel</span>`;
+            } else {
+              dlBtn.disabled = true;
+              dlBtn.style.opacity = '0.6';
+              dlBtn.style.cursor = 'not-allowed';
+              dlBtn.title = "Download Locked: Requires Central Admin Approval";
+              dlBtn.innerHTML = `<i data-lucide="lock" style="width: 14px; height: 14px; color: #f59e0b;"></i><span>Excel (Locked by Admin)</span>`;
+            }
+          } else {
+            dlBtn.style.display = 'none';
+          }
         }
       }
 
@@ -6603,6 +6783,79 @@
       filterReconciliationTable();
     }
 
+    // ==========================================
+    // EXCEL / CSV UPLOAD, STRICT VALIDATION & DUPLICATE RESOLUTION
+    // ==========================================
+    let pendingDuplicateUploadRows = null;
+
+    function downloadStandardExcelTemplate() {
+      const templateData = [
+        ["SKU", "Item Name", "Barcode", "Zone / Location", "System Qty", "UOM"],
+        ["RAW-001", "Paracetamol BP 500mg (Active Granules)", "8901234567890", "Zone A - Raw Materials", 2500, "KG"],
+        ["PKG-002", "Blister Foil PVC 250mm", "8909876543210", "Zone B - Packaging", 120, "ROLLS"],
+        ["FG-003", "Lina-Cough Syrup 100ml", "8904561237890", "Zone C - Finished Goods", 480, "BOTTLES"],
+        ["ENG-004", "Conveyor Belt Rubber 3-Ply", "8907654321098", "Zone D - Engineering Spares", 15, "PCS"]
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(templateData);
+      ws['!cols'] = [
+        { wch: 14 },
+        { wch: 42 },
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 14 },
+        { wch: 10 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Master_Inventory");
+      XLSX.writeFile(wb, "Lina_Standard_Inventory_Template.xlsx");
+      showToast("Standard Inventory Template (.xlsx) downloaded successfully!", "success");
+      playBeep(true);
+    }
+
+    function validateSpreadsheetStructure(rawRows) {
+      if (!rawRows || rawRows.length === 0) {
+        return { valid: false, error: 'The uploaded file does not contain any data rows.' };
+      }
+
+      const sampleRow = rawRows[0];
+      const keys = Object.keys(sampleRow);
+
+      const findKey = (patterns) => {
+        for (const pattern of patterns) {
+          const matched = keys.find(k => pattern.test(String(k).trim()));
+          if (matched) return matched;
+        }
+        return null;
+      };
+
+      const skuKey = findKey([/^(sku|item[_\s]?code|code|part[_\s]?no|item[_\s]?no)$/i, /^sku$/i, /code/i]);
+      const nameKey = findKey([/^(item[_\s]?name|description|item[_\s]?desc|name|title|product)$/i, /desc/i, /name/i]);
+      const qtyKey = findKey([/^(system[_\s]?qty|book[_\s]?qty|expected[_\s]?qty|expected|qty|quantity|stock)$/i, /qty/i, /stock/i]);
+
+      const missing = [];
+      if (!skuKey) missing.push("SKU / Item Code");
+      if (!nameKey) missing.push("Item Description / Name");
+      if (!qtyKey) missing.push("System / Book Quantity");
+
+      if (missing.length > 0) {
+        return {
+          valid: false,
+          error: `Invalid spreadsheet format! Missing required column(s): ${missing.join(', ')}.\n\nPlease upload a well-designed spreadsheet with columns: SKU, Item Name, Barcode, Zone, System Qty, UOM. You can download the official template using the "Download Excel Template" button above.`
+        };
+      }
+
+      return {
+        valid: true,
+        skuKey,
+        nameKey,
+        qtyKey,
+        barcodeKey: findKey([/^(barcode|upc|ean|gtin|serial)$/i, /barcode/i]),
+        zoneKey: findKey([/^(zone|location|bin|rack|aisle|shelf)$/i, /loc/i, /zone/i]),
+        uomKey: findKey([/^(uom|unit|measure)$/i, /uom/i, /unit/i])
+      };
+    }
+
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -6629,6 +6882,26 @@
           if (!rawRows || rawRows.length === 0) {
             showToast('The selected spreadsheet has no data rows.', 'error');
             progressBox.style.display = 'none';
+            event.target.value = '';
+            return;
+          }
+
+          // Strict format validation
+          const validation = validateSpreadsheetStructure(rawRows);
+          if (!validation.valid) {
+            showToast(validation.error, 'error', 6000);
+            showConfirmDialog({
+              title: 'Invalid Spreadsheet Format',
+              message: validation.error,
+              confirmText: 'Download Official Template',
+              cancelText: 'Dismiss',
+              confirmType: 'primary',
+              icon: 'file-warning'
+            }).then(downloadTemplate => {
+              if (downloadTemplate) downloadStandardExcelTemplate();
+            });
+            progressBox.style.display = 'none';
+            event.target.value = '';
             return;
           }
 
@@ -6636,14 +6909,21 @@
           progressPercent.textContent = '70%';
           progressLabel.textContent = `Mapping ${rawRows.length} columns...`;
 
-          parsedSheetData = mapSpreadsheetRows(rawRows);
+          parsedSheetData = mapSpreadsheetRows(rawRows, validation);
+
+          if (parsedSheetData.length === 0) {
+            showToast('Spreadsheet contains no valid SKU rows.', 'error');
+            progressBox.style.display = 'none';
+            event.target.value = '';
+            return;
+          }
 
           progressBar.style.width = '100%';
           progressPercent.textContent = '100%';
           progressLabel.textContent = `Parsed ${parsedSheetData.length} valid items!`;
 
           displaySheetPreview(parsedSheetData);
-          showToast(`Parsed ${parsedSheetData.length} items from spreadsheet!`, 'success');
+          showToast(`Successfully parsed and validated ${parsedSheetData.length} items from spreadsheet!`, 'success');
         } catch (err) {
           showToast('Failed to parse spreadsheet: ' + err.message, 'error');
           progressBox.style.display = 'none';
@@ -6652,28 +6932,26 @@
       reader.readAsArrayBuffer(file);
     }
 
-    function mapSpreadsheetRows(rows) {
-      return rows.map((row, index) => {
-        const keys = Object.keys(row);
-        const findVal = (patterns) => {
-          for (const pattern of patterns) {
-            const matchedKey = keys.find(k => pattern.test(k.trim()));
-            if (matchedKey && row[matchedKey] !== undefined) return String(row[matchedKey]).trim();
-          }
-          return "";
-        };
+    function mapSpreadsheetRows(rows, validation) {
+      const { skuKey, nameKey, qtyKey, barcodeKey, zoneKey, uomKey } = validation;
+      const validRows = [];
 
-        const sku = findVal([/^(sku|item[_\s]?code|code|part[_\s]?no|item[_\s]?no)$/i, /code/i, /sku/i]) || `ITEM-${index + 1}`;
-        const name = findVal([/^(item[_\s]?name|description|item[_\s]?desc|name|title|product)$/i, /desc/i, /name/i]) || sku;
-        const barcode = findVal([/^(barcode|upc|ean|gtin|serial)$/i, /barcode/i]) || sku;
-        const zone = findVal([/^(zone|location|bin|rack|aisle|shelf)$/i, /loc/i, /zone/i]) || "General";
-        const systemQtyStr = findVal([/^(system[_\s]?qty|book[_\s]?qty|expected|qty|quantity|stock)$/i, /qty/i, /stock/i]) || "0";
-        const uom = findVal([/^(uom|unit|measure)$/i]) || "PCS";
+      rows.forEach((row, index) => {
+        const rawSku = row[skuKey] !== undefined ? String(row[skuKey]).trim() : '';
+        if (!rawSku) return; // Skip empty rows
+
+        const sku = rawSku;
+        const name = (nameKey && row[nameKey] !== undefined && String(row[nameKey]).trim()) ? String(row[nameKey]).trim() : sku;
+        const barcode = (barcodeKey && row[barcodeKey] !== undefined && String(row[barcodeKey]).trim()) ? String(row[barcodeKey]).trim() : sku;
+        const zone = (zoneKey && row[zoneKey] !== undefined && String(row[zoneKey]).trim()) ? String(row[zoneKey]).trim() : 'General';
+        const uom = (uomKey && row[uomKey] !== undefined && String(row[uomKey]).trim()) ? String(row[uomKey]).trim() : 'PCS';
+        
+        let systemQtyStr = qtyKey && row[qtyKey] !== undefined ? String(row[qtyKey]).trim() : '0';
         const systemQty = parseFloat(systemQtyStr.replace(/[^0-9.-]/g, '')) || 0;
 
-        return {
+        validRows.push({
           id: "item-" + Date.now() + "-" + index,
-          session_id: activeSession.id,
+          session_id: activeSession ? activeSession.id : '',
           sku,
           item_name: name,
           barcode,
@@ -6684,8 +6962,10 @@
           uom,
           is_unlisted: false,
           created_at: new Date().toISOString()
-        };
+        });
       });
+
+      return validRows;
     }
 
     function togglePreviewSelectAll(box) {
@@ -6818,7 +7098,7 @@
 
     function commitSheetToSession() {
       if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPERVISOR' && currentUser.role !== 'MANAGER')) {
-        showToast('Only Manager or Supervisor can upload sheets.', 'error');
+        showToast('Only Manager, Administrator, or Supervisor can upload sheets.', 'error');
         return;
       }
       if (!activeSession) {
@@ -6829,17 +7109,99 @@
         showToast('This session is CLOSED and LOCKED. Reopen session before committing sheets.', 'error');
         return;
       }
-      if (parsedSheetData.length === 0) {
+      if (!parsedSheetData || parsedSheetData.length === 0) {
         showToast('No items to upload.', 'error');
         return;
       }
 
       appDb = loadDatabase();
-      // Append parsed items into active session
-      appDb.items = (appDb.items || []).concat(parsedSheetData);
-      saveDatabase(appDb);
+      const existingItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
+      
+      const existingSkuMap = new Map();
+      existingItems.forEach(item => existingSkuMap.set(String(item.sku).trim().toLowerCase(), item));
 
-      showToast(`Successfully committed ${parsedSheetData.length} items to session "${activeSession.session_code}"!`, 'success');
+      const duplicates = parsedSheetData.filter(item => existingSkuMap.has(String(item.sku).trim().toLowerCase()));
+
+      if (duplicates.length > 0 && existingItems.length > 0) {
+        pendingDuplicateUploadRows = parsedSheetData;
+        const modalBackdrop = document.getElementById('duplicateSkuModalBackdrop');
+        const modalMsg = document.getElementById('duplicateSkuModalMessage');
+        if (modalMsg) {
+          modalMsg.textContent = `Found ${duplicates.length} item(s) in this spreadsheet that already exist in active session "${activeSession.session_code}". How would you like to handle existing items?`;
+        }
+        if (modalBackdrop) modalBackdrop.style.display = 'flex';
+        lucide.createIcons();
+        return;
+      }
+
+      // No duplicates or first upload: append directly
+      executeSheetCommit('APPEND');
+    }
+
+    function resolveDuplicateSku(action) {
+      const modalBackdrop = document.getElementById('duplicateSkuModalBackdrop');
+      if (modalBackdrop) modalBackdrop.style.display = 'none';
+
+      if (action === 'CANCEL') {
+        showToast('Spreadsheet commit cancelled.', 'info');
+        return;
+      }
+
+      executeSheetCommit(action);
+    }
+
+    function executeSheetCommit(mode) {
+      const rowsToCommit = pendingDuplicateUploadRows || parsedSheetData;
+      pendingDuplicateUploadRows = null;
+
+      if (!rowsToCommit || rowsToCommit.length === 0) return;
+
+      appDb = loadDatabase();
+      let sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
+      const otherItems = (appDb.items || []).filter(i => i.session_id !== activeSession.id);
+
+      if (mode === 'REPLACE') {
+        // Replace all items in this session with new sheet items
+        appDb.items = otherItems.concat(rowsToCommit);
+        logAuditEvent('SHEET_REPLACE', `Replaced entire session inventory (${rowsToCommit.length} items) in session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, currentUser.role);
+        showToast(`Replaced inventory with ${rowsToCommit.length} items in session "${activeSession.session_code}"!`, 'success');
+      } else if (mode === 'MERGE') {
+        // Update existing SKUs, append new ones
+        const skuIndexMap = new Map();
+        sessionItems.forEach((item, idx) => skuIndexMap.set(String(item.sku).trim().toLowerCase(), idx));
+
+        let updatedCount = 0;
+        let insertedCount = 0;
+
+        rowsToCommit.forEach(newItem => {
+          const key = String(newItem.sku).trim().toLowerCase();
+          if (skuIndexMap.has(key)) {
+            const idx = skuIndexMap.get(key);
+            const existing = sessionItems[idx];
+            existing.item_name = newItem.item_name || existing.item_name;
+            existing.barcode = newItem.barcode || existing.barcode;
+            existing.zone_location = newItem.zone_location || existing.zone_location;
+            existing.uom = newItem.uom || existing.uom;
+            existing.system_qty = newItem.system_qty;
+            existing.variance_qty = (parseFloat(existing.total_counted_qty) || 0) - existing.system_qty;
+            updatedCount++;
+          } else {
+            sessionItems.push(newItem);
+            insertedCount++;
+          }
+        });
+
+        appDb.items = otherItems.concat(sessionItems);
+        logAuditEvent('SHEET_MERGE', `Merged spreadsheet: updated ${updatedCount} items, inserted ${insertedCount} new items in session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, currentUser.role);
+        showToast(`Merged spreadsheet: updated ${updatedCount} items and added ${insertedCount} new items!`, 'success');
+      } else {
+        // Direct append
+        appDb.items = (appDb.items || []).concat(rowsToCommit);
+        logAuditEvent('SHEET_COMMIT', `Committed ${rowsToCommit.length} items to session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, currentUser.role);
+        showToast(`Successfully committed ${rowsToCommit.length} items to session "${activeSession.session_code}"!`, 'success');
+      }
+
+      saveDatabase(appDb);
       document.getElementById('sheetPreviewCard').style.display = 'none';
       document.getElementById('uploadProgressBox').style.display = 'none';
       parsedSheetData = [];
@@ -7708,10 +8070,17 @@
                     <span>${s.supervisor_report_approved ? 'Sup. Export: ON' : 'Sup. Export: OFF'}</span>
                   </button>
                 ` : ''}
-                <button class="btn btn-secondary btn-sm" onclick="exportSessionAuditExcel('${s.id}')" title="Download Full 5-Sheet Executive Excel Report">
-                  <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
-                  <span>Excel</span>
-                </button>
+                ${(isManager || (currentUser && currentUser.role === 'SUPERVISOR' && s.supervisor_report_approved)) ? `
+                  <button class="btn btn-secondary btn-sm" onclick="exportSessionAuditExcel('${s.id}')" title="Download Full 5-Sheet Executive Excel Report">
+                    <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
+                    <span>Excel</span>
+                  </button>
+                ` : (currentUser && currentUser.role === 'SUPERVISOR') ? `
+                  <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.55; cursor: not-allowed;" title="Central Admin authorization required to export report for this session">
+                    <i data-lucide="lock" style="width: 14px; height: 14px; color: #f59e0b;"></i>
+                    <span>Excel (Locked)</span>
+                  </button>
+                ` : ''}
                 <button class="btn btn-secondary btn-sm admin-only" onclick="toggleSessionLock('${s.id}')" title="${isClosed ? 'Reopen and unlock counting session' : 'Close and lock session for counters'}">
                   <i data-lucide="${isClosed ? 'unlock' : 'lock'}" style="width: 14px; height: 14px; color: ${isClosed ? '#34d399' : '#f87171'};"></i>
                   <span>${isClosed ? 'Reopen' : 'Lock'}</span>
@@ -7937,7 +8306,10 @@
     window.handleSaveRecordEdit = handleSaveRecordEdit;
     window.handleClearCurrentSheet = handleClearCurrentSheet;
     window.handleFileSelect = handleFileSelect;
+    window.downloadStandardExcelTemplate = downloadStandardExcelTemplate;
     window.commitSheetToSession = commitSheetToSession;
+    window.resolveDuplicateSku = resolveDuplicateSku;
+    window.updateSessionBannerVisibility = updateSessionBannerVisibility;
     window.exportReconciliationReport = exportReconciliationReport;
     window.exportSessionAuditExcel = exportSessionAuditExcel;
     window.filterReconciliationTable = filterReconciliationTable;
