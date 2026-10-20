@@ -4202,6 +4202,7 @@
 
       session.count_type = newMode;
       saveDatabase(appDb);
+      syncSessionUpdateToServer(session.id, { count_type: newMode });
       logAuditEvent('BLIND_MODE_CHANGED', `Session "${session.session_code}" visibility mode updated to ${newMode} by ${currentUser.username}`, session.session_code, 'AUDIT');
       closeSessionControlModal();
 
@@ -4216,6 +4217,130 @@
       refreshActiveSession();
       renderSessionsTable();
       lucide.createIcons();
+    }
+
+    // ==========================================
+    // CLOUD PERSISTENCE & SAFE DATABASE SYNC
+    // ==========================================
+    function getAuthToken() {
+      try {
+        const raw = localStorage.getItem("LINA_AUTH_USER");
+        if (!raw) return '';
+        const parsed = JSON.parse(raw);
+        return parsed.token || '';
+      } catch (_) {
+        return '';
+      }
+    }
+
+    async function syncSessionToServer(session, items) {
+      if (!session || !session.id) return;
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/stock/session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ session, items: items || [] })
+        });
+        if (res.ok) {
+          console.log(`[Cloud Sync] Session ${session.session_code || session.id} successfully synced to Cloud.`);
+        } else {
+          console.warn('[Cloud Sync] Failed to sync session to cloud:', res.status);
+        }
+      } catch (err) {
+        console.warn('[Cloud Sync Network Warning]', err.message);
+      }
+    }
+
+    async function syncSessionUpdateToServer(sessionId, updateFields) {
+      if (!sessionId || !updateFields) return;
+      try {
+        const token = getAuthToken();
+        await fetch('/api/stock/session', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ id: sessionId, ...updateFields })
+        });
+      } catch (_) {}
+    }
+
+    async function syncSessionDeleteToServer(sessionId) {
+      if (!sessionId) return;
+      try {
+        const token = getAuthToken();
+        await fetch(`/api/stock/session/${encodeURIComponent(sessionId)}`, {
+          method: 'DELETE',
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          credentials: 'same-origin'
+        });
+      } catch (_) {}
+    }
+
+    function safeMergeServerDatabase(serverDb) {
+      if (!serverDb || typeof serverDb !== 'object') return;
+      const localDb = loadDatabase();
+      if (!Array.isArray(serverDb.sessions)) serverDb.sessions = [];
+      if (!Array.isArray(serverDb.items)) serverDb.items = [];
+
+      // 1. If server has no sessions but local storage has valid user sessions, preserve them & push to cloud
+      if (serverDb.sessions.length === 0 && (localDb.sessions || []).length > 0) {
+        serverDb.sessions = [...localDb.sessions];
+        serverDb.items = localDb.items || [];
+        serverDb.sessions.forEach(s => {
+          const sItems = (serverDb.items || []).filter(i => i.session_id === s.id);
+          syncSessionToServer(s, sItems);
+        });
+      } else if (serverDb.sessions.length > 0) {
+        // 2. Server has sessions: Preserve any newly added local sessions not yet on server
+        const missingFromCloud = (localDb.sessions || []).filter(ls =>
+          !serverDb.sessions.some(ss => ss.id === ls.id)
+        );
+        if (missingFromCloud.length > 0) {
+          serverDb.sessions = [...serverDb.sessions, ...missingFromCloud];
+          const localMissingItems = (localDb.items || []).filter(li =>
+            missingFromCloud.some(ms => ms.id === li.session_id)
+          );
+          serverDb.items = [...serverDb.items, ...localMissingItems];
+          missingFromCloud.forEach(ms => {
+            const msItems = localMissingItems.filter(i => i.session_id === ms.id);
+            syncSessionToServer(ms, msItems);
+          });
+        }
+      }
+
+      // Preserve local users credentials if server has minimal users
+      if (localDb.users && localDb.users.length > 0) {
+        const mergedUsers = [...(serverDb.users || [])];
+        localDb.users.forEach(lu => {
+          const existing = mergedUsers.find(su => su.id === lu.id || su.username === lu.username);
+          if (!existing) {
+            mergedUsers.push(lu);
+          } else if (lu.password_hash && !existing.password_hash) {
+            existing.password_hash = lu.password_hash;
+            existing.password_salt = lu.password_salt;
+          }
+        });
+        serverDb.users = mergedUsers;
+      }
+
+      saveDatabase(serverDb);
+      appDb = serverDb;
+      refreshActiveSession();
+      try { updateMetricsAndFeeds(); } catch (_) {}
+      try { updateLocationDropdowns(); } catch (_) {}
+      try { filterCounterFloorTable(); } catch (_) {}
+      try { filterReconciliationTable(); } catch (_) {}
+      try { renderSessionsTable(); } catch (_) {}
     }
 
     // ==========================================
@@ -4236,6 +4361,16 @@
             if (realUser && realUser.is_active && realUser.role === parsed.role) {
               currentUser = realUser;
               onUserAuthenticated();
+
+              // Background sync authoritative cloud database
+              if (parsed.token) {
+                fetch('/api/stock/db', {
+                  headers: { 'Authorization': `Bearer ${parsed.token}` },
+                  credentials: 'same-origin'
+                }).then(r => r.ok ? r.json() : null).then(serverDb => {
+                  if (serverDb) safeMergeServerDatabase(serverDb);
+                }).catch(() => {});
+              }
               return;
             }
           }
@@ -4327,15 +4462,15 @@
           }
         }
 
-        // Switch to the target view IMMEDIATELY so screen is NEVER blank
+        // 1. Resolve active session first so table filters immediately find it
+        try { refreshActiveSession(); } catch (_) {}
+
+        // 2. Switch to target view (activeSession is now set, so filterCounterFloorTable works!)
         if (currentUser && currentUser.role === 'COUNTER') {
           switchView('counting');
         } else {
           switchView('dashboard');
         }
-
-        // Secondary async refreshes
-        try { refreshActiveSession(); } catch (_) {}
         try { renderUsersTable(); } catch (_) {}
         try { renderSessionsTable(); } catch (_) {}
         try { renderAuditLogsTable(); } catch (_) {}
@@ -4449,7 +4584,7 @@
             login_at: Date.now()
           }));
 
-          // Try syncing authoritative database
+          // Try syncing authoritative database with safe merging
           try {
             const dbRes = await fetch('/api/stock/db', {
               headers: { 'Authorization': `Bearer ${data.token}` },
@@ -4457,10 +4592,7 @@
             });
             if (dbRes.ok) {
               const serverDb = await dbRes.json();
-              if (serverDb && serverDb.items) {
-                saveDatabase(serverDb);
-                appDb = serverDb;
-              }
+              safeMergeServerDatabase(serverDb);
             }
           } catch (_) {}
 
@@ -4705,8 +4837,11 @@
       appDb = loadDatabase();
       const select = document.getElementById('sessionSelector');
 
+      const savedActiveId = localStorage.getItem('LINA_ACTIVE_SESSION_ID');
+
       if (!appDb.sessions || appDb.sessions.length === 0) {
         activeSession = null;
+        localStorage.removeItem('LINA_ACTIVE_SESSION_ID');
         if (select) {
           select.innerHTML = '<option value="">-- No Active Count Session --</option>';
         }
@@ -4715,20 +4850,33 @@
         const codeEl = document.getElementById('activeSessionCode');
         if (codeEl) codeEl.innerHTML = '<span class="badge badge-warning">Upload Datasheet to Start</span>';
       } else {
-        if (!activeSession || !appDb.sessions.some(s => s.id === activeSession.id)) {
-          activeSession = appDb.sessions.find(s => s.status === 'ACTIVE') || appDb.sessions[0];
-        } else {
-          activeSession = appDb.sessions.find(s => s.id === activeSession.id) || activeSession;
+        let target = null;
+        if (savedActiveId) {
+          target = appDb.sessions.find(s => s.id === savedActiveId);
+        }
+        if (!target && activeSession) {
+          target = appDb.sessions.find(s => s.id === activeSession.id);
+        }
+        if (!target) {
+          target = appDb.sessions.find(s => s.status === 'ACTIVE') || appDb.sessions[0];
+        }
+        activeSession = target;
+        if (activeSession) {
+          localStorage.setItem('LINA_ACTIVE_SESSION_ID', activeSession.id);
         }
 
         if (select) {
           select.innerHTML = appDb.sessions.map(s => `
             <option value="${s.id}" ${activeSession && activeSession.id === s.id ? 'selected' : ''}>
-              ${s.session_code} - ${s.title} (${s.status})
+              ${escapeHtml(s.session_code)} - ${escapeHtml(s.title)} (${escapeHtml(s.status)})
             </option>
           `).join('');
         }
       }
+
+      const activeViewSec = document.querySelector('.view-section.active');
+      const currentActiveView = activeViewSec ? activeViewSec.id.replace('view-', '') : 'dashboard';
+      updateSessionBannerVisibility(currentActiveView);
 
       if (activeSession) {
         document.getElementById('activeSessionTitle').textContent = activeSession.title;
@@ -4835,8 +4983,13 @@
       const s = appDb.sessions.find(item => item.id === sessionId);
       if (s) {
         activeSession = s;
+        localStorage.setItem('LINA_ACTIVE_SESSION_ID', s.id);
         showToast(`Active session changed to: ${s.session_code}`, 'info');
         refreshActiveSession();
+        updateLocationDropdowns();
+        filterCounterFloorTable();
+        filterReconciliationTable();
+        updateMetricsAndFeeds();
       }
     }
 
@@ -4911,6 +5064,7 @@
       }
 
       saveDatabase(appDb);
+      syncSessionUpdateToServer(session.id, { status: session.status, closed_at: session.closed_at });
       logAuditEvent('SESSION_LOCKED', `Session "${session.session_code}" status changed to ${session.status} by ${currentUser.username}`, session.session_code, 'SESSION');
       refreshActiveSession();
       renderSessionsTable();
@@ -6769,9 +6923,13 @@
       appDb.sessions.push(newSession);
       appDb.items = appDb.items.concat(itemsToCommit);
       activeSession = newSession;
+      localStorage.setItem('LINA_ACTIVE_SESSION_ID', newSession.id);
 
       saveDatabase(appDb);
       logAuditEvent('SESSION_CREATED', `Created and activated count session "${newSession.session_code} - ${newSession.title}" with ${itemsToCommit.length} items by ${currentUser.username}`, newSession.session_code, 'SESSION');
+
+      // Asynchronously persist new session and items to server / cloud
+      syncSessionToServer(newSession, itemsToCommit);
 
       // Clear preview state
       parsedSheetData = [];
@@ -8227,6 +8385,11 @@
 
       // 3. Remove session
       appDb.sessions = (appDb.sessions || []).filter(s => s.id !== sessionId);
+      if (activeSession && activeSession.id === sessionId) {
+        activeSession = null;
+        localStorage.removeItem('LINA_ACTIVE_SESSION_ID');
+      }
+      syncSessionDeleteToServer(sessionId);
 
       // 4. Create broadcast alert
       appDb.broadcast_alerts = appDb.broadcast_alerts || [];

@@ -754,6 +754,169 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, dbData);
     }
 
+    // Create & Upload Stock Session
+    if (reqUrl === '/api/stock/session' && reqMethod === 'POST') {
+      const authUser = getAuthenticatedUser(req);
+      if (!authUser) return sendJson(401, { error: 'Authentication required' });
+      if (authUser.role === 'COUNTER') return sendJson(403, { error: 'Forbidden' });
+
+      try {
+        const body = await parseJsonBody(req);
+        if (deepScanPayload(body)) return sendJson(400, { error: 'Malicious payload detected' });
+
+        const session = body.session;
+        const items = Array.isArray(body.items) ? body.items : [];
+        if (!session || !session.id || !session.title) return sendJson(400, { error: 'Valid session required' });
+
+        const now = new Date().toISOString();
+        const sessionRow = {
+          id: session.id,
+          session_code: session.session_code || `SES-${Date.now()}`,
+          title: session.title,
+          description: session.description || '',
+          count_type: session.count_type || 'BLIND_COUNT',
+          status: session.status || 'ACTIVE',
+          total_items: items.length || session.total_items || 0,
+          counted_items: session.counted_items || 0,
+          progress_percent: session.progress_percent || 0,
+          created_by: authUser.id || 'u-admin',
+          created_at: session.created_at || now,
+          closed_at: session.status === 'CLOSED' ? (session.closed_at || now) : null
+        };
+
+        if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+          const existCheck = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(session.id)}&select=id`);
+          if (existCheck && existCheck.status === 200 && Array.isArray(existCheck.data) && existCheck.data.length > 0) {
+            await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(session.id)}`, 'PATCH', sessionRow);
+          } else {
+            await supabaseRequest('count_sessions', 'POST', sessionRow);
+          }
+
+          if (items.length > 0) {
+            const chunkSize = 200;
+            for (let i = 0; i < items.length; i += chunkSize) {
+              const chunk = items.slice(i, i + chunkSize).map((it, idx) => ({
+                id: it.id || `item-${session.id}-${i + idx}`,
+                session_id: session.id,
+                sku: String(it.sku || '').trim(),
+                item_name: String(it.item_name || '').trim(),
+                barcode: String(it.barcode || it.sku || '').trim(),
+                batch_no: String(it.batch_no || '').trim(),
+                expiry_date: it.expiry_date || null,
+                zone_location: String(it.zone_location || it.location || 'FLOOR').trim(),
+                system_qty: parseFloat(it.system_qty) || 0,
+                total_counted_qty: parseFloat(it.total_counted_qty) || 0,
+                variance_qty: parseFloat(it.variance_qty) || -(parseFloat(it.system_qty) || 0),
+                uom: String(it.uom || 'PCS').trim(),
+                is_unlisted: Boolean(it.is_unlisted),
+                created_at: it.created_at || now,
+                updated_at: it.updated_at || now
+              }));
+              await supabaseRequest('stock_items', 'POST', chunk);
+            }
+          }
+        }
+
+        if (sqliteDb) {
+          try {
+            const insertSes = sqliteDb.prepare(`
+              INSERT OR REPLACE INTO count_sessions (id, session_code, title, description, count_type, status, total_items, counted_items, progress_percent, created_by, created_at, closed_at)
+              VALUES (@id, @session_code, @title, @description, @count_type, @status, @total_items, @counted_items, @progress_percent, @created_by, @created_at, @closed_at)
+            `);
+            insertSes.run(sessionRow);
+
+            if (items.length > 0) {
+              const insertItem = sqliteDb.prepare(`
+                INSERT OR REPLACE INTO stock_items (id, session_id, sku, item_name, barcode, batch_no, expiry_date, zone_location, system_qty, total_counted_qty, variance_qty, uom, is_unlisted, created_at, updated_at)
+                VALUES (@id, @session_id, @sku, @item_name, @barcode, @batch_no, @expiry_date, @zone_location, @system_qty, @total_counted_qty, @variance_qty, @uom, @is_unlisted, @created_at, @updated_at)
+              `);
+              const tx = sqliteDb.transaction((itemList) => {
+                for (const it of itemList) {
+                  insertItem.run({
+                    id: it.id || `item-${session.id}-${Math.random().toString(36).slice(2, 8)}`,
+                    session_id: session.id,
+                    sku: String(it.sku || '').trim(),
+                    item_name: String(it.item_name || '').trim(),
+                    barcode: String(it.barcode || it.sku || '').trim(),
+                    batch_no: String(it.batch_no || '').trim(),
+                    expiry_date: it.expiry_date || null,
+                    zone_location: String(it.zone_location || it.location || 'FLOOR').trim(),
+                    system_qty: parseFloat(it.system_qty) || 0,
+                    total_counted_qty: parseFloat(it.total_counted_qty) || 0,
+                    variance_qty: parseFloat(it.variance_qty) || -(parseFloat(it.system_qty) || 0),
+                    uom: String(it.uom || 'PCS').trim(),
+                    is_unlisted: it.is_unlisted ? 1 : 0,
+                    created_at: it.created_at || now,
+                    updated_at: it.updated_at || now
+                  });
+                }
+              });
+              tx(items);
+            }
+          } catch (e) {
+            console.warn('[SQLite Insert Error]', e.message);
+          }
+        }
+
+        return sendJson(201, { success: true, session, itemsCount: items.length });
+      } catch (err) {
+        return sendJson(500, { error: 'Failed to create session: ' + err.message });
+      }
+    }
+
+    // Update Stock Session
+    if (reqUrl.includes('/api/stock/session') && reqMethod === 'PATCH') {
+      const authUser = getAuthenticatedUser(req);
+      if (!authUser || authUser.role === 'COUNTER') return sendJson(403, { error: 'Forbidden' });
+
+      try {
+        const body = await parseJsonBody(req);
+        const sessionId = body.id || (reqUrl.split('/api/stock/session/')[1] || '').trim();
+        if (!sessionId) return sendJson(400, { error: 'Session ID required' });
+
+        const updateFields = {};
+        if (body.status !== undefined) updateFields.status = body.status;
+        if (body.count_type !== undefined) updateFields.count_type = body.count_type;
+        if (body.title !== undefined) updateFields.title = body.title;
+        if (body.status === 'CLOSED') updateFields.closed_at = new Date().toISOString();
+        if (body.status === 'ACTIVE') updateFields.closed_at = null;
+
+        if (SUPABASE_HOST && SUPABASE_SECRET_KEY && Object.keys(updateFields).length > 0) {
+          await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}`, 'PATCH', updateFields);
+        }
+
+        if (sqliteDb && Object.keys(updateFields).length > 0) {
+          const sets = Object.keys(updateFields).map(k => `${k} = @${k}`).join(', ');
+          sqliteDb.prepare(`UPDATE count_sessions SET ${sets} WHERE id = @id`).run({ ...updateFields, id: sessionId });
+        }
+
+        return sendJson(200, { success: true, sessionId, updated: updateFields });
+      } catch (err) {
+        return sendJson(500, { error: err.message });
+      }
+    }
+
+    // Delete Stock Session
+    if (reqUrl.includes('/api/stock/session') && reqMethod === 'DELETE') {
+      const authUser = getAuthenticatedUser(req);
+      if (!authUser || authUser.role === 'COUNTER') return sendJson(403, { error: 'Forbidden' });
+
+      const sessionId = (reqUrl.split('/api/stock/session/')[1] || '').trim();
+      if (sessionId) {
+        if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+          await supabaseRequest(`stock_items?session_id=eq.${encodeURIComponent(sessionId)}`, 'DELETE');
+          await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}`, 'DELETE');
+        }
+        if (sqliteDb) {
+          try {
+            sqliteDb.prepare("DELETE FROM stock_items WHERE session_id = ?").run(sessionId);
+            sqliteDb.prepare("DELETE FROM count_sessions WHERE id = ?").run(sessionId);
+          } catch (_) {}
+        }
+      }
+      return sendJson(200, { success: true, sessionId });
+    }
+
     // Record Stock Count
     if (reqUrl === '/api/stock/count' && reqMethod === 'POST') {
       const authUser = getAuthenticatedUser(req);
