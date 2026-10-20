@@ -196,15 +196,7 @@ function hasPrototypePollution(obj) {
 }
 function deepScanPayload(obj) {
   if (!obj) return false;
-  if (typeof obj === 'string') return checkSqlInjection(obj);
-  if (typeof obj === 'object') {
-    for (const key of Object.keys(obj)) {
-      if (key === '__proto__' || key === 'constructor' || key === 'prototype') return true;
-      if (checkSqlInjection(key)) return true;
-      if (deepScanPayload(obj[key])) return true;
-    }
-  }
-  return false;
+  return hasPrototypePollution(obj);
 }
 
 // Password verification
