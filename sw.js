@@ -3,7 +3,7 @@
  * Progressive Web Application (PWA) Service Worker
  */
 
-const CACHE_NAME = 'lina-stock-cache-v1';
+const CACHE_NAME = 'lina-stock-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -39,7 +39,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
+
+  let url;
+  try {
+    url = new URL(event.request.url);
+  } catch (_) {
+    return;
+  }
+
+  // Strictly ignore non-http/https requests (e.g. chrome-extension://, moz-extension://, data:, blob:)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
 
   // Network-only for API requests
   if (url.pathname.startsWith('/api/')) {
@@ -62,11 +75,16 @@ self.addEventListener('fetch', (event) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+        // Only cache http/https URLs
+        if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache).catch(() => {});
+          }).catch(() => {});
+        }
         return networkResponse;
+      }).catch(() => {
+        return caches.match('./index.html');
       });
     })
   );
