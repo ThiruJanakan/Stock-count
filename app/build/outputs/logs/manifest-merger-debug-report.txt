@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-20:12
-INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-20:12
-INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-20:12
-INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-20:12
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-24:12
+INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-24:12
+INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-24:12
+INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:1-24:12
 MERGED from [androidx.webkit:webkit:1.12.1] C:\Users\Janagan\.gradle\caches\8.13\transforms\e3059d16341dda976f243d32b86ef51b\transformed\webkit-1.12.1\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.core:core:1.15.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\d0b1d3278ffa52f6e765757fd3d0f793\transformed\core-1.15.0\AndroidManifest.xml:17:1-30:12
 MERGED from [androidx.core:core-ktx:1.15.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\457f177fdad16609555a8460bfc8548b\transformed\core-ktx-1.15.0\AndroidManifest.xml:2:1-7:12
@@ -23,9 +23,21 @@ MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\Janagan\.gradle\cac
 		INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml
 	xmlns:android
 		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:1:11-69
+uses-permission#android.permission.INTERNET
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:2:5-67
+	android:name
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:2:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:3:5-79
+	android:name
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:3:22-76
+uses-permission#android.permission.CAMERA
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:4:5-65
+	android:name
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:4:22-62
 application
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:2:5-19:19
-INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:2:5-19:19
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:6:5-23:19
+INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:6:5-23:19
 MERGED from [androidx.core:core:1.15.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\d0b1d3278ffa52f6e765757fd3d0f793\transformed\core-1.15.0\AndroidManifest.xml:28:5-89
 MERGED from [androidx.core:core:1.15.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\d0b1d3278ffa52f6e765757fd3d0f793\transformed\core-1.15.0\AndroidManifest.xml:28:5-89
 MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\efe639a4f2f0098857a2442be2ead84e\transformed\profileinstaller-1.3.0\AndroidManifest.xml:23:5-53:19
@@ -39,37 +51,37 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\Ja
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.15.0] C:\Users\Janagan\.gradle\caches\8.13\transforms\d0b1d3278ffa52f6e765757fd3d0f793\transformed\core-1.15.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:5:9-35
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:9:9-35
 	android:label
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:4:9-41
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:8:9-41
 	android:allowBackup
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:3:9-36
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:7:9-36
 	android:theme
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:6:9-72
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:10:9-72
 	android:usesCleartextTraffic
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:7:9-45
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:11:9-45
 activity#com.linamanufacturing.stockcount.MainActivity
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:8:9-18:20
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:12:9-22:20
 	android:screenOrientation
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:12:13-52
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:16:13-52
 	android:windowSoftInputMode
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:13:13-55
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:17:13-55
 	android:exported
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:11:13-36
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:15:13-36
 	android:configChanges
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:10:13-74
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:14:13-74
 	android:name
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:9:13-41
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:13:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:14:13-17:29
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:18:13-21:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:15:17-69
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:19:17-69
 	android:name
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:15:25-66
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:19:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:16:17-77
+ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:20:17-77
 	android:name
-		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:16:27-74
+		ADDED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml:20:27-74
 uses-sdk
 INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Janagan\Downloads\Stock count\app\src\main\AndroidManifest.xml
