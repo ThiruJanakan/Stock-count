@@ -1836,6 +1836,31 @@
       .stat-card { background: #f8f9fa; }
       td, th { color: #111; border-color: #ddd; }
     }
+  
+    /* Automatically hide install and download prompts if running inside installed APK or standalone PWA */
+    @media all and (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+      .app-install-only-web,
+      #appInstallPrompts,
+      #headerInstallAppBtn,
+      #drawerInstallAppBtn,
+      #pwaInstallBanner {
+        display: none !important;
+      }
+    }
+
+    html.is-installed-app .app-install-only-web,
+    html.is-installed-app #appInstallPrompts,
+    html.is-installed-app #headerInstallAppBtn,
+    html.is-installed-app #drawerInstallAppBtn,
+    html.is-installed-app #pwaInstallBanner,
+    body.is-installed-app .app-install-only-web,
+    body.is-installed-app #appInstallPrompts,
+    body.is-installed-app #headerInstallAppBtn,
+    body.is-installed-app #drawerInstallAppBtn,
+    body.is-installed-app #pwaInstallBanner {
+      display: none !important;
+    }
+
   </style>
 </head>
 <body>
@@ -1871,7 +1896,7 @@
       </button>
 
       <!-- Install Mobile App Button -->
-      <button class="btn btn-secondary btn-sm" id="headerInstallAppBtn" onclick="triggerPwaInstall()" title="Install as Mobile App">
+      <button id="headerInstallAppBtn" class="btn btn-secondary btn-sm app-install-only-web" onclick="triggerPwaInstall()" title="Install as Mobile App">
         <i data-lucide="smartphone" style="width: 14px; height: 14px; color: var(--accent);"></i>
         <span class="theme-btn-label">Install App</span>
       </button>
@@ -1980,7 +2005,7 @@
       </button>
 
       <!-- Install as Mobile App in Drawer -->
-      <button class="mobile-drawer-link" onclick="triggerPwaInstall()">
+      <button class="mobile-drawer-link app-install-only-web" id="drawerInstallAppBtn" onclick="triggerPwaInstall()">
         <div class="mobile-link-icon-wrap"><i data-lucide="smartphone"></i></div>
         <span class="mobile-link-text">Install as Mobile App</span>
         <span style="margin-left: auto; background: rgba(2, 132, 199, 0.15); color: var(--accent); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">PWA</span>
@@ -2090,7 +2115,7 @@
           </button>
         </form>
 
-        <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div id="appInstallPrompts" class="app-install-only-web" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
           <a href="lina-stock-count.apk" download="lina-stock-count.apk" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; padding: 0.65rem; text-decoration: none; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff;">
             <i data-lucide="download" style="width: 16px; height: 16px;"></i>
             <span>Download Mobile App (Android APK)</span>
@@ -8468,6 +8493,7 @@
 
     // Boot
     window.addEventListener('DOMContentLoaded', () => {
+      updateAppInstallVisibility();
       initTheme();
       setupBarcodeScanKeypress();
       checkAuthSession();
@@ -8475,10 +8501,54 @@
 
     // ==========================================
     // PROGRESSIVE WEB APPLICATION (PWA) INSTALLATION ENGINE
+
+    // Check if running inside installed APK or standalone PWA
+    function isRunningInInstalledApp() {
+      const isApk = Boolean(
+        (typeof window !== 'undefined' && window.AndroidStockStorage) ||
+        (typeof window !== 'undefined' && window.Android) ||
+        (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('LinaStockCountApp')) ||
+        (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.includes('wv') && navigator.userAgent.includes('Android'))
+      );
+      const isStandalone = Boolean(
+        (typeof window !== 'undefined' && window.matchMedia && (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          window.matchMedia('(display-mode: minimal-ui)').matches
+        )) ||
+        (typeof navigator !== 'undefined' && 'standalone' in navigator && navigator.standalone) ||
+        (typeof document !== 'undefined' && document.referrer && document.referrer.includes('android-app://'))
+      );
+      return isApk || isStandalone;
+    }
+
+    function updateAppInstallVisibility() {
+      if (isRunningInInstalledApp() || (typeof localStorage !== 'undefined' && localStorage.getItem('LINA_APP_INSTALLED') === 'true')) {
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.add('is-installed-app');
+          if (document.body) document.body.classList.add('is-installed-app');
+          const prompts = document.getElementById('appInstallPrompts');
+          if (prompts) prompts.style.display = 'none';
+          const headerBtn = document.getElementById('headerInstallAppBtn');
+          if (headerBtn) headerBtn.style.display = 'none';
+          const drawerBtn = document.getElementById('drawerInstallAppBtn');
+          if (drawerBtn) drawerBtn.style.display = 'none';
+          const banner = document.getElementById('pwaInstallBanner');
+          if (banner) banner.style.display = 'none';
+        }
+      }
+    }
+    // Run early
+    try { updateAppInstallVisibility(); } catch (e) {}
+
     // ==========================================
     let deferredPwaPrompt = null;
 
     window.addEventListener('beforeinstallprompt', (e) => {
+      if (isRunningInInstalledApp() || localStorage.getItem('LINA_APP_INSTALLED') === 'true') {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       deferredPwaPrompt = e;
       
@@ -8495,6 +8565,8 @@
     });
 
     window.addEventListener('appinstalled', () => {
+      localStorage.setItem('LINA_APP_INSTALLED', 'true');
+      updateAppInstallVisibility();
       deferredPwaPrompt = null;
       dismissPwaBanner();
       showToast('Lina Stock App successfully installed on your device!', 'success');
@@ -8652,7 +8724,7 @@
     </button>
   </nav>
 
-  <div id="pwaInstallBanner" class="pwa-install-banner-wrap">
+  <div id="pwaInstallBanner" class="pwa-install-banner-wrap app-install-only-web">
     <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
       <img src="lina-logo.png" alt="Lina Manufacturing Logo" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain; background: white; padding: 4px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
       <div style="min-width: 0;">

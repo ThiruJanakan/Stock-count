@@ -57,6 +57,7 @@ class MainActivity : Activity() {
             setSupportMultipleWindows(false)
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             safeBrowsingEnabled = true
+            userAgentString = "${userAgentString} LinaStockCountApp/1.0"
         }
         webView.addJavascriptInterface(StockBridge(), BRIDGE_NAME)
         webView.webChromeClient = object : WebChromeClient() {
