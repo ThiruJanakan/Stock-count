@@ -95,42 +95,60 @@ class MainActivity : Activity() {
                     true
                 }
             }
+
+            override fun onPermissionRequest(request: android.webkit.PermissionRequest?) {
+                request?.grant(request.resources)
+            }
         }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest
             ): WebResourceResponse? {
-                val response = assetLoader.shouldInterceptRequest(request.url) ?: return blockedResponse()
-                val headers = HashMap(response.responseHeaders ?: emptyMap())
-                headers["Content-Security-Policy"] =
-                    "default-src 'self' data: blob: https:; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net https://unpkg.com; " +
-                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; " +
-                    "font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; " +
-                    "frame-src 'none'; base-uri 'self'; form-action 'self'"
-                val statusCode = response.statusCode.takeIf { it in 100..599 } ?: 200
-                return WebResourceResponse(
-                    response.mimeType,
-                    response.encoding,
-                    statusCode,
-                    response.reasonPhrase.takeIf { statusCode == response.statusCode && !it.isNullOrBlank() }
-                        ?: "OK",
-                    headers,
-                    response.data
-                )
+                if (request.url.host == ASSET_HOST) {
+                    val response = assetLoader.shouldInterceptRequest(request.url) ?: return blockedResponse()
+                    val headers = HashMap(response.responseHeaders ?: emptyMap())
+                    val statusCode = response.statusCode.takeIf { it in 100..599 } ?: 200
+                    return WebResourceResponse(
+                        response.mimeType,
+                        response.encoding,
+                        statusCode,
+                        response.reasonPhrase.takeIf { statusCode == response.statusCode && !it.isNullOrBlank() }
+                            ?: "OK",
+                        headers,
+                        response.data
+                    )
+                }
+                return null
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: android.webkit.WebResourceError?
+            ) {
+                if (request?.isForMainFrame == true) {
+                    view?.loadUrl(LOCAL_URL)
+                }
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
                 val uri = request.url
-                return uri.scheme != "https" ||
-                    uri.host != ASSET_HOST ||
-                    uri.path != APP_PATH
+                val host = uri.host ?: ""
+                if (host.contains("vercel.app") || host == ASSET_HOST || host.contains("supabase.co")) {
+                    return false
+                }
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    true
+                } catch (e: Exception) {
+                    false
+                }
             }
         }
 
         setContentView(webView)
-        webView.loadUrl(APP_URL)
+        webView.loadUrl(CLOUD_URL)
     }
 
     @Deprecated("Deprecated in Android, retained for WebView file chooser compatibility")
@@ -374,9 +392,10 @@ class MainActivity : Activity() {
         private const val BRIDGE_NAME = "AndroidStockStorage"
         private const val APP_KEY_PREFIX = "lina-stock-count::"
         private const val FILE_REQUEST = 1201
+        private const val CLOUD_URL = "https://stock-count-gamma.vercel.app/"
         private const val ASSET_HOST = "appassets.androidplatform.net"
         private const val APP_PATH = "/assets/Stock_Count_System_V5.html"
-        private const val APP_URL = "https://$ASSET_HOST$APP_PATH"
+        private const val LOCAL_URL = "https://$ASSET_HOST$APP_PATH"
         private const val MAX_VALUE_BYTES = 12 * 1024 * 1024
         private const val MAX_DOWNLOAD_BYTES = 40 * 1024 * 1024
         private const val MAX_DOWNLOAD_BASE64_CHARS = 56 * 1024 * 1024
