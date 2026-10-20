@@ -18,7 +18,7 @@ CREATE TABLE public.stock_users (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'SUPERVISOR', 'MANAGER', 'COUNTER')),
+    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'EXECUTIVE', 'SUPERVISOR', 'MANAGER', 'COUNTER')),
     password_salt TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
@@ -125,6 +125,25 @@ CREATE POLICY "Allow insert audit_trails" ON public.audit_trails FOR INSERT WITH
 CREATE POLICY "Allow update count_sessions" ON public.count_sessions FOR UPDATE USING (true);
 CREATE POLICY "Allow insert count_sessions" ON public.count_sessions FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow all stock_users" ON public.stock_users FOR ALL USING (true);
+
+-- ============================================================================
+-- EXPLICIT POSTGREST DATA API TABLE GRANTS (Post-October 30 Compatibility)
+-- ============================================================================
+-- Grant full API access to anon, authenticated, and service_role roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+GRANT ALL ON TABLE public.stock_users TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.count_sessions TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.stock_items TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.count_logs TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.audit_trails TO anon, authenticated, service_role;
+
+-- Ensure all sequences (if any are added) have usage granted
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- Automatically grant access on any future tables created in public schema
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 
 -- ============================================================================
 -- SUPABASE REALTIME REPLICATION (For live multi-device warehouse sync)
