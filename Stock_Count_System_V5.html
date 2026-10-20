@@ -7,6 +7,7 @@
 
   <!-- Progressive Web App (PWA) Mobile Meta Tags -->
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="manifest.json" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1116,12 +1117,16 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(3, 7, 18, 0.7);
+      background: rgba(3, 7, 18, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.25rem;
+      padding: 1rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .custom-modal-dialog {
@@ -2060,7 +2065,7 @@
         <form id="loginForm" onsubmit="handleLoginSubmit(event)">
           <div class="form-group" style="text-align: left;">
             <label class="form-label">Username</label>
-            <input type="text" id="loginUsername" class="form-input" placeholder="e.g. admin or counter1" required />
+            <input type="text" id="loginUsername" class="form-input" placeholder="Enter username" required />
           </div>
 
           <div class="form-group" style="text-align: left;">
@@ -3284,8 +3289,8 @@
   </div>
 
   <!-- Dedicated Admin Session Control & Visibility Modal -->
-  <div class="modal-backdrop" id="sessionControlModalBackdrop" style="display: none;">
-    <div class="custom-modal-dialog" style="max-width: 580px;">
+  <div class="modal-backdrop" id="sessionControlModalBackdrop" style="display: none;" onclick="if(event.target === this) closeSessionControlModal()">
+    <div class="custom-modal-dialog" style="max-width: 580px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; margin: auto;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--accent-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent);">
@@ -3959,13 +3964,19 @@
           return DEFAULT_DB;
         }
         const parsed = JSON.parse(raw);
-        // Auto-migrate supervisor role to executive
+        // Auto-migrate supervisor role to executive & ensure passwords exist
         if (parsed.users && Array.isArray(parsed.users)) {
           let updatedUsers = false;
           parsed.users.forEach(u => {
             if (u.role === 'SUPERVISOR') { u.role = 'EXECUTIVE'; updatedUsers = true; }
             if (u.full_name === 'Floor Supervisor') { u.full_name = 'Floor Executive'; updatedUsers = true; }
             if (u.username === 'supervisor1') { u.username = 'executive1'; updatedUsers = true; }
+            const seedMatch = DEFAULT_DB.users.find(d => d.id === u.id || d.username === u.username);
+            if (seedMatch && (!u.password_hash || !u.password_salt)) {
+              u.password_salt = seedMatch.password_salt;
+              u.password_hash = seedMatch.password_hash;
+              updatedUsers = true;
+            }
           });
           if (updatedUsers) saveDatabase(parsed);
         }
@@ -4171,7 +4182,7 @@
     }
 
     function isExecutive(user) {
-      return user && (isExecutive(user) || isExecutive(user));
+      return !!(user && (user.role === 'EXECUTIVE' || user.role === 'SUPERVISOR'));
     }
 
     function isManagerOrAdmin(user) {
@@ -8435,6 +8446,19 @@
       refreshActiveSession();
       renderUsersTable();
       renderSessionsTable();
+    });
+
+    
+    // Global ESC key listener to dismiss overlays & modals
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        closeSessionControlModal();
+        closeCustomModal(false);
+        const bDrawer = document.getElementById('barcodeScanDrawer');
+        if (bDrawer && bDrawer.classList.contains('active')) closeBarcodeDrawer();
+        const uDrawer = document.getElementById('unlistedItemDrawer');
+        if (uDrawer && uDrawer.classList.contains('active')) closeUnlistedItemDrawer();
+      }
     });
 
     // Boot

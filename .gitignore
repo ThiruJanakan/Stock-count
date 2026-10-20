@@ -3,6 +3,7 @@ local.properties
 build/
 app/build/
 *.apk
+!lina-stock-count.apk
 *.log
 .DS_Store
 Thumbs.db
