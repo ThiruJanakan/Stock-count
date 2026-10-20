@@ -1998,7 +1998,7 @@
         <span class="mobile-link-text">Upload Data Sheet</span>
       </button>
 
-      <button class="mobile-drawer-link admin-only" data-view="sessions" onclick="mobileNavigateTo('sessions')">
+      <button class="mobile-drawer-link" data-view="sessions" onclick="mobileNavigateTo('sessions')">
         <div class="mobile-link-icon-wrap"><i data-lucide="calendar"></i></div>
         <span class="mobile-link-text">Count Sessions</span>
       </button>
@@ -2064,7 +2064,7 @@
         <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i>
         <span>Upload Data Sheet</span>
       </button>
-      <button class="nav-tab-btn admin-only" data-view="sessions" onclick="switchView('sessions')">
+      <button class="nav-tab-btn" data-view="sessions" onclick="switchView('sessions')">
         <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
         <span>Count Sessions</span>
       </button>
@@ -2207,7 +2207,31 @@
     <!-- VIEW 1: LIVE DASHBOARD -->
     <!-- ========================================== -->
     <section class="view-section" id="view-dashboard">
-      <div class="grid-4" style="margin-bottom: 1.5rem;">
+      <!-- Live Dashboard Session Switcher Banner -->
+      <div class="card" style="margin-bottom: 1.25rem; padding: 0.85rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 36px; height: 36px; background: rgba(2, 132, 199, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+            <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text);" id="dashSessionHeaderTitle">Loading Session...</div>
+            <div style="font-size: 0.74rem; color: var(--text-dim);" id="dashSessionHeaderSubtitle">Active verification metrics</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim);">Switch Session:</label>
+          <select class="form-select" id="dashSessionSelect" onchange="changeActiveSession(this.value)" style="min-width: 220px; font-weight: 600; font-size: 0.82rem; height: 36px;">
+            <option value="">-- Select Count Session --</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="switchView('sessions')" title="View All Count Sessions">
+            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+            <span>All Sessions</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Overall Progress -->
         <div class="stat-card">
           <div class="stat-label">
             <span>Overall Progress</span>
@@ -2220,6 +2244,27 @@
           <div class="stat-sub" id="dashCountedRatio">0 of 0 items verified</div>
         </div>
 
+        <!-- Counted Items Card -->
+        <div class="stat-card emerald">
+          <div class="stat-label">
+            <span>Counted Items</span>
+            <i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: var(--accent-emerald);"></i>
+          </div>
+          <div class="stat-value" id="dashCountedItemsCount" style="color: var(--accent-emerald);">0</div>
+          <div class="stat-sub" id="dashCountedItemsSub">Items verified on floor</div>
+        </div>
+
+        <!-- Pending Counts Card -->
+        <div class="stat-card amber" style="border-left: 3px solid #f59e0b;">
+          <div class="stat-label">
+            <span>Pending Counts</span>
+            <i data-lucide="clock" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+          </div>
+          <div class="stat-value" id="dashPendingItemsCount" style="color: #f59e0b;">0</div>
+          <div class="stat-sub" id="dashPendingItemsSub">Items awaiting verification</div>
+        </div>
+
+        <!-- Matched Exactly -->
         <div class="stat-card emerald">
           <div class="stat-label">
             <span>Matched Exactly</span>
@@ -2229,6 +2274,7 @@
           <div class="stat-sub">Count matches book stock</div>
         </div>
 
+        <!-- Discrepancies -->
         <div class="stat-card rose">
           <div class="stat-label">
             <span>Discrepancies</span>
@@ -2238,6 +2284,7 @@
           <div class="stat-sub">Requires recount or review</div>
         </div>
 
+        <!-- Unlisted Found Stock -->
         <div class="stat-card indigo">
           <div class="stat-label">
             <span>Unlisted Found Stock</span>
@@ -2462,21 +2509,12 @@
 
         <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
           <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted);" id="countQtyInputLabel">Add Quantity:</span>
-          <input type="number" id="manualCountQtyInput" class="form-input" style="width: 130px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700;" value="1" min="0" step="any" />
+          <input type="number" id="manualCountQtyInput" class="form-input" style="width: 180px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700;" placeholder="Enter qty (e.g. 0)" min="0" step="any" value="" />
           
           <button class="btn btn-success btn-lg" id="submitCountBtn" onclick="submitCountEntry()">
             <i data-lucide="check" style="width: 20px; height: 20px;"></i>
             <span id="submitCountBtnText">Log Verified Count</span>
           </button>
-        </div>
-
-        <div class="quick-qty-btns">
-          <button class="quick-qty-btn" onclick="quickAddQty(1)">+1</button>
-          <button class="quick-qty-btn" onclick="quickAddQty(5)">+5</button>
-          <button class="quick-qty-btn" onclick="quickAddQty(10)">+10</button>
-          <button class="quick-qty-btn" onclick="quickAddQty(25)">+25</button>
-          <button class="quick-qty-btn" onclick="quickAddQty(50)">+50</button>
-          <button class="quick-qty-btn" onclick="quickAddQty(100)">+100</button>
         </div>
       </div>
 
@@ -2808,7 +2846,7 @@
     <!-- ========================================== -->
     <!-- VIEW 5: COUNT SESSIONS (ADMIN) -->
     <!-- ========================================== -->
-    <section class="view-section admin-only" id="view-sessions">
+    <section class="view-section" id="view-sessions">
       <div class="card">
         <div class="card-title">
           <span>Stock Count Sessions</span>
@@ -4139,83 +4177,38 @@
         showToast('Unauthorized: Only Central Administrators or Managers can change visibility rules.', 'error');
         return;
       }
-      if (!pendingSessionControlSessionId) return;
+      if (!pendingSessionControlSessionId) {
+        closeSessionControlModal();
+        return;
+      }
       appDb = loadDatabase();
       const session = appDb.sessions.find(s => s.id === pendingSessionControlSessionId);
-      if (!session) return;
-
-      const previousMode = session.count_type || 'BLIND_COUNT';
-      const newMode = pendingSessionControlMode;
-
-      if (previousMode !== newMode) {
-        let confirmTitle = 'Update System Quantity Visibility?';
-        let confirmMsg = `Apply new visibility rule for session "${session.session_code}"?`;
-        let confirmItems = [];
-        let confirmType = 'primary';
-        let icon = 'sliders-horizontal';
-
-        if (newMode === 'BLIND_ALL') {
-          confirmTitle = 'Enable Strict Blind (Hide from Executives & Counters)?';
-          confirmMsg = `Are you sure you want to hide System Quantities from BOTH Floor Counters AND Executives for session "${session.session_code}"?`;
-          confirmItems = [
-            'Neither Counters nor Floor Executives will see expected Book Stock.',
-            'Discrepancy amounts and live variance calculations will be locked from executives.',
-            'Only Central Manager / Admin can view book quantities and variances.',
-            'Guarantees 100% unbiased audit and eliminates executive bias.'
-          ];
-          confirmType = 'danger';
-          icon = 'shield-alert';
-        } else if (newMode === 'BLIND_COUNT') {
-          confirmTitle = 'Enable Blind for Counters (Visible to Executives)?';
-          confirmMsg = `Are you sure you want to hide System Quantities from Floor Counters for session "${session.session_code}"?`;
-          confirmItems = [
-            'Floor counters cannot see book stock numbers or variance calculations.',
-            'Executives and Managers can view system stock for real-time monitoring and recount management.',
-            'Recommended standard mode for warehouse cycle counts.'
-          ];
-          confirmType = 'warning';
-          icon = 'eye-off';
-        } else {
-          confirmTitle = 'Enable Open Count (Visible to Everyone)?';
-          confirmMsg = `Are you sure you want to reveal System Quantities to all users for session "${session.session_code}"?`;
-          confirmItems = [
-            'Expected system quantities and live +/- variances will be visible to everyone.',
-            'Counters can see exactly how many units are expected on each shelf.',
-            'Best for quick cycle checks or collaborative recounting.'
-          ];
-          confirmType = 'info';
-          icon = 'eye';
-        }
-
-        const confirmed = await showConfirmModal({
-          title: confirmTitle,
-          message: confirmMsg,
-          badge: session.session_code,
-          items: confirmItems,
-          confirmText: 'Apply Visibility Rule',
-          confirmType: confirmType,
-          icon: icon
-        });
-
-        if (!confirmed) return;
+      if (!session) {
+        closeSessionControlModal();
+        return;
       }
 
+      const newMode = pendingSessionControlMode || 'BLIND_COUNT';
       session.count_type = newMode;
       saveDatabase(appDb);
       syncSessionUpdateToServer(session.id, { count_type: newMode });
       logAuditEvent('BLIND_MODE_CHANGED', `Session "${session.session_code}" visibility mode updated to ${newMode} by ${currentUser.username}`, session.session_code, 'AUDIT');
+      
+      // Automatically close modal immediately upon apply
       closeSessionControlModal();
 
       if (newMode === 'BLIND_ALL') {
-        showToast(`Session "${session.session_code}" set to STRICT BLIND: System Qty is now hidden from BOTH Counters and Executives (Manager Eyes Only).`, 'success');
+        showToast(`Applied: Session "${session.session_code}" set to STRICT BLIND (System Qty hidden from Counters & Executives).`, 'success');
       } else if (newMode === 'BLIND_COUNT') {
-        showToast(`Session "${session.session_code}" set to BLIND COUNT: System Qty is hidden from Counters (Visible to Executives).`, 'info');
+        showToast(`Applied: Session "${session.session_code}" set to BLIND COUNT (System Qty hidden from Counters).`, 'info');
       } else {
-        showToast(`Session "${session.session_code}" set to OPEN COUNT: System Qty is visible to all users.`, 'info');
+        showToast(`Applied: Session "${session.session_code}" set to OPEN COUNT (System Qty visible to all).`, 'info');
       }
 
       refreshActiveSession();
       renderSessionsTable();
+      updateMetricsAndFeeds();
+      filterCounterFloorTable();
       lucide.createIcons();
     }
 
@@ -4729,7 +4722,7 @@
         showToast('Access Denied: Audit Ledger requires Executive or Administrator permissions.', 'error');
         return;
       }
-      if ((viewName === 'upload' || viewName === 'sessions' || viewName === 'reconciliation') && !isManager && !isSuper) {
+      if ((viewName === 'upload' || viewName === 'reconciliation') && !isManager && !isSuper) {
         showToast('Access Denied: This portal requires Executive or Administrator permissions.', 'error');
         return;
       }
@@ -4752,6 +4745,10 @@
 
       if (viewName === 'dashboard') {
         updateMetricsAndFeeds();
+      }
+
+      if (viewName === 'sessions') {
+        renderSessionsTable();
       }
 
       if (viewName === 'counting') {
@@ -4865,13 +4862,14 @@
           localStorage.setItem('LINA_ACTIVE_SESSION_ID', activeSession.id);
         }
 
-        if (select) {
-          select.innerHTML = appDb.sessions.map(s => `
+        const optionsHtml = appDb.sessions.map(s => `
             <option value="${s.id}" ${activeSession && activeSession.id === s.id ? 'selected' : ''}>
               ${escapeHtml(s.session_code)} - ${escapeHtml(s.title)} (${escapeHtml(s.status)})
             </option>
           `).join('');
-        }
+        if (select) select.innerHTML = optionsHtml;
+        const dashSelect = document.getElementById('dashSessionSelect');
+        if (dashSelect) dashSelect.innerHTML = optionsHtml;
       }
 
       const activeViewSec = document.querySelector('.view-section.active');
@@ -4984,7 +4982,7 @@
       if (s) {
         activeSession = s;
         localStorage.setItem('LINA_ACTIVE_SESSION_ID', s.id);
-        showToast(`Active session changed to: ${s.session_code}`, 'info');
+        showToast(`Active session changed to: ${s.session_code} - "${s.title}"`, 'info');
         refreshActiveSession();
         updateLocationDropdowns();
         filterCounterFloorTable();
@@ -4992,6 +4990,13 @@
         updateMetricsAndFeeds();
       }
     }
+
+    function selectSessionAndStartCount(sessionId) {
+      changeActiveSession(sessionId);
+      switchView('counting');
+      showToast('Switched to floor checklist for this session. You can return to "Count Sessions" anytime to change.', 'success', 4000);
+    }
+    window.selectSessionAndStartCount = selectSessionAndStartCount;
 
     function toggleSessionBlindMode(sessionId) {
       if (!isManagerOrAdmin(currentUser)) {
@@ -5116,15 +5121,18 @@
 
         const counted = parseFloat(item.total_counted_qty) || 0;
         const system = parseFloat(item.system_qty) || 0;
+        const isVerified = Boolean(item.is_verified || item.last_counted_at || item.last_counted_by || counted > 0);
 
         if (item.is_unlisted) {
           unlisted++;
-          discrepancy++; // Unlisted floor items are ALWAYS considered variances!
-          if (counted > 0) {
+          discrepancy++;
+          if (isVerified) {
             countedItems++;
             zoneMap[zone].counted++;
+          } else {
+            uncounted++;
           }
-        } else if (counted > 0) {
+        } else if (isVerified) {
           countedItems++;
           zoneMap[zone].counted++;
           if (counted === system) {
@@ -5148,12 +5156,30 @@
       saveDatabase(appDb);
 
       const canViewAuditMetrics = canUserViewSystemQtyAndVariances(currentUser, activeSession);
+      const pendingCounts = Math.max(0, total - countedItems);
       document.getElementById('dashProgressPercent').textContent = `${progress}%`;
       document.getElementById('dashProgressBar').style.width = `${progress}%`;
       document.getElementById('dashCountedRatio').textContent = `${countedItems} of ${total} items verified`;
+      
+      const elCounted = document.getElementById('dashCountedItemsCount');
+      if (elCounted) elCounted.textContent = countedItems;
+      const elCountedSub = document.getElementById('dashCountedItemsSub');
+      if (elCountedSub) elCountedSub.textContent = `${countedItems} of ${total} items counted`;
+
+      const elPending = document.getElementById('dashPendingItemsCount');
+      if (elPending) elPending.textContent = pendingCounts;
+      const elPendingSub = document.getElementById('dashPendingItemsSub');
+      if (elPendingSub) elPendingSub.textContent = `${pendingCounts} items awaiting count`;
+
       document.getElementById('dashMatchedCount').textContent = canViewAuditMetrics ? matched : '***';
       document.getElementById('dashDiscrepancyCount').textContent = canViewAuditMetrics ? discrepancy : '***';
       document.getElementById('dashUnlistedCount').textContent = unlisted;
+
+      // Update Dashboard Session Switcher Header
+      const dTitle = document.getElementById('dashSessionHeaderTitle');
+      if (dTitle) dTitle.textContent = `Session: ${activeSession.session_code} · ${activeSession.title}`;
+      const dSub = document.getElementById('dashSessionHeaderSubtitle');
+      if (dSub) dSub.textContent = `Status: ${activeSession.status} | Total Items: ${total} | Verified: ${countedItems} | Pending: ${pendingCounts}`;
 
       // ==========================================
       // PHARMACEUTICAL BATCH EXPIRY & SHELF-LIFE VISUALS
@@ -5464,8 +5490,9 @@
           btnAdd.className = 'btn btn-sm btn-secondary';
           btnReplace.className = 'btn btn-sm btn-primary';
           if (label) label.textContent = 'Edit / New Total Count:';
-          if (input && activeScannedItem) {
-            input.value = activeScannedItem.total_counted_qty || 0;
+          if (input) {
+            input.value = '';
+            input.placeholder = (activeScannedItem && activeScannedItem.total_counted_qty !== undefined) ? ('Current: ' + (activeScannedItem.total_counted_qty || 0) + ' (Enter new total)') : '0';
           }
           if (submitBtn && !isLocked) {
             submitBtn.className = 'btn btn-primary btn-lg';
@@ -5475,7 +5502,10 @@
           btnAdd.className = 'btn btn-sm btn-primary';
           btnReplace.className = 'btn btn-sm btn-secondary';
           if (label) label.textContent = 'Add Quantity:';
-          if (input) input.value = '1';
+          if (input) {
+            input.value = '';
+            input.placeholder = 'Enter qty (e.g. 0)';
+          }
           if (submitBtn && !isLocked) {
             submitBtn.className = 'btn btn-success btn-lg';
             submitBtn.innerHTML = '<i data-lucide="check" style="width: 20px; height: 20px;"></i> <span>Log Verified Count</span>';
@@ -5559,13 +5589,15 @@
         return;
       }
 
-      const inputVal = parseFloat(document.getElementById('manualCountQtyInput').value);
-      if (isNaN(inputVal) || inputVal < 0) {
-        showToast('Please enter a valid count quantity >= 0.', 'error');
+      const rawInput = (document.getElementById('manualCountQtyInput')?.value || '').trim();
+      if (rawInput === '') {
+        showToast('Please enter a count quantity (e.g. 0, 5, 100).', 'error');
+        document.getElementById('manualCountQtyInput')?.focus();
         return;
       }
-      if (activeCountEntryMode === 'ADD' && inputVal <= 0) {
-        showToast('Please enter an add quantity > 0.', 'error');
+      const inputVal = parseFloat(rawInput);
+      if (isNaN(inputVal) || inputVal < 0) {
+        showToast('Please enter a valid count quantity >= 0.', 'error');
         return;
       }
 
@@ -5581,9 +5613,27 @@
 
         appDb.items[itmIdx].total_counted_qty = newTotal;
         appDb.items[itmIdx].variance_qty = newTotal - (parseFloat(appDb.items[itmIdx].system_qty) || 0);
+        appDb.items[itmIdx].is_verified = true;
         appDb.items[itmIdx].last_counted_by = currentOpName;
         appDb.items[itmIdx].last_counted_at = new Date().toISOString();
         appDb.items[itmIdx].updated_at = new Date().toISOString();
+
+        // Also asynchronously notify backend
+        try {
+          const token = getAuthToken();
+          fetch('/api/stock/count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              session_id: activeSession.id,
+              sku: activeScannedItem.sku,
+              counted_qty: inputVal,
+              mode: activeCountEntryMode,
+              location: activeScannedItem.zone_location || ''
+            })
+          }).catch(() => {});
+        } catch (_) {}
 
         // 2. Add log entry with latest operator name, mode and timestamp
         const logEntry = {
@@ -8287,8 +8337,9 @@
             <td style="font-size: 0.78rem; color: var(--text-dim);">${new Date(s.created_at).toLocaleDateString()}</td>
             <td>
               <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-                <button class="btn ${isCurrentActive ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changeActiveSession('${s.id}')" title="Set as Active Session">
-                  ${isCurrentActive ? 'Active' : 'Select'}
+                <button class="btn ${isCurrentActive ? 'btn-success' : 'btn-primary'} btn-sm" onclick="selectSessionAndStartCount('${s.id}')" title="${isCurrentActive ? 'Currently active session' : 'Select this session and begin floor count'}">
+                  <i data-lucide="${isCurrentActive ? 'check' : 'play'}" style="width: 14px; height: 14px;"></i>
+                  <span>${isCurrentActive ? 'Active (Counting)' : 'Select & Count'}</span>
                 </button>
                 ${isManager ? `
                   <button class="btn btn-secondary btn-sm admin-exclusive" onclick="toggleSessionBlindMode('${s.id}')" title="Manager Control: Configure System Qty Visibility">
@@ -8474,11 +8525,13 @@
         showToast('Unauthorized: Only Executives and Administrators can create sessions.', 'error');
         return;
       }
-      const code = `SES-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(10 + Math.random() * 90)}`;
-      document.getElementById('newSessionCode').value = code;
-      document.getElementById('sessionDrawerBackdrop').classList.add('open');
-      document.getElementById('sessionDrawer').classList.add('open');
-      document.getElementById('newSessionTitle').focus();
+      switchView('upload');
+      showToast('To create a new count session, please upload your Excel or CSV datasheet below.', 'info', 5000);
+      const input = document.getElementById('sheetFileInput');
+      if (input) {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        input.focus();
+      }
     }
 
     function closeSessionDrawer() {

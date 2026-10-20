@@ -573,7 +573,8 @@ module.exports = async function handler(req, res) {
     
     if (sbItemRes && sbItemRes.status === 200 && Array.isArray(sbItemRes.data) && sbItemRes.data.length > 0) {
       item = sbItemRes.data[0];
-      const newCounted = Number(item.total_counted_qty) + qty;
+      const isReplace = body.mode === 'REPLACE';
+      const newCounted = isReplace ? qty : (Number(item.total_counted_qty) + qty);
       const newVariance = newCounted - Number(item.system_qty);
 
       await supabaseRequest(`stock_items?id=eq.${encodeURIComponent(item.id)}`, 'PATCH', {

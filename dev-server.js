@@ -330,7 +330,7 @@ async function dbGetFullDatabase(authUser) {
   };
 }
 
-async function dbInsertCountRecord(authUser, sku, countedQty, batchNo, location, itemName, uom) {
+async function dbInsertCountRecord(authUser, sku, countedQty, batchNo, location, itemName, uom, mode = 'ADD', sessionId = null) {
   const now = new Date().toISOString();
 
   // 1. Fetch item from Supabase or SQLite
@@ -343,7 +343,12 @@ async function dbInsertCountRecord(authUser, sku, countedQty, batchNo, location,
   }
 
   const isUnlisted = !item;
-  const activeSesId = 'ses-101'; // Default active session
+  let activeSesId = sessionId || (item ? item.session_id : null);
+  if (!activeSesId && sqliteDb) {
+    const activeSes = sqliteDb.prepare("SELECT id FROM count_sessions WHERE status = 'ACTIVE' LIMIT 1").get();
+    if (activeSes) activeSesId = activeSes.id;
+  }
+  if (!activeSesId) activeSesId = 'ses-default';
 
   if (isUnlisted) {
     const newItemId = 'item-unlisted-' + Date.now();
@@ -377,7 +382,7 @@ async function dbInsertCountRecord(authUser, sku, countedQty, batchNo, location,
     }
     item = newItem;
   } else {
-    const newCounted = Number(item.total_counted_qty) + countedQty;
+    const newCounted = mode === 'REPLACE' ? countedQty : (Number(item.total_counted_qty) + countedQty);
     const newVariance = newCounted - Number(item.system_qty);
 
     // Update in Supabase Cloud
@@ -937,7 +942,7 @@ const server = http.createServer(async (req, res) => {
           return sendJson(400, { error: 'Valid SKU and non-negative quantity required' });
         }
 
-        const result = await dbInsertCountRecord(authUser, sku, qty, batchNo, location, body.item_name, body.uom);
+        const result = await dbInsertCountRecord(authUser, sku, qty, batchNo, location, body.item_name, body.uom, body.mode, body.session_id);
         return sendJson(200, { success: true, ...result });
       } catch (err) {
         return sendJson(500, { error: 'Failed to record count: ' + err.message });
