@@ -2090,10 +2090,14 @@
           </button>
         </form>
 
-        <div style="margin-top: 0.75rem;">
+        <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <a href="lina-stock-count.apk" download="lina-stock-count.apk" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; padding: 0.65rem; text-decoration: none; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff;">
+            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+            <span>Download Mobile App (Android APK)</span>
+          </a>
           <button type="button" onclick="triggerPwaInstall()" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; padding: 0.65rem;">
             <i data-lucide="smartphone" style="width: 15px; height: 15px; color: var(--accent);"></i>
-            <span>Install as Mobile Application (PWA)</span>
+            <span>Install as Web App (PWA)</span>
           </button>
         </div>
 
