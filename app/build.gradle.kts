@@ -66,6 +66,13 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        named("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
