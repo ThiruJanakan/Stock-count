@@ -2297,16 +2297,29 @@
           <div style="text-align: right;">
             <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Total Counted So Far</div>
             <div style="font-size: 2.3rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent);" id="itemCurrentTotalCounted">0</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;" id="itemCountedBySubtext">Not Counted Yet</div>
           </div>
         </div>
 
+        <!-- Count Entry Mode Switcher (Add Qty vs Edit / Overwrite Total) -->
+        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.85rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm btn-primary" id="btnCountModeAdd" onclick="setCountEntryMode('ADD')">
+            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+            <span>Add Quantity (+Qty)</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" id="btnCountModeReplace" onclick="setCountEntryMode('REPLACE')">
+            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+            <span>Edit / Replace Total Count</span>
+          </button>
+        </div>
+
         <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-          <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted);">Add Quantity:</span>
-          <input type="number" id="manualCountQtyInput" class="form-input" style="width: 130px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700;" value="1" min="1" />
+          <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted);" id="countQtyInputLabel">Add Quantity:</span>
+          <input type="number" id="manualCountQtyInput" class="form-input" style="width: 130px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700;" value="1" min="0" step="any" />
           
           <button class="btn btn-success btn-lg" id="submitCountBtn" onclick="submitCountEntry()">
             <i data-lucide="check" style="width: 20px; height: 20px;"></i>
-            <span>Log Verified Count</span>
+            <span id="submitCountBtnText">Log Verified Count</span>
           </button>
         </div>
 
@@ -2342,6 +2355,16 @@
             <button class="btn btn-secondary btn-sm" id="toggleSelectedQueueBtn" onclick="toggleFilterSelectedOnly()">
               <i data-lucide="check-square" style="width: 14px; height: 14px;"></i>
               <span id="selectedQueueBtnText">Show Selected Set (0)</span>
+            </button>
+            <!-- Admin & Supervisor: Delete Selected Floor Items -->
+            <button class="btn btn-danger btn-sm admin-only" id="deleteSelectedFloorItemsBtn" onclick="deleteSelectedFloorItems()" style="display: none;" title="Admin & Supervisor: Permanently delete selected items from this session">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              <span id="deleteSelectedFloorBtnText">Delete Selected (0)</span>
+            </button>
+            <!-- Admin & Supervisor: Delete Entire Zone -->
+            <button class="btn btn-danger btn-sm admin-only" id="deleteZoneFloorBtn" onclick="openDeleteZoneModal()" title="Admin & Supervisor: Delete all items in a specific zone from this session">
+              <i data-lucide="map-pin-off" style="width: 14px; height: 14px;"></i>
+              <span>Delete Entire Zone</span>
             </button>
             <!-- Corner Barcode & Camera Tool button -->
             <button class="btn btn-secondary btn-sm" id="cornerBarcodeBtn" onclick="openBarcodeDrawer()" title="Open Barcode & Camera Scanner Utility">
@@ -2515,17 +2538,23 @@
     <!-- ========================================== -->
     <section class="view-section admin-only" id="view-upload">
       <div class="card" style="margin-bottom: 1.5rem;">
-        <div class="card-title">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
           <span>Upload Master Inventory Sheet (Manager & Supervisor)</span>
-          <!-- Admin or Supervisor can delete / replace current sheet! -->
-          <button class="btn btn-danger btn-sm" onclick="handleClearCurrentSheet()">
-            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-            <span>Clear / Replace Current Sheet</span>
-          </button>
+          <!-- Admin or Supervisor can delete / replace current sheet or delete an entire zone! -->
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openDeleteZoneModal()" title="Admin & Supervisor: Remove all items of a specific warehouse zone from this session">
+              <i data-lucide="map-pin-off" style="width: 14px; height: 14px; color: var(--accent-rose);"></i>
+              <span>Delete Zone from Session</span>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="handleClearCurrentSheet()">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              <span>Clear / Replace Current Sheet</span>
+            </button>
+          </div>
         </div>
 
         <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
-          Upload your ERP or warehouse spreadsheet. Columns will be auto-detected for SKU/Item Code, Description, Barcode, Book Stock, and Location. If you made a mistake, you can clear and re-upload anytime!
+          Upload your ERP or warehouse spreadsheet. Columns will be auto-detected for SKU/Item Code, Description, Barcode, Book Stock, and Location. If you made a mistake, you can remove individual items, clear an entire zone, or re-upload anytime!
         </p>
 
         <!-- Dropzone -->
@@ -2556,18 +2585,31 @@
 
       <!-- Parsed Data Preview -->
       <div class="card" id="sheetPreviewCard" style="display: none;">
-        <div class="card-title">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
           <span>Spreadsheet Preview (<span id="parsedRowCount">0</span> rows detected)</span>
-          <button class="btn btn-success btn-sm" id="commitSheetBtn" onclick="commitSheetToSession()">
-            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
-            <span>Commit to Active Session</span>
-          </button>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-danger btn-sm" id="removeSelectedPreviewBtn" onclick="removeSelectedPreviewItems()" style="display: none;" title="Remove selected rows from this spreadsheet before committing">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              <span id="removeSelectedPreviewText">Remove Selected (0)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openDeleteZoneFromPreviewModal()" title="Remove all rows of a specific zone from this uploaded preview">
+              <i data-lucide="map-pin-off" style="width: 14px; height: 14px;"></i>
+              <span>Remove Zone from Preview</span>
+            </button>
+            <button class="btn btn-success btn-sm" id="commitSheetBtn" onclick="commitSheetToSession()">
+              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+              <span>Commit to Active Session</span>
+            </button>
+          </div>
         </div>
 
         <div class="table-container" style="max-height: 420px; overflow-y: auto;">
           <table>
             <thead>
               <tr>
+                <th style="width: 40px; text-align: center;">
+                  <input type="checkbox" id="previewSelectAllBox" onchange="togglePreviewSelectAll(this)" title="Select all preview items" />
+                </th>
                 <th>Row</th>
                 <th>SKU / Code</th>
                 <th>Item Name</th>
@@ -3340,6 +3382,56 @@
     </div>
   </div>
 
+  <!-- Modal: Delete Entire Zone (Admin & Supervisor) -->
+  <div id="deleteZoneModalBackdrop" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 100000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="custom-modal-dialog" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); max-width: 480px; width: 100%; padding: 1.5rem; box-shadow: var(--shadow-lg);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--accent-rose-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent-rose);">
+            <i data-lucide="map-pin-off" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0; color: var(--text);">Delete Entire Zone</h3>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin: 0;">Remove all session inventory items belonging to a specific zone</p>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="closeDeleteZoneModal()" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim);">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label class="form-label" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem; display: block;">Select Zone to Remove:</label>
+        <select id="deleteZoneSelect" class="form-select" style="width: 100%;">
+          <option value="">-- Choose a Zone --</option>
+        </select>
+        <p style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.4rem;">
+          All master SKUs and recorded counts assigned to this zone in the active session will be permanently deleted.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteZoneModal()">Cancel</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteEntireZone()">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+          <span>Delete All Items in Zone</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Broadcast Notification (Session Deletion Live Alert) -->
+  <div id="broadcastAlertModalBackdrop" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(6px); z-index: 100001; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="custom-modal-dialog" style="background: var(--bg-card); border: 2px solid var(--accent-rose); border-radius: var(--radius-lg); max-width: 500px; width: 100%; padding: 1.75rem; box-shadow: var(--shadow-lg); text-align: center;">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--accent-rose-subtle); display: flex; align-items: center; justify-content: center; color: var(--accent-rose); margin: 0 auto 1rem;">
+        <i data-lucide="alert-triangle" style="width: 28px; height: 28px;"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem;" id="broadcastAlertTitle">Session Alert</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem;" id="broadcastAlertMessage">A session has been modified.</p>
+      <button type="button" class="btn btn-primary btn-lg" onclick="acknowledgeBroadcastAlert()" style="width: 100%;">
+        <span>Understood / Refresh View</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -3783,6 +3875,22 @@
     let myScansCount = 0;
     let selectedFloorItemIds = new Set();
     let isFilteredSelectedOnly = false;
+    let activeCountEntryMode = 'ADD'; // 'ADD' or 'REPLACE'
+    let previewSelectedItemIndices = new Set();
+
+    // Central Security & Logical Blind Count Visibility Helper
+    function canUserViewSystemQtyAndVariances(user = currentUser, session = activeSession) {
+      if (!user || !session) return false;
+      // Administrator and Manager have full visibility
+      if (user.role === 'ADMIN' || user.role === 'MANAGER') return true;
+      const countMode = session.count_type || 'BLIND_COUNT';
+      // In BLIND_ALL, both Floor Counters and Supervisors are blind
+      if (countMode === 'BLIND_ALL') return false;
+      // In BLIND_COUNT, Floor Counters are blind, Supervisors can view
+      if (countMode === 'BLIND_COUNT') return user.role === 'SUPERVISOR';
+      // For any open count session, counters cannot view system qty to prevent deduction
+      return user.role !== 'COUNTER';
+    }
 
     // Toast helper
     function showToast(message, type = 'info') {
@@ -4167,6 +4275,10 @@
       renderSessionsTable();
       renderAuditLogsTable();
       updateBackupDatabaseMetaStats();
+      checkBroadcastAlerts();
+      if (!window._broadcastAlertInterval) {
+        window._broadcastAlertInterval = setInterval(checkBroadcastAlerts, 15000);
+      }
       lucide.createIcons();
     }
 
@@ -4740,11 +4852,12 @@
       if (sIdx !== -1) appDb.sessions[sIdx] = activeSession;
       saveDatabase(appDb);
 
+      const canViewAuditMetrics = canUserViewSystemQtyAndVariances(currentUser, activeSession);
       document.getElementById('dashProgressPercent').textContent = `${progress}%`;
       document.getElementById('dashProgressBar').style.width = `${progress}%`;
       document.getElementById('dashCountedRatio').textContent = `${countedItems} of ${total} items verified`;
-      document.getElementById('dashMatchedCount').textContent = matched;
-      document.getElementById('dashDiscrepancyCount').textContent = discrepancy;
+      document.getElementById('dashMatchedCount').textContent = canViewAuditMetrics ? matched : '***';
+      document.getElementById('dashDiscrepancyCount').textContent = canViewAuditMetrics ? discrepancy : '***';
       document.getElementById('dashUnlistedCount').textContent = unlisted;
 
       // ==========================================
@@ -4832,24 +4945,32 @@
 
       // Update Total Units Comparison Meter
       const sysUnitsEl = document.getElementById('dashTotalSystemUnits');
-      if (sysUnitsEl) sysUnitsEl.textContent = Math.round(totalSystemUnits).toLocaleString();
+      if (sysUnitsEl) {
+        sysUnitsEl.textContent = canViewAuditMetrics ? Math.round(totalSystemUnits).toLocaleString() : 'Hidden (Blind)';
+      }
       const cntUnitsEl = document.getElementById('dashTotalCountedUnits');
       if (cntUnitsEl) cntUnitsEl.textContent = Math.round(totalCountedUnits).toLocaleString();
       const netVariance = totalCountedUnits - totalSystemUnits;
       const netVarEl = document.getElementById('dashNetVarianceUnits');
       const netSubEl = document.getElementById('dashVarianceSubtext');
       if (netVarEl) {
-        const sign = netVariance > 0 ? '+' : '';
-        netVarEl.textContent = `${sign}${Math.round(netVariance).toLocaleString()}`;
-        if (netVariance === 0) {
-          netVarEl.style.color = 'var(--accent-emerald)';
-          if (netSubEl) netSubEl.textContent = '100% Book & Physical Match';
-        } else if (netVariance < 0) {
-          netVarEl.style.color = 'var(--accent-rose)';
-          if (netSubEl) netSubEl.textContent = 'Physical Under-Count (Missing Stock)';
+        if (!canViewAuditMetrics) {
+          netVarEl.textContent = 'Hidden (Blind)';
+          netVarEl.style.color = 'var(--text-dim)';
+          if (netSubEl) netSubEl.textContent = 'Blind Audit Active · Book Units & Variances Hidden';
         } else {
-          netVarEl.style.color = 'var(--accent-indigo)';
-          if (netSubEl) netSubEl.textContent = 'Physical Surplus / Unlisted Stock';
+          const sign = netVariance > 0 ? '+' : '';
+          netVarEl.textContent = `${sign}${Math.round(netVariance).toLocaleString()}`;
+          if (netVariance === 0) {
+            netVarEl.style.color = 'var(--accent-emerald)';
+            if (netSubEl) netSubEl.textContent = '100% Book & Physical Match';
+          } else if (netVariance < 0) {
+            netVarEl.style.color = 'var(--accent-rose)';
+            if (netSubEl) netSubEl.textContent = 'Physical Under-Count (Missing Stock)';
+          } else {
+            netVarEl.style.color = 'var(--accent-indigo)';
+            if (netSubEl) netSubEl.textContent = 'Physical Surplus / Unlisted Stock';
+          }
         }
       }
 
@@ -5034,7 +5155,42 @@
       }
     }
 
-    function displayScannedItem(item) {
+    function setCountEntryMode(mode) {
+      activeCountEntryMode = mode;
+      const btnAdd = document.getElementById('btnCountModeAdd');
+      const btnReplace = document.getElementById('btnCountModeReplace');
+      const label = document.getElementById('countQtyInputLabel');
+      const input = document.getElementById('manualCountQtyInput');
+      const submitBtn = document.getElementById('submitCountBtn');
+      const isLocked = activeSession && activeSession.status === 'CLOSED';
+
+      if (btnAdd && btnReplace) {
+        if (mode === 'REPLACE') {
+          btnAdd.className = 'btn btn-sm btn-secondary';
+          btnReplace.className = 'btn btn-sm btn-primary';
+          if (label) label.textContent = 'Edit / New Total Count:';
+          if (input && activeScannedItem) {
+            input.value = activeScannedItem.total_counted_qty || 0;
+          }
+          if (submitBtn && !isLocked) {
+            submitBtn.className = 'btn btn-primary btn-lg';
+            submitBtn.innerHTML = '<i data-lucide="check-circle" style="width: 20px; height: 20px;"></i> <span>Save Corrected Total Count</span>';
+          }
+        } else {
+          btnAdd.className = 'btn btn-sm btn-primary';
+          btnReplace.className = 'btn btn-sm btn-secondary';
+          if (label) label.textContent = 'Add Quantity:';
+          if (input) input.value = '1';
+          if (submitBtn && !isLocked) {
+            submitBtn.className = 'btn btn-success btn-lg';
+            submitBtn.innerHTML = '<i data-lucide="check" style="width: 20px; height: 20px;"></i> <span>Log Verified Count</span>';
+          }
+        }
+        lucide.createIcons();
+      }
+    }
+
+    function displayScannedItem(item, initialMode = 'ADD') {
       const card = document.getElementById('scannedItemCard');
       card.style.display = 'block';
       document.getElementById('itemZoneBadge').textContent = `ZONE: ${item.zone_location || 'General'}`;
@@ -5043,13 +5199,26 @@
       document.getElementById('itemScannedSku').textContent = `SKU: ${item.sku} | Barcode: ${item.barcode || 'N/A'}`;
       document.getElementById('itemCurrentTotalCounted').textContent = item.total_counted_qty || 0;
 
+      const subtext = document.getElementById('itemCountedBySubtext');
+      if (subtext) {
+        if (item.last_counted_by) {
+          const timeStr = item.last_counted_at ? new Date(item.last_counted_at).toLocaleTimeString() : '';
+          subtext.textContent = `Last counted by: ${item.last_counted_by}${timeStr ? ' at ' + timeStr : ''}`;
+          subtext.style.color = 'var(--accent)';
+        } else {
+          subtext.textContent = 'Not Counted Yet';
+          subtext.style.color = 'var(--text-dim)';
+        }
+      }
+
+      setCountEntryMode(initialMode);
+
       const isLocked = activeSession && activeSession.status === 'CLOSED';
       const manualInput = document.getElementById('manualCountQtyInput');
       const submitBtn = document.getElementById('submitCountBtn');
       const quickBtns = document.querySelectorAll('.quick-qty-btn');
 
       if (manualInput) {
-        manualInput.value = "1";
         manualInput.disabled = isLocked;
         if (!isLocked) manualInput.focus();
       }
@@ -5065,9 +5234,6 @@
         if (isLocked) {
           submitBtn.className = "btn btn-secondary btn-lg";
           submitBtn.innerHTML = `<i data-lucide="lock" style="width: 18px; height: 18px; color: #f87171;"></i> <span>Session Locked (Read Only)</span>`;
-        } else {
-          submitBtn.className = "btn btn-success btn-lg";
-          submitBtn.innerHTML = `<i data-lucide="check" style="width: 20px; height: 20px;"></i> <span>Log Verified Count</span>`;
         }
       }
 
@@ -5081,6 +5247,7 @@
         playBeep(false);
         return;
       }
+      setCountEntryMode('ADD');
       document.getElementById('manualCountQtyInput').value = qty;
       submitCountEntry();
     }
@@ -5096,63 +5263,81 @@
         showToast('No active item scanned.', 'error');
         return;
       }
-      const qty = parseFloat(document.getElementById('manualCountQtyInput').value);
-      if (isNaN(qty) || qty <= 0) {
-        showToast('Please enter a valid count quantity > 0.', 'error');
+
+      const inputVal = parseFloat(document.getElementById('manualCountQtyInput').value);
+      if (isNaN(inputVal) || inputVal < 0) {
+        showToast('Please enter a valid count quantity >= 0.', 'error');
+        return;
+      }
+      if (activeCountEntryMode === 'ADD' && inputVal <= 0) {
+        showToast('Please enter an add quantity > 0.', 'error');
         return;
       }
 
       appDb = loadDatabase();
+      const currentOpName = currentUser ? (currentUser.full_name || currentUser.username) : 'Floor Operator';
 
-      // 1. Update item total counted & capture operator and time
+      // 1. Update item total counted & capture latest operator and time
       const itmIdx = appDb.items.findIndex(i => i.id === activeScannedItem.id);
       if (itmIdx !== -1) {
-        appDb.items[itmIdx].total_counted_qty = (parseFloat(appDb.items[itmIdx].total_counted_qty) || 0) + qty;
-        appDb.items[itmIdx].variance_qty = appDb.items[itmIdx].total_counted_qty - appDb.items[itmIdx].system_qty;
-        appDb.items[itmIdx].last_counted_by = currentUser.full_name || currentUser.username;
+        const prevCount = parseFloat(appDb.items[itmIdx].total_counted_qty) || 0;
+        const newTotal = activeCountEntryMode === 'REPLACE' ? inputVal : (prevCount + inputVal);
+        const addedDelta = activeCountEntryMode === 'REPLACE' ? (newTotal - prevCount) : inputVal;
+
+        appDb.items[itmIdx].total_counted_qty = newTotal;
+        appDb.items[itmIdx].variance_qty = newTotal - (parseFloat(appDb.items[itmIdx].system_qty) || 0);
+        appDb.items[itmIdx].last_counted_by = currentOpName;
         appDb.items[itmIdx].last_counted_at = new Date().toISOString();
         appDb.items[itmIdx].updated_at = new Date().toISOString();
+
+        // 2. Add log entry with latest operator name, mode and timestamp
+        const logEntry = {
+          id: "log-" + Date.now(),
+          session_id: activeSession.id,
+          item_id: activeScannedItem.id,
+          sku: activeScannedItem.sku,
+          item_name: activeScannedItem.item_name,
+          user_id: currentUser ? currentUser.id : 'unknown',
+          operator_name: currentOpName,
+          action_type: activeCountEntryMode === 'REPLACE' ? 'COUNT_REPLACED' : 'COUNT_ADDED',
+          counted_qty: addedDelta,
+          new_total: newTotal,
+          recorded_at: new Date().toISOString()
+        };
+        appDb.logs = appDb.logs || [];
+        appDb.logs.push(logEntry);
+        saveDatabase(appDb);
+
+        const auditAction = activeCountEntryMode === 'REPLACE' ? 'STOCK_COUNT_MODIFIED' : 'STOCK_COUNTED';
+        const auditMsg = activeCountEntryMode === 'REPLACE'
+          ? `Total count edited from ${prevCount} to ${newTotal} for SKU ${activeScannedItem.sku} by ${currentOpName}`
+          : `Count entry +${inputVal} logged for SKU ${activeScannedItem.sku} (Total: ${newTotal}) by ${currentOpName}`;
+
+        logAuditEvent(auditAction, auditMsg, activeScannedItem.sku, 'COUNTING');
+
+        playBeep(true);
+        showToast(activeCountEntryMode === 'REPLACE' ? `Count updated to ${newTotal} for ${activeScannedItem.sku}!` : `+${inputVal} recorded for ${activeScannedItem.sku}!`, 'success');
+
+        myScansCount++;
+        const topBadge = document.getElementById('myScanCountBadge');
+        if (topBadge) topBadge.textContent = myScansCount;
+        const bBadge = document.getElementById('bottomScanBadge');
+        if (bBadge) {
+          bBadge.textContent = myScansCount;
+          bBadge.style.display = myScansCount > 0 ? 'inline-block' : 'none';
+        }
+        addMyRecentScanRow(activeScannedItem, activeCountEntryMode === 'REPLACE' ? newTotal : inputVal);
+
+        // Reset
+        const scanInput = document.getElementById('barcodeScanInput');
+        if (scanInput) scanInput.value = '';
+        document.getElementById('scannedItemCard').style.display = 'none';
+        activeScannedItem = null;
+
+        updateMetricsAndFeeds();
+        filterCounterFloorTable();
+        filterReconciliationTable();
       }
-
-      // 2. Add log entry with operator name and timestamp
-      const logEntry = {
-        id: "log-" + Date.now(),
-        session_id: activeSession.id,
-        item_id: activeScannedItem.id,
-        sku: activeScannedItem.sku,
-        item_name: activeScannedItem.item_name,
-        user_id: currentUser.id,
-        operator_name: currentUser.full_name || currentUser.username,
-        counted_qty: qty,
-        recorded_at: new Date().toISOString()
-      };
-      appDb.logs.push(logEntry);
-      saveDatabase(appDb);
-
-      logAuditEvent('STOCK_COUNTED', `Count entry logged: +${qty} for SKU ${activeScannedItem.sku} (${activeScannedItem.item_name}) by ${currentUser.username}`, activeScannedItem.sku, 'COUNTING');
-
-      playBeep(true);
-      showToast(`+${qty} recorded for ${activeScannedItem.sku}!`, 'success');
-
-      myScansCount++;
-      const topBadge = document.getElementById('myScanCountBadge');
-      if (topBadge) topBadge.textContent = myScansCount;
-      const bBadge = document.getElementById('bottomScanBadge');
-      if (bBadge) {
-        bBadge.textContent = myScansCount;
-        bBadge.style.display = myScansCount > 0 ? 'inline-block' : 'none';
-      }
-      addMyRecentScanRow(activeScannedItem, qty);
-
-      // Reset
-      const scanInput = document.getElementById('barcodeScanInput');
-      if (scanInput) scanInput.value = '';
-      document.getElementById('scannedItemCard').style.display = 'none';
-      activeScannedItem = null;
-
-      updateMetricsAndFeeds();
-      filterCounterFloorTable();
-      filterReconciliationTable();
     }
 
     function addMyRecentScanRow(item, qty) {
@@ -5325,6 +5510,19 @@
         }
       });
 
+      // Update Delete Selected Floor Items button visibility for Admin & Supervisor
+      const deleteFloorBtn = document.getElementById('deleteSelectedFloorItemsBtn');
+      const deleteFloorText = document.getElementById('deleteSelectedFloorBtnText');
+      const canManageFloor = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER' || currentUser.role === 'SUPERVISOR');
+      if (deleteFloorBtn && deleteFloorText) {
+        if (count > 0 && canManageFloor) {
+          deleteFloorBtn.style.display = 'inline-flex';
+          deleteFloorText.textContent = `Delete Selected (${count})`;
+        } else {
+          deleteFloorBtn.style.display = 'none';
+        }
+      }
+
       // Update master checkbox
       const master = document.getElementById('masterSelectAllBox');
       const visibleRows = document.querySelectorAll('#counterFloorTableBody tr[data-item-id]');
@@ -5342,6 +5540,139 @@
         master.checked = allChecked;
         master.indeterminate = !allChecked && anyChecked;
       }
+    }
+
+    // Admin & Supervisor: Delete Selected Floor Items
+    async function deleteSelectedFloorItems() {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
+        showToast('Unauthorized: Only Administrators and Supervisors can delete items.', 'error');
+        return;
+      }
+      if (!activeSession) return;
+      if (activeSession.status === 'CLOSED') {
+        showToast('This session is CLOSED and LOCKED. Items cannot be deleted.', 'error');
+        return;
+      }
+      if (selectedFloorItemIds.size === 0) {
+        showToast('No items selected for deletion.', 'error');
+        return;
+      }
+
+      const confirmed = await showConfirmModal({
+        title: `Delete ${selectedFloorItemIds.size} Selected Item(s)`,
+        message: `Are you sure you want to permanently delete the <b>${selectedFloorItemIds.size}</b> selected item(s) from session "${activeSession.session_code}"?<br>All recorded physical counts and entries for these items will be removed.`,
+        confirmText: `Delete ${selectedFloorItemIds.size} Items`,
+        confirmClass: 'btn-danger',
+        icon: 'trash-2'
+      });
+
+      if (!confirmed) return;
+
+      appDb = loadDatabase();
+      const toDelete = new Set(selectedFloorItemIds);
+      appDb.items = (appDb.items || []).filter(item => {
+        if (item.session_id === activeSession.id && toDelete.has(item.id)) {
+          return false;
+        }
+        return true;
+      });
+
+      selectedFloorItemIds.clear();
+      isFilteredSelectedOnly = false;
+      saveDatabase(appDb);
+
+      logAuditEvent('ITEMS_DELETED', `Deleted ${toDelete.size} items from session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, 'INVENTORY');
+      showToast(`Successfully deleted ${toDelete.size} selected item(s).`, 'success');
+      playBeep(true);
+
+      updateFloorSelectionUI();
+      updateMetricsAndFeeds();
+      updateLocationDropdowns();
+      filterCounterFloorTable();
+      filterReconciliationTable();
+    }
+
+    // Admin & Supervisor: Open Delete Entire Zone Modal
+    function openDeleteZoneModal() {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
+        showToast('Unauthorized: Only Administrators and Supervisors can delete zones.', 'error');
+        return;
+      }
+      if (!activeSession) {
+        showToast('Please select an active session first.', 'error');
+        return;
+      }
+      if (activeSession.status === 'CLOSED') {
+        showToast('This session is CLOSED and LOCKED. Zones cannot be deleted.', 'error');
+        return;
+      }
+
+      appDb = loadDatabase();
+      const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
+      const zones = Array.from(new Set(sessionItems.map(i => i.zone_location || 'General'))).sort();
+
+      const select = document.getElementById('deleteZoneSelect');
+      if (!select) return;
+
+      if (zones.length === 0) {
+        showToast('No zones found in the active session.', 'info');
+        return;
+      }
+
+      select.innerHTML = '<option value="">-- Choose a Zone to Delete --</option>' +
+        zones.map(z => {
+          const count = sessionItems.filter(i => (i.zone_location || 'General') === z).length;
+          return `<option value="${escapeHtml(z)}">${escapeHtml(z)} (${count} items)</option>`;
+        }).join('');
+
+      const modal = document.getElementById('deleteZoneModalBackdrop');
+      if (modal) modal.style.display = 'flex';
+      lucide.createIcons();
+    }
+
+    function closeDeleteZoneModal() {
+      const modal = document.getElementById('deleteZoneModalBackdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function confirmDeleteEntireZone() {
+      const select = document.getElementById('deleteZoneSelect');
+      const targetZone = select ? select.value : '';
+      if (!targetZone) {
+        showToast('Please select a zone to delete.', 'error');
+        return;
+      }
+
+      appDb = loadDatabase();
+      const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id && (i.zone_location || 'General') === targetZone);
+      if (sessionItems.length === 0) {
+        showToast(`No items found in zone "${targetZone}".`, 'error');
+        return;
+      }
+
+      const confirmed = await showConfirmModal({
+        title: `Delete Entire Zone: ${targetZone}`,
+        message: `Are you sure you want to permanently remove all <b>${sessionItems.length}</b> items in zone <b>"${targetZone}"</b> from session "${activeSession.session_code}"?<br>This will permanently erase all master SKUs and recorded counts in this zone.`,
+        confirmText: `Delete Zone (${sessionItems.length} items)`,
+        confirmClass: 'btn-danger',
+        icon: 'map-pin-off'
+      });
+
+      if (!confirmed) return;
+
+      appDb.items = (appDb.items || []).filter(i => !(i.session_id === activeSession.id && (i.zone_location || 'General') === targetZone));
+      saveDatabase(appDb);
+
+      logAuditEvent('ZONE_DELETED', `Deleted all ${sessionItems.length} items in zone "${targetZone}" from session ${activeSession.session_code} by ${currentUser.username}`, targetZone, 'INVENTORY');
+
+      closeDeleteZoneModal();
+      showToast(`Zone "${targetZone}" and all ${sessionItems.length} items were deleted.`, 'success');
+      playBeep(true);
+
+      updateMetricsAndFeeds();
+      updateLocationDropdowns();
+      filterCounterFloorTable();
+      filterReconciliationTable();
     }
 
     function filterCounterFloorTable() {
@@ -5415,28 +5746,16 @@
       }
 
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
-      const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
       const isSupervisor = currentUser && currentUser.role === 'SUPERVISOR';
-      const isCounter = !currentUser || currentUser.role === 'COUNTER';
-
-      let hideSystemQty = false;
-      if (countMode === 'BLIND_ALL') {
-        // Manager hides from BOTH Counters and Supervisors!
-        hideSystemQty = !isManager;
-      } else if (countMode === 'BLIND_COUNT') {
-        // Hidden from Counters only; Supervisors and Managers can see it
-        hideSystemQty = isCounter;
-      } else {
-        hideSystemQty = false;
-      }
+      const hideSystemQty = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       const blindIndicator = document.getElementById('blindModeIndicator');
       if (blindIndicator) {
         if (hideSystemQty) {
           blindIndicator.style.display = 'inline-flex';
           blindIndicator.innerHTML = (countMode === 'BLIND_ALL' && isSupervisor)
-            ? `<i data-lucide="shield-alert" style="width: 14px; height: 14px; margin-right: 4px;"></i> STRICT BLIND: System Qty Hidden by Manager`
-            : `<i data-lucide="eye-off" style="width: 14px; height: 14px; margin-right: 4px;"></i> BLIND AUDIT: System Qty is Hidden`;
+            ? `<i data-lucide="shield-alert" style="width: 14px; height: 14px; margin-right: 4px;"></i> STRICT BLIND: System Qty & Variances Hidden by Admin`
+            : `<i data-lucide="eye-off" style="width: 14px; height: 14px; margin-right: 4px;"></i> BLIND AUDIT: System Qty & Variances Hidden`;
         } else {
           blindIndicator.style.display = 'none';
         }
@@ -5453,7 +5772,8 @@
           statusBadge = `<span class="badge badge-unlisted" title="Unlisted floor item is an inventory variance"><i data-lucide="package-plus" style="width: 11px; height: 11px; margin-right: 2px; vertical-align: middle;"></i>UNLISTED (+${counted})</span>`;
         } else if (counted > 0) {
           if (hideSystemQty) {
-            statusBadge = `<span class="badge badge-matched"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 2px; vertical-align: middle;"></i>VERIFIED</span>`;
+            // Strictly hide variance / matched indicators so counters cannot discover system qty
+            statusBadge = `<span class="badge badge-matched"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 2px; vertical-align: middle;"></i>COUNTED (${counted})</span>`;
           } else {
             if (variance === 0) {
               statusBadge = `<span class="badge badge-matched">MATCHED</span>`;
@@ -5464,20 +5784,32 @@
         }
 
         const isSessionClosed = activeSession && activeSession.status === 'CLOSED';
-        const actionBtn = isSessionClosed ? `
-          <button class="btn btn-secondary btn-sm" onclick="selectItemToCount('${item.id}')" title="View count details (Read Only)">
-            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-            <span>View Count</span>
-          </button>
-        ` : `
-          <button class="btn btn-primary btn-sm" onclick="selectItemToCount('${item.id}')" title="Count this item">
-            <i data-lucide="scan-line" style="width: 14px; height: 14px;"></i>
-            <span>Count Now</span>
-          </button>
-        `;
+        let actionBtn = '';
+        if (isSessionClosed) {
+          actionBtn = `
+            <button class="btn btn-secondary btn-sm" onclick="selectItemToCount('${item.id}')" title="View count details (Read Only)">
+              <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+              <span>View</span>
+            </button>
+          `;
+        } else if (counted > 0) {
+          actionBtn = `
+            <button class="btn btn-primary btn-sm" onclick="selectItemToCount('${item.id}')" title="Edit or add count for this item">
+              <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+              <span>Edit / Count</span>
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <button class="btn btn-primary btn-sm" onclick="selectItemToCount('${item.id}')" title="Count this item">
+              <i data-lucide="scan-line" style="width: 14px; height: 14px;"></i>
+              <span>Count Now</span>
+            </button>
+          `;
+        }
 
         const systemQtyDisplay = hideSystemQty ? `
-          <span class="badge" style="background: ${countMode === 'BLIND_ALL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.1)'}; border: 1px solid ${countMode === 'BLIND_ALL' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.25)'}; color: ${countMode === 'BLIND_ALL' ? '#f87171' : '#fbbf24'}; font-size: 0.72rem; padding: 2px 7px; font-weight: 600;" title="System Qty is hidden by Manager in Blind Count mode">
+          <span class="badge" style="background: ${countMode === 'BLIND_ALL' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.1)'}; border: 1px solid ${countMode === 'BLIND_ALL' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.25)'}; color: ${countMode === 'BLIND_ALL' ? '#f87171' : '#fbbf24'}; font-size: 0.72rem; padding: 2px 7px; font-weight: 600;" title="System Qty & Variance are hidden in Blind Count mode">
             <i data-lucide="${countMode === 'BLIND_ALL' ? 'shield-alert' : 'eye-off'}" style="width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></i>
             Hidden (${countMode === 'BLIND_ALL' ? 'Strict' : 'Blind'})
           </span>
@@ -5528,12 +5860,13 @@
       if (!item) return;
 
       activeScannedItem = item;
-      displayScannedItem(item);
+      const isAlreadyCounted = (parseFloat(item.total_counted_qty) || 0) > 0;
+      displayScannedItem(item, isAlreadyCounted ? 'REPLACE' : 'ADD');
       const scanInput = document.getElementById('barcodeScanInput');
       if (scanInput) scanInput.value = item.sku;
       playBeep(true);
       const isLocked = activeSession && activeSession.status === 'CLOSED';
-      showToast(`Selected "${item.sku} - ${item.item_name}" ${isLocked ? '(Session Locked · Read Only)' : 'for counting.'}`, 'info');
+      showToast(`Selected "${item.sku} - ${item.item_name}" ${isLocked ? '(Session Locked · Read Only)' : (isAlreadyCounted ? 'to edit or adjust count.' : 'for counting.')}`, 'info');
     }
 
     // ==========================================
@@ -5589,7 +5922,7 @@
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
       const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
       const isSupervisor = currentUser && currentUser.role === 'SUPERVISOR';
-      const hideSupervisorBookStock = (countMode === 'BLIND_ALL' && isSupervisor);
+      const hideReconValues = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       tbody.innerHTML = filtered.map(item => {
         const counted = parseFloat(item.total_counted_qty) || 0;
@@ -5601,8 +5934,8 @@
           const varAmt = counted > 0 ? `+${counted}` : '0';
           statusBadge = `<span class="badge badge-discrepancy" style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);" title="Unlisted floor item is an inventory variance"><i data-lucide="package-plus" style="width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></i>UNLISTED (VARIANCE ${varAmt})</span>`;
         } else if (counted > 0) {
-          if (hideSupervisorBookStock) {
-            statusBadge = `<span class="badge badge-matched"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 2px; vertical-align: middle;"></i>VERIFIED</span>`;
+          if (hideReconValues) {
+            statusBadge = `<span class="badge badge-matched"><i data-lucide="check" style="width: 12px; height: 12px; margin-right: 2px; vertical-align: middle;"></i>COUNTED (${counted})</span>`;
           } else {
             if (variance === 0) {
               statusBadge = `<span class="badge badge-matched">MATCHED</span>`;
@@ -5614,15 +5947,15 @@
 
         const varianceColor = variance === 0 ? 'var(--text-muted)' : (variance > 0 ? '#34d399' : '#fb7185');
 
-        const reconSystemQtyDisplay = hideSupervisorBookStock ? `
+        const reconSystemQtyDisplay = hideReconValues ? `
           <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); font-size: 0.72rem;">
             <i data-lucide="shield-alert" style="width: 12px; height: 12px; margin-right: 3px; vertical-align: middle;"></i>
-            Hidden by Manager
+            Hidden (Blind Audit)
           </span>
         ` : `<span style="font-family: var(--font-mono); font-weight: 600;">${system} ${item.uom || 'PCS'}</span>`;
 
-        const reconVarianceDisplay = hideSupervisorBookStock ? `
-          <span style="color: var(--text-dim); font-size: 0.8rem; font-style: italic;">Locked (Strict Audit)</span>
+        const reconVarianceDisplay = hideReconValues ? `
+          <span style="color: var(--text-dim); font-size: 0.8rem; font-style: italic;">Locked (Blind Audit)</span>
         ` : `
           <span style="font-family: var(--font-mono); font-weight: 800; color: ${varianceColor};">
             ${variance > 0 ? '+' : ''}${variance}
@@ -5728,11 +6061,12 @@
     }
 
     // ==========================================
-    // MULTI-SHEET EXCEL AUDIT EXPORT (SUPERVISOR & MANAGER)
+    // MULTI-SHEET EXECUTIVE EXCEL AUDIT EXPORT (ADMIN & APPROVED SUPERVISOR)
     // ==========================================
     function exportSessionAuditExcel(sessionId) {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Supervisors and Administrators can export audit sheets.', 'error');
+      if (!currentUser || currentUser.role === 'COUNTER') {
+        showToast('Access Denied: Floor Counters are not authorized to download audit reports.', 'error');
+        playBeep(false);
         return;
       }
       appDb = loadDatabase();
@@ -5745,6 +6079,15 @@
       if (!session) {
         showToast('Session not found.', 'error');
         return;
+      }
+
+      // Check Supervisor export approval
+      if (currentUser.role === 'SUPERVISOR') {
+        if (!session.supervisor_report_approved) {
+          showToast(`Supervisor export is locked for session "${session.session_code}". Requires Central Admin approval.`, 'error');
+          playBeep(false);
+          return;
+        }
       }
 
       const sessionItems = (appDb.items || []).filter(i => i.session_id === session.id);
@@ -5771,7 +6114,7 @@
         totalPhysicalQty += count;
         if (i.is_unlisted) {
           unlistedCount++;
-          discrepancyCount++; // Unlisted floor item is an inventory variance!
+          discrepancyCount++;
         } else if (count === 0) {
           uncountedCount++;
         } else if (count === sys) {
@@ -5798,55 +6141,55 @@
         }
       });
 
-      // Sheet 1: Audit Summary Rows
-      const summaryRows = [
-        { "Audit Parameter / Metric": "Company / Enterprise", "Value": "Lina Manufacturing · Stock Verification Cloud", "Details / Clarification": "Certified Internal Stock Audit" },
-        { "Audit Parameter / Metric": "Session Code", "Value": session.session_code, "Details / Clarification": "Unique Verification Run Code" },
-        { "Audit Parameter / Metric": "Session Title", "Value": session.title, "Details / Clarification": session.description || "Warehouse Stock Verification" },
-        { "Audit Parameter / Metric": "Session Status", "Value": session.status === 'CLOSED' ? "CLOSED & LOCKED" : "ACTIVE", "Details / Clarification": session.status === 'CLOSED' ? `Closed at: ${session.closed_at || 'N/A'} by ${session.closed_by || 'Admin'}` : "Verification in progress" },
-        { "Audit Parameter / Metric": "Count Methodology", "Value": (session.count_type || 'BLIND_COUNT').replace('_', ' '), "Details / Clarification": session.count_type === 'BLIND_COUNT' ? "Blind Count (Expected Stock Hidden from Counters)" : "Open Count" },
-        { "Audit Parameter / Metric": "Session Creation Date", "Value": session.created_at ? new Date(session.created_at).toLocaleString() : "N/A", "Details / Clarification": "System Creation Timestamp" },
-        { "Audit Parameter / Metric": "Export Generated By", "Value": currentUser ? `${currentUser.full_name || currentUser.username} (${currentUser.role})` : "System", "Details / Clarification": `Generated on ${new Date().toLocaleString()}` },
-        { "Audit Parameter / Metric": "----------------------------------------", "Value": "----------------------------------------", "Details / Clarification": "----------------------------------------" },
-        { "Audit Parameter / Metric": "Total Master Catalog Items", "Value": totalMaster, "Details / Clarification": "Total SKUs registered in this session" },
-        { "Audit Parameter / Metric": "Total Items Verified & Counted", "Value": totalMaster - uncountedCount, "Details / Clarification": `Verification completion rate: ${completionRate}%` },
-        { "Audit Parameter / Metric": "Items Pending Verification", "Value": uncountedCount, "Details / Clarification": "Pending floor physical count" },
-        { "Audit Parameter / Metric": "Items with Exact Match", "Value": matchedCount, "Details / Clarification": "Physical count matches theoretical book stock" },
-        { "Audit Parameter / Metric": "Items with Variance / Discrepancy", "Value": discrepancyCount, "Details / Clarification": "Requires recount or supervisory review" },
-        { "Audit Parameter / Metric": "Unlisted Floor Stock Discovered", "Value": unlistedCount, "Details / Clarification": "Found on floor but not present in initial sheet" },
-        { "Audit Parameter / Metric": "----------------------------------------", "Value": "----------------------------------------", "Details / Clarification": "----------------------------------------" },
-        { "Audit Parameter / Metric": "Total Book Stock (Expected Qty)", "Value": totalBookQty, "Details / Clarification": "Total theoretical inventory on books" },
-        { "Audit Parameter / Metric": "Total Physical Counted Qty", "Value": totalPhysicalQty, "Details / Clarification": "Total verified inventory counted on floor" },
-        { "Audit Parameter / Metric": "Net Stock Variance (Physical - Book)", "Value": (netVariance > 0 ? `+${netVariance}` : `${netVariance}`), "Details / Clarification": netVariance === 0 ? "Perfect Inventory Balance" : (netVariance > 0 ? "Overall Net Surplus" : "Overall Net Shortage") },
-        { "Audit Parameter / Metric": "----------------------------------------", "Value": "----------------------------------------", "Details / Clarification": "----------------------------------------" },
-        { "Audit Parameter / Metric": "FLOOR COUNTER PRODUCTIVITY", "Value": "COUNTER ACTIVITY SUMMARY", "Details / Clarification": "Individual operator scans & throughput" }
+      // Sheet 1: Executive Dashboard
+      const dashboardRows = [
+        { "Metric / Parameter": "ORGANIZATION / ENTERPRISE", "Value": "Lina Manufacturing · Stock Verification Cloud", "Audit Context & Notes": "Internal Regulatory Stock Verification" },
+        { "Metric / Parameter": "SESSION AUDIT CODE", "Value": session.session_code, "Audit Context & Notes": "Unique Audit Tracking Identifier" },
+        { "Metric / Parameter": "SESSION TITLE", "Value": session.title, "Audit Context & Notes": session.description || "Warehouse Stock Verification" },
+        { "Metric / Parameter": "AUDIT STATUS", "Value": session.status === 'CLOSED' ? "CLOSED & LOCKED" : "ACTIVE VERIFICATION", "Audit Context & Notes": session.status === 'CLOSED' ? `Locked at ${session.closed_at || 'N/A'} by ${session.closed_by || 'Admin'}` : "Physical floor counting active" },
+        { "Metric / Parameter": "AUDIT COUNT METHODOLOGY", "Value": (session.count_type || 'BLIND_COUNT').replace('_', ' '), "Audit Context & Notes": session.count_type === 'BLIND_ALL' ? "Strict Blind (Hidden from Counters & Supervisors)" : (session.count_type === 'BLIND_COUNT' ? "Blind Count (Hidden from Counters)" : "Open Theoretical Count") },
+        { "Metric / Parameter": "SUPERVISOR EXPORT PERMISSION", "Value": session.supervisor_report_approved ? "APPROVED BY ADMIN" : "RESTRICTED (ADMIN ONLY)", "Audit Context & Notes": "Central Admin authorization governance" },
+        { "Metric / Parameter": "EXPORT GENERATED BY", "Value": `${currentUser.full_name || currentUser.username} (${currentUser.role})`, "Audit Context & Notes": `Exported on ${new Date().toLocaleString()}` },
+        { "Metric / Parameter": "----------------------------------------", "Value": "----------------------------------------", "Audit Context & Notes": "----------------------------------------" },
+        { "Metric / Parameter": "TOTAL REGISTERED SKUS / ITEMS", "Value": totalMaster, "Audit Context & Notes": "Total distinct inventory records" },
+        { "Metric / Parameter": "ITEMS VERIFIED & COUNTED", "Value": totalMaster - uncountedCount, "Audit Context & Notes": `Completion Progress: ${completionRate}%` },
+        { "Metric / Parameter": "ITEMS PENDING PHYSICAL COUNT", "Value": uncountedCount, "Audit Context & Notes": "Pending warehouse floor verification" },
+        { "Metric / Parameter": "EXACT PHYSICAL MATCHES", "Value": matchedCount, "Audit Context & Notes": "Physical inventory exactly equals book balance" },
+        { "Metric / Parameter": "ITEMS WITH AUDIT DISCREPANCIES", "Value": discrepancyCount, "Audit Context & Notes": "Stock variance requiring reconciliation" },
+        { "Metric / Parameter": "UNLISTED FLOOR ITEMS DISCOVERED", "Value": unlistedCount, "Audit Context & Notes": "Found on floor but not present in initial sheet" },
+        { "Metric / Parameter": "----------------------------------------", "Value": "----------------------------------------", "Audit Context & Notes": "----------------------------------------" },
+        { "Metric / Parameter": "TOTAL THEORETICAL BOOK QUANTITY", "Value": totalBookQty, "Audit Context & Notes": "Total book units on ERP register" },
+        { "Metric / Parameter": "TOTAL PHYSICAL COUNTED UNITS", "Value": totalPhysicalQty, "Audit Context & Notes": "Total verified floor units counted" },
+        { "Metric / Parameter": "NET INVENTORY VARIANCE UNITS", "Value": (netVariance > 0 ? `+${netVariance}` : `${netVariance}`), "Audit Context & Notes": netVariance === 0 ? "Perfect 100% Stock Balance" : (netVariance > 0 ? "Overall Net Physical Surplus" : "Overall Net Inventory Shortage") },
+        { "Metric / Parameter": "----------------------------------------", "Value": "----------------------------------------", "Audit Context & Notes": "----------------------------------------" },
+        { "Metric / Parameter": "OPERATOR ACTIVITY BREAKDOWN", "Value": "COUNTER PRODUCTIVITY", "Audit Context & Notes": "Total scans & physical units counted" }
       ];
 
       const opEntries = Object.values(operatorMap);
       if (opEntries.length === 0) {
-        summaryRows.push({
-          "Audit Parameter / Metric": "No Counter Activity Logged Yet",
+        dashboardRows.push({
+          "Metric / Parameter": "No Floor Activity Logged",
           "Value": "—",
-          "Details / Clarification": "Operators have not logged count entries yet"
+          "Audit Context & Notes": "Operators have not logged count entries yet"
         });
       } else {
         opEntries.forEach(op => {
-          summaryRows.push({
-            "Audit Parameter / Metric": `Counter: ${op.name}`,
+          dashboardRows.push({
+            "Metric / Parameter": `Operator: ${op.name}`,
             "Value": `${op.scans} scan entries | ${op.totalQty} total units`,
-            "Details / Clarification": `Last entry time: ${new Date(op.lastEntry).toLocaleString()}`
+            "Audit Context & Notes": `Last scan: ${new Date(op.lastEntry).toLocaleString()}`
           });
         });
       }
 
-      // Sheet 2: Item Count Details & Variances
-      const itemRows = sessionItems.map(item => {
+      // Sheet 2: All Items Details & Status
+      const allItemsRows = sessionItems.map(item => {
         const sys = parseFloat(item.system_qty) || 0;
         const count = parseFloat(item.total_counted_qty) || 0;
         const variance = count - sys;
         let status = "UNCOUNTED";
         if (item.is_unlisted) {
-          status = `UNLISTED VARIANCE (+${count})`;
+          status = `UNLISTED DISCOVERY (+${count})`;
         } else if (count > 0) {
           status = variance === 0 ? "MATCHED" : (variance > 0 ? `SURPLUS (+${variance})` : `SHORTAGE (${variance})`);
         }
@@ -5860,78 +6203,228 @@
           "Item Description / Name": item.item_name,
           "Location / Zone": item.zone_location || "General",
           "UOM": item.uom || "PCS",
+          "Batch / Lot No": item.batch_no || "N/A",
+          "Expiry Date": item.expiry_date || "N/A",
           "Book Stock (Expected)": sys,
           "Physical Counted": count,
           "Variance Qty": variance,
-          "Variance Status": status,
-          "Counter Details (Last Counted By)": item.last_counted_by || (count > 0 ? "Floor Counter" : "—"),
-          "Data Entered Time (Timestamp)": lastEnteredTime,
+          "Count Status": status,
+          "Last Counted By": item.last_counted_by || (count > 0 ? "Floor Counter" : "—"),
+          "Data Entered Time": lastEnteredTime,
           "Stock Classification": item.is_unlisted ? "UNLISTED FLOOR ITEM" : "MASTER SHEET",
-          "Recount / Audit Notes": item.notes || ""
+          "Audit Notes": item.notes || ""
         };
       });
 
-      // Sheet 3: Counter Scan Event Logs (Every single scan with timestamp & counter details)
+      // Sheet 3: Session Variance Analysis
+      const varianceItems = sessionItems.filter(item => {
+        const sys = parseFloat(item.system_qty) || 0;
+        const count = parseFloat(item.total_counted_qty) || 0;
+        return item.is_unlisted || (count > 0 && count !== sys) || (count === 0 && sys > 0);
+      });
+
+      const varianceRows = varianceItems.map(item => {
+        const sys = parseFloat(item.system_qty) || 0;
+        const count = parseFloat(item.total_counted_qty) || 0;
+        const variance = count - sys;
+        let varCategory = "UNKNOWN";
+        let pctStr = "0%";
+
+        if (item.is_unlisted) {
+          varCategory = "UNLISTED DISCOVERY (+Surplus)";
+          pctStr = "+100%";
+        } else if (count === 0) {
+          varCategory = "UNCOUNTED SHORTAGE (-Full Book)";
+          pctStr = "-100%";
+        } else if (variance > 0) {
+          varCategory = "PHYSICAL SURPLUS (+Excess)";
+          pctStr = sys > 0 ? `+${((variance / sys) * 100).toFixed(1)}%` : "+100%";
+        } else {
+          varCategory = "PHYSICAL SHORTAGE (-Missing)";
+          pctStr = sys > 0 ? `${((variance / sys) * 100).toFixed(1)}%` : "-100%";
+        }
+
+        return {
+          "Session Code": session.session_code,
+          "SKU / Item Code": item.sku,
+          "Item Description": item.item_name,
+          "Location / Zone": item.zone_location || "General",
+          "UOM": item.uom || "PCS",
+          "Book Stock (Expected)": sys,
+          "Physical Counted": count,
+          "Variance Qty": variance,
+          "Variance Category": varCategory,
+          "Variance %": pctStr,
+          "Batch / Lot No": item.batch_no || "N/A",
+          "Expiry Date": item.expiry_date || "N/A",
+          "Last Counted By": item.last_counted_by || (count > 0 ? "Floor Counter" : "—"),
+          "Recommended Remediation": item.is_unlisted ? "Ingest into Master ERP Register" : (count === 0 ? "Floor Physical Search / Recount" : (variance > 0 ? "Surplus Verification / Book Up" : "Shortage Investigation / Write-off"))
+        };
+      });
+
+      // Sheet 4: Expiry & Shelf-Life Buckets
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const expiryRows = sessionItems.map(item => {
+        const sys = parseFloat(item.system_qty) || 0;
+        const count = parseFloat(item.total_counted_qty) || 0;
+        let diffDays = null;
+        let agingBucket = "NO EXPIRY SPECIFIED";
+
+        if (item.expiry_date) {
+          const exp = new Date(item.expiry_date);
+          const diffTime = exp.getTime() - today.getTime();
+          diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays < 0) {
+            agingBucket = `EXPIRED (${Math.abs(diffDays)}d overdue - QUARANTINE)`;
+          } else if (diffDays <= 30) {
+            agingBucket = `CRITICAL (<30d remaining - EXPEDITE)`;
+          } else if (diffDays <= 90) {
+            agingBucket = `WARNING (31-90d remaining - MONITOR)`;
+          } else {
+            agingBucket = `HEALTHY (>90d remaining - STABLE)`;
+          }
+        }
+
+        return {
+          "SKU / Item Code": item.sku,
+          "Item Description": item.item_name,
+          "Batch / Lot No": item.batch_no || "BATCH-NA",
+          "Expiry Date": item.expiry_date || "N/A",
+          "Days to Expiry": diffDays !== null ? diffDays : "N/A",
+          "Shelf-Life Aging Bucket": agingBucket,
+          "Location / Zone": item.zone_location || "General",
+          "Book Stock": sys,
+          "Physical Counted": count,
+          "Batch Variance Qty": count - sys,
+          "Last Counted By": item.last_counted_by || "—"
+        };
+      }).sort((a, b) => {
+        if (typeof a["Days to Expiry"] === 'number' && typeof b["Days to Expiry"] === 'number') {
+          return a["Days to Expiry"] - b["Days to Expiry"];
+        }
+        return typeof a["Days to Expiry"] === 'number' ? -1 : 1;
+      });
+
+      // Sheet 5: Operator Audit Logs
       const logRows = sessionLogs.map((log, idx) => ({
         "Log ID": log.id || `LOG-${idx + 1}`,
-        "Data Entered Time (Exact Timestamp)": log.recorded_at ? new Date(log.recorded_at).toLocaleString() : "N/A",
-        "Counter / Operator Name": log.operator_name || "Unknown Operator",
-        "Counter User ID": log.user_id || "N/A",
+        "Timestamp": log.recorded_at ? new Date(log.recorded_at).toLocaleString() : "N/A",
+        "Operator / Counter Name": log.operator_name || "Unknown Operator",
+        "User ID": log.user_id || "N/A",
+        "Action Type": log.action_type || "COUNT_LOGGED",
         "SKU / Item Code": log.sku || "",
         "Item Description": log.item_name || "",
-        "Quantity Added in Scan": log.counted_qty,
+        "Quantity Logged": log.counted_qty,
+        "Resulting Total Count": log.new_total !== undefined ? log.new_total : "—",
         "Session Code": session.session_code
       }));
 
-      // Build Workbook with SheetJS
+      // Build 5-Sheet Executive Workbook with SheetJS
       const workbook = XLSX.utils.book_new();
 
-      // Append Sheet 1
-      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
-      wsSummary['!cols'] = [{ wch: 36 }, { wch: 34 }, { wch: 50 }];
-      XLSX.utils.book_append_sheet(workbook, wsSummary, "Audit Summary");
+      // Sheet 1
+      const wsDashboard = XLSX.utils.json_to_sheet(dashboardRows);
+      wsDashboard['!cols'] = [{ wch: 38 }, { wch: 36 }, { wch: 48 }];
+      XLSX.utils.book_append_sheet(workbook, wsDashboard, "Executive Dashboard");
 
-      // Append Sheet 2
-      const wsItems = XLSX.utils.json_to_sheet(itemRows.length > 0 ? itemRows : [{ "Status": "No items recorded in this session" }]);
-      wsItems['!cols'] = [
+      // Sheet 2
+      const wsAllItems = XLSX.utils.json_to_sheet(allItemsRows.length > 0 ? allItemsRows : [{ "Status": "No items recorded in session" }]);
+      wsAllItems['!cols'] = [
         { wch: 18 }, // Session Code
         { wch: 20 }, // SKU
         { wch: 20 }, // Barcode
         { wch: 36 }, // Description
         { wch: 20 }, // Location
         { wch: 10 }, // UOM
+        { wch: 18 }, // Batch No
+        { wch: 16 }, // Expiry Date
         { wch: 20 }, // Book Stock
-        { wch: 18 }, // Physical
-        { wch: 15 }, // Variance
-        { wch: 22 }, // Status
-        { wch: 28 }, // Counter Details
+        { wch: 18 }, // Physical Counted
+        { wch: 16 }, // Variance Qty
+        { wch: 24 }, // Count Status
+        { wch: 28 }, // Last Counted By
         { wch: 26 }, // Data Entered Time
         { wch: 24 }, // Classification
         { wch: 30 }  // Notes
       ];
-      XLSX.utils.book_append_sheet(workbook, wsItems, "Count Details & Variances");
+      XLSX.utils.book_append_sheet(workbook, wsAllItems, "All Items Details & Status");
 
-      // Append Sheet 3
-      const wsLogs = XLSX.utils.json_to_sheet(logRows.length > 0 ? logRows : [{ "Status": "No individual scan entries logged yet" }]);
-      wsLogs['!cols'] = [
-        { wch: 20 }, // Log ID
-        { wch: 28 }, // Entered Time
-        { wch: 26 }, // Counter Name
-        { wch: 16 }, // User ID
+      // Sheet 3
+      const wsVariance = XLSX.utils.json_to_sheet(varianceRows.length > 0 ? varianceRows : [{ "Status": "100% Stock Match - No Discrepancies Detected" }]);
+      wsVariance['!cols'] = [
+        { wch: 18 }, // Session Code
         { wch: 20 }, // SKU
         { wch: 36 }, // Description
-        { wch: 20 }, // Qty Added
-        { wch: 20 }  // Session
+        { wch: 20 }, // Location
+        { wch: 10 }, // UOM
+        { wch: 20 }, // Book Stock
+        { wch: 18 }, // Physical Counted
+        { wch: 16 }, // Variance Qty
+        { wch: 30 }, // Variance Category
+        { wch: 14 }, // Variance %
+        { wch: 18 }, // Batch No
+        { wch: 16 }, // Expiry Date
+        { wch: 28 }, // Last Counted By
+        { wch: 38 }  // Recommended Remediation
       ];
-      XLSX.utils.book_append_sheet(workbook, wsLogs, "Counter Scan Logs");
+      XLSX.utils.book_append_sheet(workbook, wsVariance, "Session Variance Analysis");
+
+      // Sheet 4
+      const wsExpiry = XLSX.utils.json_to_sheet(expiryRows.length > 0 ? expiryRows : [{ "Status": "No batch expiry dates specified" }]);
+      wsExpiry['!cols'] = [
+        { wch: 20 }, // SKU
+        { wch: 36 }, // Description
+        { wch: 18 }, // Batch
+        { wch: 16 }, // Expiry Date
+        { wch: 16 }, // Days to Expiry
+        { wch: 36 }, // Aging Bucket
+        { wch: 20 }, // Location
+        { wch: 16 }, // Book Stock
+        { wch: 18 }, // Physical Counted
+        { wch: 18 }, // Batch Variance
+        { wch: 26 }  // Last Counted By
+      ];
+      XLSX.utils.book_append_sheet(workbook, wsExpiry, "Expiry & Shelf-Life Buckets");
+
+      // Sheet 5
+      const wsLogs = XLSX.utils.json_to_sheet(logRows.length > 0 ? logRows : [{ "Status": "No scan entries logged yet" }]);
+      wsLogs['!cols'] = [
+        { wch: 20 }, // Log ID
+        { wch: 26 }, // Timestamp
+        { wch: 28 }, // Operator Name
+        { wch: 16 }, // User ID
+        { wch: 20 }, // Action Type
+        { wch: 20 }, // SKU
+        { wch: 36 }, // Description
+        { wch: 18 }, // Qty Logged
+        { wch: 22 }, // Resulting Total Count
+        { wch: 20 }  // Session Code
+      ];
+      XLSX.utils.book_append_sheet(workbook, wsLogs, "Operator Audit Logs");
 
       const filename = `Lina_Stock_Audit_${session.session_code}_${Date.now()}.xlsx`;
       XLSX.writeFile(workbook, filename);
-      showToast(`Exported full 3-sheet Excel report for "${session.session_code}"!`, 'success');
+      logAuditEvent('REPORT_DOWNLOADED', `Full 5-Sheet Executive Excel Report downloaded for session ${session.session_code} by ${currentUser.username}`, session.session_code, 'AUDIT');
+      showToast(`Exported 5-sheet Executive Excel report for "${session.session_code}"!`, 'success');
+      playBeep(true);
     }
 
-    // Export Reconciliation (Delegates to exportSessionAuditExcel for excel)
+    // Export Reconciliation (Strictly checks report download permissions)
     function exportReconciliationReport(format = 'excel') {
+      if (!currentUser || currentUser.role === 'COUNTER') {
+        showToast('Access Denied: Floor Counters are not authorized to download audit reports.', 'error');
+        playBeep(false);
+        return;
+      }
+      if (currentUser.role === 'SUPERVISOR' && activeSession && !activeSession.supervisor_report_approved) {
+        showToast(`Supervisor report download requires Administrator approval for session "${activeSession.session_code}".`, 'error');
+        playBeep(false);
+        return;
+      }
+
       if (format === 'excel') {
         exportSessionAuditExcel(activeSession ? activeSession.id : null);
         return;
@@ -5971,7 +6464,9 @@
 
       const filename = `Lina_Stock_Reconciliation_${activeSession.session_code}_${Date.now()}.csv`;
       XLSX.writeFile(workbook, filename);
+      logAuditEvent('REPORT_DOWNLOADED', `Reconciliation CSV downloaded for session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, 'AUDIT');
       showToast(`Exported ${rows.length} rows to ${filename}`, 'success');
+      playBeep(true);
     }
 
     // ==========================================
@@ -6193,6 +6688,96 @@
       });
     }
 
+    function togglePreviewSelectAll(box) {
+      const isChecked = box.checked;
+      const checkboxes = document.querySelectorAll('.preview-row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+        const idx = parseInt(cb.getAttribute('data-idx'), 10);
+        if (!isNaN(idx)) {
+          if (isChecked) {
+            previewSelectedItemIndices.add(idx);
+          } else {
+            previewSelectedItemIndices.delete(idx);
+          }
+        }
+      });
+      updatePreviewSelectionUI();
+    }
+
+    function togglePreviewRowSelection(idx, event) {
+      if (event) event.stopPropagation();
+      if (previewSelectedItemIndices.has(idx)) {
+        previewSelectedItemIndices.delete(idx);
+      } else {
+        previewSelectedItemIndices.add(idx);
+      }
+      updatePreviewSelectionUI();
+    }
+
+    function updatePreviewSelectionUI() {
+      const removeBtn = document.getElementById('removeSelectedPreviewBtn');
+      const removeText = document.getElementById('removeSelectedPreviewText');
+      const count = previewSelectedItemIndices.size;
+      if (removeBtn && removeText) {
+        if (count > 0) {
+          removeBtn.style.display = 'inline-flex';
+          removeText.textContent = `Remove Selected (${count})`;
+        } else {
+          removeBtn.style.display = 'none';
+        }
+      }
+      const allBox = document.getElementById('previewSelectAllBox');
+      if (allBox && parsedSheetData.length > 0) {
+        allBox.checked = previewSelectedItemIndices.size === parsedSheetData.length;
+        allBox.indeterminate = previewSelectedItemIndices.size > 0 && previewSelectedItemIndices.size < parsedSheetData.length;
+      }
+    }
+
+    function removeSelectedPreviewItems() {
+      if (previewSelectedItemIndices.size === 0) return;
+      const count = previewSelectedItemIndices.size;
+      parsedSheetData = parsedSheetData.filter((_, idx) => !previewSelectedItemIndices.has(idx));
+      previewSelectedItemIndices.clear();
+      displaySheetPreview(parsedSheetData);
+      showToast(`Removed ${count} selected item(s) from spreadsheet preview.`, 'info');
+      playBeep(true);
+    }
+
+    async function openDeleteZoneFromPreviewModal() {
+      if (parsedSheetData.length === 0) {
+        showToast('No preview data uploaded yet.', 'error');
+        return;
+      }
+      const zones = Array.from(new Set(parsedSheetData.map(i => i.zone_location || 'General'))).sort();
+      if (zones.length === 0) {
+        showToast('No zones found in the preview data.', 'info');
+        return;
+      }
+
+      const promptMsg = `Enter the Zone name to remove entirely from this uploaded preview:\n\nAvailable Zones:\n${zones.map(z => {
+        const c = parsedSheetData.filter(i => (i.zone_location || 'General') === z).length;
+        return `• ${z} (${c} items)`;
+      }).join('\n')}`;
+
+      const selectedZone = prompt(promptMsg);
+      if (!selectedZone) return;
+
+      const matchedZone = zones.find(z => z.toLowerCase() === selectedZone.trim().toLowerCase());
+      if (!matchedZone) {
+        showToast(`Zone "${selectedZone}" was not found in the uploaded preview.`, 'error');
+        return;
+      }
+
+      const prevTotal = parsedSheetData.length;
+      parsedSheetData = parsedSheetData.filter(i => (i.zone_location || 'General').toLowerCase() !== matchedZone.toLowerCase());
+      const removedCount = prevTotal - parsedSheetData.length;
+      previewSelectedItemIndices.clear();
+      displaySheetPreview(parsedSheetData);
+      showToast(`Removed zone "${matchedZone}" (${removedCount} items) from preview!`, 'success');
+      playBeep(true);
+    }
+
     function displaySheetPreview(items) {
       const card = document.getElementById('sheetPreviewCard');
       const tbody = document.getElementById('sheetPreviewTableBody');
@@ -6201,19 +6786,32 @@
       countEl.textContent = items.length;
       card.style.display = 'block';
 
-      const previewSlice = items.slice(0, 50);
-      tbody.innerHTML = previewSlice.map((item, idx) => `
-        <tr>
-          <td style="color: var(--text-dim);">${idx + 1}</td>
-          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);">${item.sku}</td>
-          <td style="font-weight: 500;">${item.item_name}</td>
-          <td style="font-family: var(--font-mono); color: var(--text-dim);">${item.barcode}</td>
-          <td><span class="badge badge-uncounted">${item.zone_location}</span></td>
-          <td style="font-family: var(--font-mono); font-weight: 700;">${item.system_qty}</td>
-          <td>${item.uom}</td>
-        </tr>
-      `).join('');
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-dim);">All preview items have been removed.</td></tr>`;
+        updatePreviewSelectionUI();
+        return;
+      }
 
+      const previewSlice = items.slice(0, 100);
+      tbody.innerHTML = previewSlice.map((item, idx) => {
+        const isChecked = previewSelectedItemIndices.has(idx);
+        return `
+          <tr style="${isChecked ? 'background: rgba(2, 132, 199, 0.08);' : ''}">
+            <td style="text-align: center;" onclick="event.stopPropagation()">
+              <input type="checkbox" class="preview-row-checkbox" data-idx="${idx}" ${isChecked ? 'checked' : ''} onchange="togglePreviewRowSelection(${idx}, event)" />
+            </td>
+            <td style="color: var(--text-dim);">${idx + 1}</td>
+            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);">${escapeHtml(item.sku)}</td>
+            <td style="font-weight: 500;">${escapeHtml(item.item_name)}</td>
+            <td style="font-family: var(--font-mono); color: var(--text-dim);">${escapeHtml(item.barcode)}</td>
+            <td><span class="badge badge-uncounted">${escapeHtml(item.zone_location)}</span></td>
+            <td style="font-family: var(--font-mono); font-weight: 700;">${item.system_qty}</td>
+            <td>${escapeHtml(item.uom)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      updatePreviewSelectionUI();
       card.scrollIntoView({ behavior: 'smooth' });
       lucide.createIcons();
     }
@@ -7105,8 +7703,12 @@
                     <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: #f59e0b;"></i>
                     <span>Visibility</span>
                   </button>
+                  <button class="btn btn-secondary btn-sm admin-exclusive" onclick="toggleSupervisorReportApproval('${s.id}')" title="Configure Supervisor Excel Export Permission">
+                    <i data-lucide="${s.supervisor_report_approved ? 'file-check-2' : 'file-lock-2'}" style="width: 14px; height: 14px; color: ${s.supervisor_report_approved ? '#34d399' : '#f59e0b'};"></i>
+                    <span>${s.supervisor_report_approved ? 'Sup. Export: ON' : 'Sup. Export: OFF'}</span>
+                  </button>
                 ` : ''}
-                <button class="btn btn-secondary btn-sm" onclick="exportSessionAuditExcel('${s.id}')" title="Download Full 3-Sheet Excel Audit Sheet">
+                <button class="btn btn-secondary btn-sm" onclick="exportSessionAuditExcel('${s.id}')" title="Download Full 5-Sheet Executive Excel Report">
                   <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
                   <span>Excel</span>
                 </button>
@@ -7114,12 +7716,153 @@
                   <i data-lucide="${isClosed ? 'unlock' : 'lock'}" style="width: 14px; height: 14px; color: ${isClosed ? '#34d399' : '#f87171'};"></i>
                   <span>${isClosed ? 'Reopen' : 'Lock'}</span>
                 </button>
+                ${isManager ? `
+                  <button class="btn btn-danger btn-sm admin-exclusive" onclick="deleteSession('${s.id}')" title="Delete Session and Notify Active Users">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    <span>Delete</span>
+                  </button>
+                ` : ''}
               </div>
             </td>
           </tr>
         `;
       }).join('');
       lucide.createIcons();
+    }
+
+    function toggleSupervisorReportApproval(sessionId) {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
+        showToast('Unauthorized: Only Administrators can configure report permissions.', 'error');
+        return;
+      }
+      appDb = loadDatabase();
+      const s = (appDb.sessions || []).find(x => x.id === sessionId);
+      if (!s) return;
+
+      s.supervisor_report_approved = !s.supervisor_report_approved;
+      if (activeSession && activeSession.id === sessionId) {
+        activeSession.supervisor_report_approved = s.supervisor_report_approved;
+      }
+      saveDatabase(appDb);
+
+      const statusStr = s.supervisor_report_approved ? 'APPROVED' : 'RESTRICTED';
+      logAuditEvent('SUPERVISOR_REPORT_PERMISSION', `Supervisor report download ${statusStr} for session ${s.session_code} by ${currentUser.username}`, s.session_code, 'ADMIN');
+
+      showToast(`Supervisor Excel download is now ${statusStr} for session "${s.session_code}".`, s.supervisor_report_approved ? 'success' : 'info');
+      playBeep(true);
+      renderSessionsTable();
+    }
+
+    async function deleteSession(sessionId) {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
+        showToast('Unauthorized: Only Administrators can delete sessions.', 'error');
+        return;
+      }
+      appDb = loadDatabase();
+      const session = (appDb.sessions || []).find(s => s.id === sessionId);
+      if (!session) {
+        showToast('Session not found.', 'error');
+        return;
+      }
+
+      const confirmed = await showConfirmModal({
+        title: `Delete Session: ${session.session_code}`,
+        message: `Are you sure you want to permanently delete session <b>"${session.title}"</b> (${session.session_code})?<br><br><span style="color: var(--accent-rose); font-weight: 700;">WARNING:</span> All registered items, recorded physical counts, and logs belonging to this session will be permanently erased. All users will be alerted.`,
+        confirmText: 'Delete Session',
+        confirmClass: 'btn-danger',
+        icon: 'trash-2'
+      });
+
+      if (!confirmed) return;
+
+      const deletedCode = session.session_code;
+      const deletedTitle = session.title;
+
+      // 1. Remove items
+      appDb.items = (appDb.items || []).filter(i => i.session_id !== sessionId);
+
+      // 2. Remove logs
+      appDb.logs = (appDb.logs || []).filter(l => l.session_id !== sessionId);
+
+      // 3. Remove session
+      appDb.sessions = (appDb.sessions || []).filter(s => s.id !== sessionId);
+
+      // 4. Create broadcast alert
+      appDb.broadcast_alerts = appDb.broadcast_alerts || [];
+      const alertObj = {
+        id: "alert-" + Date.now(),
+        title: "Session Deleted by Administrator",
+        message: `Session "${deletedCode} - ${deletedTitle}" has been permanently deleted by Administrator ${currentUser.full_name || currentUser.username}. The active session list has been updated.`,
+        created_at: new Date().toISOString()
+      };
+      appDb.broadcast_alerts.push(alertObj);
+
+      // 5. Active session switch if deleted
+      if (activeSession && activeSession.id === sessionId) {
+        if (appDb.sessions.length > 0) {
+          activeSession = appDb.sessions[0];
+        } else {
+          const newDefSession = {
+            id: "ses-" + Date.now(),
+            session_code: "SES-" + new Date().toISOString().slice(0, 10).replace(/-/g, '') + "-01",
+            title: "Default Stock Verification Session",
+            description: "Auto-created session after deletion",
+            count_type: "BLIND_COUNT",
+            status: "ACTIVE",
+            total_items: 0,
+            counted_items: 0,
+            progress_percent: 0,
+            created_at: new Date().toISOString()
+          };
+          appDb.sessions.push(newDefSession);
+          activeSession = newDefSession;
+        }
+      }
+
+      saveDatabase(appDb);
+      logAuditEvent('SESSION_DELETED', `Session ${deletedCode} (${deletedTitle}) permanently deleted by ${currentUser.username}`, deletedCode, 'ADMIN');
+
+      showToast(`Session "${deletedCode}" has been deleted.`, 'success');
+      playBeep(true);
+
+      refreshActiveSession();
+      renderSessionsTable();
+      updateMetricsAndFeeds();
+      filterCounterFloorTable();
+      filterReconciliationTable();
+    }
+
+    function checkBroadcastAlerts() {
+      if (!currentUser) return;
+      appDb = loadDatabase();
+      const alerts = appDb.broadcast_alerts || [];
+      if (alerts.length === 0) return;
+
+      const lastAckTime = parseInt(localStorage.getItem('lina_last_ack_alert_time') || '0', 10);
+      const newAlerts = alerts.filter(a => new Date(a.created_at).getTime() > lastAckTime);
+      if (newAlerts.length > 0) {
+        const latest = newAlerts[newAlerts.length - 1];
+        const modal = document.getElementById('broadcastAlertModalBackdrop');
+        const titleEl = document.getElementById('broadcastAlertTitle');
+        const msgEl = document.getElementById('broadcastAlertMessage');
+        if (modal && titleEl && msgEl) {
+          titleEl.textContent = latest.title || 'Session Alert';
+          msgEl.textContent = latest.message || 'A session was updated by Administrator.';
+          modal.style.display = 'flex';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    function acknowledgeBroadcastAlert() {
+      localStorage.setItem('lina_last_ack_alert_time', String(Date.now()));
+      const modal = document.getElementById('broadcastAlertModalBackdrop');
+      if (modal) modal.style.display = 'none';
+      refreshActiveSession();
+      renderSessionsTable();
+      updateMetricsAndFeeds();
+      filterCounterFloorTable();
+      filterReconciliationTable();
     }
 
     function openNewSessionDrawer() {

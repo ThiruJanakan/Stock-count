@@ -303,7 +303,11 @@ module.exports = async function handler(req, res) {
     ]);
 
     let items = itemsRes && itemsRes.data ? itemsRes.data : [];
-    // Strict Server-Side Blind Count enforcement: Strip book values from COUNTER role
+    const sessionsList = sesRes && sesRes.data ? sesRes.data : [];
+
+    // Strict Server-Side Blind Count enforcement:
+    // 1. COUNTER role never sees system_qty or variance_qty (in any mode)
+    // 2. SUPERVISOR role cannot see system_qty or variance_qty for sessions configured as BLIND_ALL
     if (authUser.role === 'COUNTER') {
       items = items.map(item => {
         const clean = { ...item };
@@ -311,6 +315,21 @@ module.exports = async function handler(req, res) {
         delete clean.variance_qty;
         return clean;
       });
+    } else if (authUser.role === 'SUPERVISOR') {
+      const strictBlindSessionIds = new Set(
+        sessionsList.filter(s => s.count_type === 'BLIND_ALL').map(s => s.id)
+      );
+      if (strictBlindSessionIds.size > 0) {
+        items = items.map(item => {
+          if (strictBlindSessionIds.has(item.session_id)) {
+            const clean = { ...item };
+            delete clean.system_qty;
+            delete clean.variance_qty;
+            return clean;
+          }
+          return item;
+        });
+      }
     }
 
     return sendJson(200, {

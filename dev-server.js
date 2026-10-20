@@ -252,6 +252,21 @@ async function dbGetFullDatabase(authUser) {
         delete clone.variance_qty;
         return clone;
       });
+    } else if (authUser && authUser.role === 'SUPERVISOR') {
+      const strictBlindSessionIds = new Set(
+        (sesRes.data || []).filter(s => s.count_type === 'BLIND_ALL').map(s => s.id)
+      );
+      if (strictBlindSessionIds.size > 0) {
+        items = items.map(item => {
+          if (strictBlindSessionIds.has(item.session_id)) {
+            const clone = { ...item };
+            delete clone.system_qty;
+            delete clone.variance_qty;
+            return clone;
+          }
+          return item;
+        });
+      }
     }
 
     return {
@@ -288,6 +303,21 @@ async function dbGetFullDatabase(authUser) {
       delete clone.variance_qty;
       return clone;
     });
+  } else if (authUser && authUser.role === 'SUPERVISOR') {
+    const strictBlindSessionIds = new Set(
+      sessionsRaw.filter(s => s.count_type === 'BLIND_ALL').map(s => s.id)
+    );
+    if (strictBlindSessionIds.size > 0) {
+      items = items.map(item => {
+        if (strictBlindSessionIds.has(item.session_id)) {
+          const clone = { ...item };
+          delete clone.system_qty;
+          delete clone.variance_qty;
+          return clone;
+        }
+        return item;
+      });
+    }
   }
 
   return {
