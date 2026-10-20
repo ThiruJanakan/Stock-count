@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Lina Manufacturing · Enterprise Stock Verification Cloud</title>
 
   <!-- Progressive Web App (PWA) Mobile Meta Tags -->
@@ -181,7 +181,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      padding: 0.65rem 1.5rem;
+      padding: calc(0.65rem + env(safe-area-inset-top, 0px)) 1.5rem 0.65rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
