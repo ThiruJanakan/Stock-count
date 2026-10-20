@@ -7601,7 +7601,8 @@
 
       const roleSelect = document.getElementById('editRole');
       const roleHelp = document.getElementById('editRoleHelpText');
-      const isSuper = isExecutive(currentUser);
+      const isExec = Boolean(currentUser && isExecutive(currentUser));
+      const isSuper = isExec;
       const isRootAdmin = user.username === 'admin' || user.id === 'u-admin';
 
       if (roleSelect) {
