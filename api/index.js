@@ -133,6 +133,55 @@ function parseBody(req) {
   });
 }
 
+const SESSION_SECRET = process.env.SESSION_SECRET || 'lina_manufacturing_enterprise_secure_token_secret_key_2026';
+
+function signSessionToken(user) {
+  const payload = JSON.stringify({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    full_name: user.full_name,
+    exp: Date.now() + 8 * 3600 * 1000 // 8-hour session lifetime
+  });
+  const b64 = Buffer.from(payload).toString('base64url');
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(b64).digest('base64url');
+  return `${b64}.${sig}`;
+}
+
+function verifySessionToken(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [b64, sig] = parts;
+  const expectedSig = crypto.createHmac('sha256', SESSION_SECRET).update(b64).digest('base64url');
+  if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(b64, 'base64url').toString('utf8'));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch (_) {
+    return null;
+  }
+}
+
+function getAuthenticatedUser(req) {
+  const cookies = parseCookies(req);
+  const cookieToken = cookies['LINA_AUTH_SESSION'];
+  if (cookieToken) {
+    const u = verifySessionToken(cookieToken);
+    if (u) return u;
+  }
+  const authHeader = req.headers['authorization'] || '';
+  if (authHeader.startsWith('Bearer ')) {
+    const bearer = authHeader.slice(7).trim();
+    const u = verifySessionToken(bearer);
+    if (u) return u;
+  }
+  return null;
+}
+
 module.exports = async function handler(req, res) {
   const reqUrl = (req.url || '').split('?')[0];
   const reqMethod = (req.method || 'GET').toUpperCase();
@@ -209,7 +258,7 @@ module.exports = async function handler(req, res) {
       return sendJson(401, { error: 'Invalid credentials' });
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = signSessionToken(user);
     const cookieHeader = `LINA_AUTH_SESSION=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800; Secure`;
 
     return sendJson(200, {
@@ -226,9 +275,9 @@ module.exports = async function handler(req, res) {
 
   // 4. Session Check
   if (reqUrl.endsWith('/api/auth/session') && reqMethod === 'GET') {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) return sendJson(401, { authenticated: false });
-    return sendJson(200, { authenticated: true });
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) return sendJson(401, { authenticated: false });
+    return sendJson(200, { authenticated: true, user: authUser });
   }
 
   // 4b. Logout
@@ -238,8 +287,13 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // 5. Stock Database Fetch
+  // 5. Stock Database Fetch (Protected - Requires Valid Authentication)
   if (reqUrl.endsWith('/api/stock/db') && reqMethod === 'GET') {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized: Valid authentication required to access stock data' });
+    }
+
     const [usersRes, sesRes, itemsRes, logsRes, auditRes] = await Promise.all([
       supabaseRequest('stock_users?select=id,username,full_name,role,is_active,created_at'),
       supabaseRequest('count_sessions?select=*&order=created_at.desc'),
@@ -248,18 +302,34 @@ module.exports = async function handler(req, res) {
       supabaseRequest('audit_trails?select=*&order=timestamp.desc&limit=2000')
     ]);
 
+    let items = itemsRes && itemsRes.data ? itemsRes.data : [];
+    // Strict Server-Side Blind Count enforcement: Strip book values from COUNTER role
+    if (authUser.role === 'COUNTER') {
+      items = items.map(item => {
+        const clean = { ...item };
+        delete clean.system_qty;
+        delete clean.variance_qty;
+        return clean;
+      });
+    }
+
     return sendJson(200, {
       source: 'SUPABASE_CLOUD',
       users: usersRes && usersRes.data ? usersRes.data : [],
       sessions: sesRes && sesRes.data ? sesRes.data : [],
-      items: itemsRes && itemsRes.data ? itemsRes.data : [],
+      items: items,
       logs: logsRes && logsRes.data ? logsRes.data : [],
-      audit_trails: auditRes && auditRes.data ? auditRes.data : []
+      audit_trails: authUser.role === 'COUNTER' ? [] : (auditRes && auditRes.data ? auditRes.data : [])
     });
   }
 
-  // 6. Record Stock Count
+  // 6. Record Stock Count (Protected)
   if (reqUrl.endsWith('/api/stock/count') && reqMethod === 'POST') {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized: Authentication required to submit inventory counts' });
+    }
+
     const body = await parseBody(req);
     if (deepScanPayload(body)) {
       return sendJson(400, { error: 'Malicious payload detected' });
@@ -320,15 +390,19 @@ module.exports = async function handler(req, res) {
       batch_no: item.batch_no || '',
       location: item.zone_location || '',
       qty_counted: qty,
-      counted_by: body.counted_by || 'counter',
+      counted_by: authUser.username || body.counted_by || 'counter',
       timestamp: now
     });
 
     return sendJson(200, { success: true, item });
   }
 
-  // 7. Audit
+  // 7. Audit (Protected - Restricted to Supervisors & Admins)
   if (reqUrl.endsWith('/api/audit') && reqMethod === 'GET') {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser || authUser.role === 'COUNTER') {
+      return sendJson(403, { error: 'Forbidden: Audit trail access restricted to Supervisors and Administrators' });
+    }
     const sbAuditRes = await supabaseRequest('audit_trails?select=*&order=timestamp.desc&limit=2000');
     return sendJson(200, { audit_trails: sbAuditRes && sbAuditRes.data ? sbAuditRes.data : [] });
   }

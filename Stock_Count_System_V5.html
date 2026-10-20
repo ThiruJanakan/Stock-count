@@ -1280,19 +1280,36 @@
     }
 
     @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: flex !important;
+      }
+      .tab-bar-container {
+        display: none !important;
+      }
+      .mobile-bottom-bar.active-session {
+        display: flex !important;
+      }
       .top-nav {
-        padding: 0.5rem 0.75rem;
+        padding: 0.55rem 0.85rem !important;
+        justify-content: space-between;
+      }
+      .nav-actions {
+        gap: 0.45rem !important;
+      }
+      .nav-actions .user-pill,
+      .nav-actions button:not(.mobile-menu-btn):not(#headerThemeToggleBtn) {
+        display: none !important;
       }
       .brand-logo-badge {
-        width: 30px;
-        height: 30px;
-        font-size: 0.95rem;
+        width: 32px;
+        height: 32px;
+        min-width: 44px;
       }
       .brand-text p {
         display: none;
       }
       .brand-text h1 {
-        font-size: 0.88rem;
+        font-size: 0.9rem;
       }
       .engine-status-pill span#engineStatusText {
         display: none;
@@ -1300,34 +1317,12 @@
       .engine-status-pill {
         padding: 0.28rem 0.4rem;
       }
-      .user-pill div:last-child {
-        display: none !important;
-      }
-      .user-avatar {
-        width: 24px;
-        height: 24px;
-        font-size: 0.7rem;
-      }
-      .tab-bar-container {
-        padding: 0 0.4rem;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-      }
-      .tab-bar-container::-webkit-scrollbar {
-        display: none;
-      }
-      .nav-tab-btn {
-        padding: 0.65rem 0.7rem;
-        font-size: 0.76rem;
-        gap: 0.35rem;
-        flex-shrink: 0;
-      }
-      .nav-tab-btn i {
-        width: 14px !important;
-        height: 14px !important;
-      }
       .main-content {
-        padding: 0.65rem 0.55rem;
+        padding: 0.75rem 0.65rem 5rem 0.65rem !important;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.65rem !important;
       }
       .card {
         padding: 0.9rem;
@@ -1491,6 +1486,248 @@
       }
     }
 
+    /* ==========================================================================
+       MOBILE NAVIGATION DRAWER & BOTTOM BAR STYLES
+       ========================================================================== */
+    .mobile-menu-btn {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-md);
+      width: 38px;
+      height: 38px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-xs);
+      flex-shrink: 0;
+    }
+    .mobile-menu-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .mobile-menu-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Mobile Drawer Backdrop */
+    .mobile-drawer-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 99998;
+      opacity: 0;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mobile-drawer-backdrop.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Mobile Navigation Drawer Panel */
+    .mobile-nav-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(86vw, 340px);
+      height: 100%;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      box-shadow: 12px 0 35px -5px rgba(0, 0, 0, 0.3);
+      z-index: 99999;
+      transform: translateX(-100%);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .mobile-nav-drawer.open {
+      transform: translateX(0);
+    }
+
+    .mobile-drawer-header {
+      padding: 1rem 1.15rem;
+      padding-top: max(1rem, env(safe-area-inset-top));
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .mobile-drawer-user-card {
+      margin: 0.85rem 0.85rem 0.4rem 0.85rem;
+      padding: 0.85rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mobile-drawer-nav-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.65rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .mobile-drawer-section-title {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      padding: 0.4rem 0.6rem 0.2rem 0.6rem;
+    }
+
+    .mobile-drawer-link {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.75rem 0.85rem;
+      border-radius: var(--radius-md);
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      width: 100%;
+    }
+    .mobile-drawer-link:hover {
+      background: var(--bg-card-hover);
+      color: var(--text);
+    }
+    .mobile-drawer-link.active {
+      background: var(--accent-subtle);
+      border-color: rgba(2, 132, 199, 0.2);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .mobile-link-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      flex-shrink: 0;
+      transition: all 0.18s ease;
+    }
+    .mobile-drawer-link.active .mobile-link-icon-wrap {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+    .mobile-drawer-link i {
+      width: 18px;
+      height: 18px;
+    }
+    .mobile-link-text {
+      flex: 1;
+    }
+
+    .mobile-drawer-footer {
+      padding: 0.85rem 1rem;
+      padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+    }
+
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+      z-index: 99990;
+      padding-bottom: env(safe-area-inset-bottom);
+      align-items: center;
+      justify-content: space-around;
+      box-sizing: content-box;
+    }
+    .mobile-bottom-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.15s ease;
+      gap: 3px;
+      padding: 0;
+    }
+    .mobile-bottom-tab i {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.15s ease;
+    }
+    .mobile-bottom-tab.active {
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .mobile-bottom-tab.active i {
+      transform: translateY(-1px);
+    }
+    .mobile-bottom-tab.scan-tab-hero {
+      position: relative;
+      top: -12px;
+    }
+    .scan-tab-icon-ring {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, #0369a1 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.45);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 3px solid var(--bg-surface);
+    }
+    .mobile-bottom-tab.scan-tab-hero.active .scan-tab-icon-ring {
+      transform: scale(1.08);
+      box-shadow: 0 8px 22px rgba(2, 132, 199, 0.6);
+    }
+    .scan-tab-icon-ring i {
+      width: 24px;
+      height: 24px;
+    }
+
     /* Print Styles */
     @media print {
       .top-nav, .tab-bar-container, .floating-corner-scanner-btn,
@@ -1553,8 +1790,118 @@
         <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
         <span>Sign Out</span>
       </button>
+
+      <!-- Mobile Navigation Hamburger Menu Toggle Button -->
+      <button class="mobile-menu-btn" id="mobileMenuOpenBtn" onclick="toggleMobileNavDrawer(true)" aria-label="Open Navigation Menu" title="Open Navigation Menu">
+        <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
+      </button>
     </div>
   </header>
+
+  <!-- Mobile Navigation Drawer Overlay Backdrop -->
+  <div id="mobileDrawerBackdrop" class="mobile-drawer-backdrop" onclick="toggleMobileNavDrawer(false)"></div>
+
+  <!-- Mobile Navigation Drawer Panel (Slides in from Left) -->
+  <aside id="mobileNavDrawer" class="mobile-nav-drawer" aria-label="Mobile Navigation Menu">
+    <div class="mobile-drawer-header">
+      <div class="brand-section" style="margin: 0; gap: 0.65rem;">
+        <div class="brand-logo-badge" style="background: #ffffff; padding: 2px 6px; border: 1px solid rgba(0,0,0,0.1); width: auto; height: 34px; min-width: 44px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
+          <img src="assets/lina_logo.jpg" alt="Lina Logo" style="height: 24px; width: auto; object-fit: contain;" onerror="if(typeof LINA_LOGO_DATA!=='undefined') this.src=LINA_LOGO_DATA;" />
+        </div>
+        <div class="brand-text">
+          <h2 style="font-size: 0.95rem; font-weight: 800; margin: 0; color: var(--text);">Lina Manufacturing</h2>
+          <p style="font-size: 0.7rem; color: var(--text-dim); margin: 0;">Stock Verification Cloud</p>
+        </div>
+      </div>
+      <button class="btn-icon" onclick="toggleMobileNavDrawer(false)" aria-label="Close Navigation Drawer" style="background: var(--bg-card-hover); border: 1px solid var(--border); border-radius: var(--radius-md); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text);">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Drawer User Profile Card -->
+    <div class="mobile-drawer-user-card">
+      <div class="user-avatar" id="mobileDrawerUserInitial" style="width: 40px; height: 40px; font-size: 1.1rem; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--accent) 0%, #0369a1 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: var(--shadow-sm);">A</div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 0.92rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="mobileDrawerUserName">Central Admin</div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+          <span class="badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(2, 132, 199, 0.12); color: var(--accent); padding: 2px 8px; border-radius: 9999px;" id="mobileDrawerUserRole">ADMIN</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--accent-emerald); font-weight: 600;">
+            <span class="pulse-dot" style="width: 6px; height: 6px; background: var(--accent-emerald);"></span> Connected
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer Links -->
+    <div class="mobile-drawer-nav-list" id="mobileDrawerNavList">
+      <div class="mobile-drawer-section-title">Navigation Views</div>
+      
+      <button class="mobile-drawer-link active" data-view="dashboard" onclick="mobileNavigateTo('dashboard')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="layout-dashboard"></i></div>
+        <span class="mobile-link-text">Live Dashboard</span>
+      </button>
+
+      <button class="mobile-drawer-link" data-view="counting" onclick="mobileNavigateTo('counting')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="scan-barcode"></i></div>
+        <span class="mobile-link-text">Counter Scanning</span>
+        <span class="tab-badge" id="mobileScanCountBadge" style="margin-left: auto;">0</span>
+      </button>
+
+      <button class="mobile-drawer-link" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="scale"></i></div>
+        <span class="mobile-link-text">Reconciliation & Variances</span>
+      </button>
+
+      <button class="mobile-drawer-link admin-only" data-view="upload" onclick="mobileNavigateTo('upload')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="file-spreadsheet"></i></div>
+        <span class="mobile-link-text">Upload Data Sheet</span>
+      </button>
+
+      <button class="mobile-drawer-link admin-only" data-view="sessions" onclick="mobileNavigateTo('sessions')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="calendar"></i></div>
+        <span class="mobile-link-text">Count Sessions</span>
+      </button>
+
+      <button class="mobile-drawer-link admin-only" data-view="users" onclick="mobileNavigateTo('users')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="users"></i></div>
+        <span class="mobile-link-text">User Management</span>
+      </button>
+
+      <button class="mobile-drawer-link admin-only" data-view="audit" onclick="mobileNavigateTo('audit')">
+        <div class="mobile-link-icon-wrap"><i data-lucide="shield-check"></i></div>
+        <span class="mobile-link-text">Audit Trail & Ledger</span>
+      </button>
+
+      <div class="mobile-drawer-section-title" style="margin-top: 1rem;">System &amp; Preferences</div>
+
+      <!-- Theme Switcher in Drawer -->
+      <button class="mobile-drawer-link" onclick="toggleTheme(); updateMobileThemeLabels();">
+        <div class="mobile-link-icon-wrap"><i data-lucide="moon" id="mobileDrawerThemeIcon"></i></div>
+        <span class="mobile-link-text" id="mobileDrawerThemeText">Switch to Dark Mode</span>
+      </button>
+
+      <!-- Install as Mobile App in Drawer -->
+      <button class="mobile-drawer-link" onclick="triggerPwaInstall()">
+        <div class="mobile-link-icon-wrap"><i data-lucide="smartphone"></i></div>
+        <span class="mobile-link-text">Install as Mobile App</span>
+        <span style="margin-left: auto; background: rgba(2, 132, 199, 0.15); color: var(--accent); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">PWA</span>
+      </button>
+
+      <!-- Quick Full Backup in Drawer (Admin Exclusive) -->
+      <button class="mobile-drawer-link admin-exclusive" onclick="exportFullSystemBackup(); toggleMobileNavDrawer(false);">
+        <div class="mobile-link-icon-wrap"><i data-lucide="hard-drive-download"></i></div>
+        <span class="mobile-link-text">Download Backup (.json)</span>
+      </button>
+    </div>
+
+    <!-- Drawer Footer Sign Out -->
+    <div class="mobile-drawer-footer">
+      <button class="btn btn-secondary btn-lg" onclick="toggleMobileNavDrawer(false); handleLogout();" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.6rem; color: var(--accent-rose); border-color: rgba(220, 38, 38, 0.25); background: var(--accent-rose-subtle); font-weight: 700;">
+        <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+        <span>Sign Out</span>
+      </button>
+    </div>
+  </aside>
 
   <!-- Navigation Tab Bar -->
   <div class="tab-bar-container" id="appTabBar" style="display: none;">
@@ -3007,10 +3354,10 @@
     // Initial default database state (Cryptographically Salted Hashes)
     const DEFAULT_DB = {
       users: [
-        { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", password_salt: "a8f5b2c1d0e9478291f038572bcae142", password_hash: "e565cf7400deddb134e20c56b5f8fd27569eb2a6077e022b749fa8f295c9d69c", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-sup", username: "supervisor1", full_name: "Floor Supervisor", role: "SUPERVISOR", password_salt: "b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6", password_hash: "5ea5f9ac90ee3e3054ec99177576012049b4e92f555147ce8e5820d4e0153709", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", password_salt: "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8", password_hash: "6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", password_salt: "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9", password_hash: "cebe37c591e6e9dc92a53426a023d1abf4eaa000cc80fa19c50e4e6d67d530d2", is_active: true, created_at: new Date().toISOString() }
+        { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, created_at: new Date().toISOString() },
+        { id: "u-sup", username: "supervisor1", full_name: "Floor Supervisor", role: "SUPERVISOR", is_active: true, created_at: new Date().toISOString() },
+        { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, created_at: new Date().toISOString() },
+        { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, created_at: new Date().toISOString() }
       ],
       sessions: [
         {
@@ -3750,6 +4097,12 @@
       document.getElementById('appHeader').style.display = 'none';
       document.getElementById('appTabBar').style.display = 'none';
       document.getElementById('sessionBanner').style.display = 'none';
+      const mBottom = document.getElementById('mobileBottomBar');
+      if (mBottom) {
+        mBottom.classList.remove('active-session');
+        mBottom.style.display = 'none';
+      }
+      toggleMobileNavDrawer(false);
       document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
     }
 
@@ -3759,9 +4112,25 @@
       document.getElementById('appTabBar').style.display = 'block';
       document.getElementById('sessionBanner').style.display = 'flex';
 
-      document.getElementById('navUserName').textContent = currentUser.full_name || currentUser.username;
+      const userName = currentUser.full_name || currentUser.username;
+      document.getElementById('navUserName').textContent = userName;
       document.getElementById('navUserRole').textContent = currentUser.role;
-      document.getElementById('navUserInitial').textContent = (currentUser.full_name || currentUser.username).charAt(0).toUpperCase();
+      document.getElementById('navUserInitial').textContent = userName.charAt(0).toUpperCase();
+
+      // Update Mobile Drawer Profile
+      const mName = document.getElementById('mobileDrawerUserName');
+      if (mName) mName.textContent = userName;
+      const mRole = document.getElementById('mobileDrawerUserRole');
+      if (mRole) mRole.textContent = currentUser.role;
+      const mInit = document.getElementById('mobileDrawerUserInitial');
+      if (mInit) mInit.textContent = userName.charAt(0).toUpperCase();
+
+      const mBottom = document.getElementById('mobileBottomBar');
+      if (mBottom) {
+        mBottom.classList.add('active-session');
+        mBottom.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+      }
+      updateMobileThemeLabels();
 
       // Show/hide admin, manager & supervisor tabs
       const isManager = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER';
@@ -3900,7 +4269,10 @@
 
           // Try syncing authoritative database
           try {
-            const dbRes = await fetch('/api/stock/db');
+            const dbRes = await fetch('/api/stock/db', {
+              headers: { 'Authorization': `Bearer ${data.token}` },
+              credentials: 'same-origin'
+            });
             if (dbRes.ok) {
               const serverDb = await dbRes.json();
               if (serverDb && serverDb.items) {
@@ -4046,11 +4418,18 @@
 
       document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
       document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.mobile-drawer-link').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.mobile-bottom-tab').forEach(btn => btn.classList.remove('active'));
 
       const targetSec = document.getElementById(`view-${viewName}`);
       const targetBtn = document.querySelector(`.nav-tab-btn[data-view="${viewName}"]`);
+      const targetDrawerBtn = document.querySelector(`.mobile-drawer-link[data-view="${viewName}"]`);
+      const targetBottomTab = document.querySelector(`.mobile-bottom-tab[data-view="${viewName}"]`);
+
       if (targetSec) targetSec.classList.add('active');
       if (targetBtn) targetBtn.classList.add('active');
+      if (targetDrawerBtn) targetDrawerBtn.classList.add('active');
+      if (targetBottomTab) targetBottomTab.classList.add('active');
 
       if (viewName === 'dashboard') {
         updateMetricsAndFeeds();
@@ -4080,6 +4459,46 @@
 
       lucide.createIcons();
     }
+
+    // ==========================================
+    // MOBILE NAVIGATION DRAWER & CONTROLLERS
+    // ==========================================
+    function toggleMobileNavDrawer(isOpen) {
+      const drawer = document.getElementById('mobileNavDrawer');
+      const backdrop = document.getElementById('mobileDrawerBackdrop');
+      if (!drawer || !backdrop) return;
+      if (isOpen) {
+        backdrop.classList.add('active');
+        drawer.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      } else {
+        backdrop.classList.remove('active');
+        drawer.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function mobileNavigateTo(viewName) {
+      switchView(viewName);
+      toggleMobileNavDrawer(false);
+    }
+
+    function updateMobileThemeLabels() {
+      const isDark = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+      const mIcon = document.getElementById('mobileDrawerThemeIcon');
+      const mText = document.getElementById('mobileDrawerThemeText');
+      if (mIcon) mIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+      if (mText) mText.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    window.addEventListener('resize', () => {
+      const mBottom = document.getElementById('mobileBottomBar');
+      if (mBottom && currentUser) {
+        mBottom.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+      }
+    });
 
     // ==========================================
     // SESSIONS & REFRESH LOGIC
@@ -4716,7 +5135,13 @@
       showToast(`+${qty} recorded for ${activeScannedItem.sku}!`, 'success');
 
       myScansCount++;
-      document.getElementById('myScanCountBadge').textContent = myScansCount;
+      const topBadge = document.getElementById('myScanCountBadge');
+      if (topBadge) topBadge.textContent = myScansCount;
+      const bBadge = document.getElementById('bottomScanBadge');
+      if (bBadge) {
+        bBadge.textContent = myScansCount;
+        bBadge.style.display = myScansCount > 0 ? 'inline-block' : 'none';
+      }
       addMyRecentScanRow(activeScannedItem, qty);
 
       // Reset
@@ -7020,7 +7445,50 @@
     .pwa-install-btn:active {
       transform: translateY(1px);
     }
+    .mobile-bottom-tab .tab-badge {
+      position: absolute;
+      top: 3px;
+      right: 22%;
+      background: var(--accent-rose);
+      color: #ffffff;
+      font-size: 0.6rem;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 9999px;
+      min-width: 16px;
+      text-align: center;
+      line-height: 1.2;
+    }
+    @media (max-width: 768px) {
+      .pwa-install-banner-wrap {
+        bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+        width: calc(100% - 20px) !important;
+      }
+    }
   </style>
+
+  <!-- Mobile Fixed Bottom Navigation Bar -->
+  <nav id="mobileBottomBar" class="mobile-bottom-bar" style="display: none;" aria-label="Mobile Bottom Navigation">
+    <button class="mobile-bottom-tab active" data-view="dashboard" onclick="mobileNavigateTo('dashboard')" aria-label="Dashboard">
+      <i data-lucide="layout-dashboard"></i>
+      <span>Dashboard</span>
+    </button>
+    <button class="mobile-bottom-tab scan-tab-hero" data-view="counting" onclick="mobileNavigateTo('counting')" aria-label="Scan Barcode">
+      <div class="scan-tab-icon-ring">
+        <i data-lucide="scan-barcode"></i>
+      </div>
+      <span>Scan</span>
+      <span class="tab-badge" id="bottomScanBadge" style="display: none;">0</span>
+    </button>
+    <button class="mobile-bottom-tab" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')" aria-label="Discrepancies">
+      <i data-lucide="scale"></i>
+      <span>Variances</span>
+    </button>
+    <button class="mobile-bottom-tab" onclick="toggleMobileNavDrawer(true)" aria-label="Open Navigation Menu">
+      <i data-lucide="menu"></i>
+      <span>Menu</span>
+    </button>
+  </nav>
 
   <div id="pwaInstallBanner" class="pwa-install-banner-wrap">
     <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
