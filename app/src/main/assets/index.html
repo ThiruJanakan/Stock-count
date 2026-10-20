@@ -968,419 +968,34 @@
       flex-wrap: wrap;
     }
     .session-banner-actions-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .login-logo-container {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 8px 18px;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    .login-logo-img {
-      height: 48px;
-      width: auto;
-      object-fit: contain;
-      display: block;
-    }
-
-    .demo-users-pills {
-      display: flex;
-      gap: 0.45rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 1.25rem;
-      padding-top: 1.15rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .demo-pill {
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.73rem;
-      font-weight: 600;
-      padding: 0.32rem 0.65rem;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .demo-pill:hover {
-      border-color: var(--accent);
-      color: var(--text);
-      background: var(--accent-subtle);
-    }
-
-    /* Live Feed */
-    .live-feed-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      max-height: 380px;
-      overflow-y: auto;
-      padding-right: 0.2rem;
-    }
-
-    .feed-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.6rem 0.85rem;
-      background: rgba(255, 255, 255, 0.015);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      transition: background 0.15s ease;
-    }
-
-    .feed-item:hover {
-      background: rgba(255, 255, 255, 0.035);
-    }
-
-    /* Toast Notifications */
-    .toast-container {
-      position: fixed;
-      bottom: 1.25rem;
-      right: 1.25rem;
-      z-index: 200;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      pointer-events: none;
-      max-width: 380px;
-    }
-
-    .toast {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.75rem 1.15rem;
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-md);
-      font-size: 0.82rem;
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      pointer-events: auto;
-    }
-
-    .toast.success { border-left: 3px solid var(--accent-emerald); }
-    .toast.error { border-left: 3px solid var(--accent-rose); }
-    .toast.info { border-left: 3px solid var(--accent); }
-
-    /* Corner Floating Scanner Utility */
-    .floating-corner-scanner-btn {
-      position: fixed;
-      bottom: 1.5rem;
-      left: 1.5rem;
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-md);
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: var(--shadow-md);
-      cursor: pointer;
-      z-index: 85;
-      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .floating-corner-scanner-btn:hover {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent-hover);
-    }
-
-    .counter-controls-bar {
-      display: grid;
-      grid-template-columns: minmax(200px, 2fr) minmax(150px, 1fr) minmax(140px, 1fr) auto;
-      gap: 0.65rem;
-      margin-bottom: 0.75rem;
-      align-items: center;
-    }
-
-    /* Modal Dialogs */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(3, 7, 18, 0.75);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .custom-modal-dialog {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      max-width: 480px;
-      width: 100%;
-      padding: 1.5rem;
-    }
-
-    .modal-icon-badge {
-      width: 42px;
-      height: 42px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .modal-icon-badge.danger {
-      background: var(--accent-rose-subtle);
-      border: 1px solid rgba(220, 38, 38, 0.28);
-      color: var(--accent-rose);
-    }
-
-    .modal-icon-badge.warning {
-      background: var(--accent-amber-subtle);
-      border: 1px solid rgba(217, 119, 6, 0.28);
-      color: var(--accent-amber);
-    }
-
-    .modal-icon-badge.info {
-      background: var(--accent-subtle);
-      border: 1px solid rgba(2, 132, 199, 0.28);
-      color: var(--accent);
-    }
-
-    .modal-icon-badge.success {
-      background: var(--accent-emerald-subtle);
-      border: 1px solid rgba(5, 150, 105, 0.28);
-      color: var(--accent-emerald);
-    }
-
-    .modal-actions-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.65rem;
-      margin-top: 1.35rem;
-    }
-
-    /* Session Mode Option Cards */
-    .session-mode-card {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 0.9rem 1rem;
-      background: var(--bg-card);
-      cursor: pointer;
-      transition: border-color 0.15s ease, background 0.15s ease;
-    }
-
-    .session-mode-card:hover {
-      border-color: var(--border-focus);
-      background: var(--bg-card-hover);
-    }
-
-    .session-mode-card.active {
-      border-color: var(--accent);
-      background: var(--accent-subtle);
-    }
-
-    .mode-icon-box {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .mode-icon-box.blind {
-      background: var(--accent-amber-subtle);
-      color: var(--accent-amber);
-      border: 1px solid rgba(217, 119, 6, 0.28);
-    }
-
-    .mode-icon-box.strict {
-      background: var(--accent-rose-subtle);
-      color: var(--accent-rose);
-      border: 1px solid rgba(220, 38, 38, 0.28);
-    }
-
-    .mode-icon-box.open {
-      background: var(--accent-subtle);
-      color: var(--accent);
-      border: 1px solid rgba(2, 132, 199, 0.28);
-    }
-
-    /* Expiry & Batch Risk Badges */
-    .badge-expired {
-      background: var(--accent-rose-subtle);
-      border: 1px solid rgba(220, 38, 38, 0.35);
-      color: var(--accent-rose);
-      font-weight: 700;
-      font-size: 0.72rem;
-    }
-    .badge-critical {
-      background: #fff7ed;
-      border: 1px solid rgba(234, 88, 12, 0.35);
-      color: #ea580c;
-      font-weight: 700;
-      font-size: 0.72rem;
-    }
-    .badge-warning-shelf {
-      background: var(--accent-amber-subtle);
-      border: 1px solid rgba(217, 119, 6, 0.35);
-      color: var(--accent-amber);
-      font-weight: 700;
-      font-size: 0.72rem;
-    }
-    .badge-healthy-shelf {
-      background: var(--accent-emerald-subtle);
-      border: 1px solid rgba(5, 150, 105, 0.35);
-      color: var(--accent-emerald);
-      font-weight: 700;
-      font-size: 0.72rem;
-    }
-
-    /* Shelf-Life Segmented Visual Progress Gauge */
-    .expiry-gauge-track {
-      display: flex;
-      height: 10px;
-      width: 100%;
-      background: var(--bg-card-hover);
-      border-radius: var(--radius-xs);
-      overflow: hidden;
-      margin: 0.75rem 0;
-      border: 1px solid var(--border-subtle);
-    }
-    .expiry-gauge-seg {
-      height: 100%;
-      transition: width 0.3s ease;
-    }
-    .expiry-gauge-seg.seg-expired { background: var(--accent-rose); }
-    .expiry-gauge-seg.seg-critical { background: #ea580c; }
-    .expiry-gauge-seg.seg-warning { background: var(--accent-amber); }
-    .expiry-gauge-seg.seg-healthy { background: var(--accent-emerald); }
-
-    /* Audit Log Pills & Category Filters */
-    .audit-filter-pills {
-      display: flex;
-      gap: 0.45rem;
-      flex-wrap: wrap;
-    }
-    .audit-cat-pill {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.35rem 0.65rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: all 0.15s ease;
-    }
-    .audit-cat-pill:hover {
-      background: var(--bg-card-hover);
-      color: var(--text);
-    }
-    .audit-cat-pill.active {
-      background: var(--accent);
-      color: #ffffff;
-      border-color: var(--accent-hover);
-    }
-
-    /* Backup Cards */
-    .backup-meta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 0.75rem;
-      margin-top: 0.85rem;
-    }
-    .backup-stat-chip {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem 0.75rem;
-      text-align: center;
-    }
-    .backup-stat-chip .val {
-      font-size: 1.25rem;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      color: var(--accent);
-    }
-    .backup-stat-chip .lbl {
-      font-size: 0.68rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      font-weight: 700;
-      margin-top: 2px;
-    }
-
-    /* Comprehensive Smartphone Mobile Responsiveness */
-    @media (max-width: 900px) {
-      .counter-controls-bar {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      /* Single unified Menu access: Bottom nav bar provides the thumb-friendly Menu tab */
-      .mobile-menu-btn {
-        display: none !important;
-      }
-      .tab-bar-container {
-        display: none !important;
-      }
-      .mobile-bottom-bar.active-session {
-        display: flex !important;
-      }
-      .session-banner {
-        padding: 0.85rem !important;
-        gap: 0.65rem !important;
-      }
-      .session-banner-info {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
         width: 100% !important;
-        flex: 1 1 100% !important;
-      }
-      .session-banner-actions {
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.45rem !important;
-      }
-      .session-banner-actions-row {
-        display: flex !important;
-        gap: 0.4rem !important;
-        width: 100% !important;
-        flex-wrap: wrap !important;
+        box-sizing: border-box !important;
       }
       .session-banner-actions-row .btn {
-        flex: 1 1 calc(50% - 0.25rem) !important;
-        min-width: 120px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        display: inline-flex !important;
+        align-items: center !important;
         justify-content: center !important;
-        padding: 0.45rem 0.5rem !important;
-        font-size: 0.76rem !important;
+        gap: 0.35rem !important;
+        padding: 0.52rem 0.35rem !important;
+        font-size: 0.74rem !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+      .session-banner-actions-row .btn span {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        min-width: 0 !important;
+      }
+      .session-banner-actions-row .btn:last-child:nth-child(odd) {
+        grid-column: 1 / -1 !important;
       }
       .session-banner-actions #sessionSelector {
         width: 100% !important;
@@ -4874,33 +4489,28 @@
         }
 
         // Blind Mode banner button
-        const blindBtnText = document.getElementById('bannerBlindBtnText');
-        const blindIcon = document.getElementById('bannerBlindIcon');
-        if (blindBtnText && blindIcon) {
+        const blindBtn = document.getElementById('bannerToggleBlindBtn');
+        if (blindBtn) {
           if (mode === 'BLIND_ALL') {
-            blindBtnText.textContent = "System Qty: Hidden (Counters & Sup)";
-            blindIcon.setAttribute('data-lucide', 'shield-alert');
-            blindIcon.style.color = '#f87171';
+            blindBtn.innerHTML = '<i data-lucide="shield-alert" style="width: 14px; height: 14px; color: #f87171; flex-shrink: 0;"></i><span id="bannerBlindBtnText">Blind: Strict</span>';
+            blindBtn.title = 'Strict Blind Mode: System Qty is hidden from Counters & Executives';
           } else if (mode === 'BLIND_COUNT') {
-            blindBtnText.textContent = "System Qty: Hidden (Counters Only)";
-            blindIcon.setAttribute('data-lucide', 'eye-off');
-            blindIcon.style.color = '#f59e0b';
+            blindBtn.innerHTML = '<i data-lucide="eye-off" style="width: 14px; height: 14px; color: #f59e0b; flex-shrink: 0;"></i><span id="bannerBlindBtnText">Blind: Counters</span>';
+            blindBtn.title = 'Blind Count: System Qty is hidden from Counters (Visible to Executives & Admins)';
           } else {
-            blindBtnText.textContent = "System Qty: Visible (Open)";
-            blindIcon.setAttribute('data-lucide', 'eye');
-            blindIcon.style.color = '#38bdf8';
+            blindBtn.innerHTML = '<i data-lucide="eye" style="width: 14px; height: 14px; color: #38bdf8; flex-shrink: 0;"></i><span id="bannerBlindBtnText">Blind: Off (Open)</span>';
+            blindBtn.title = 'Open Count: System Qty is visible to all users';
           }
         }
 
-        const lockBtnText = document.getElementById('bannerLockBtnText');
-        const lockIcon = document.getElementById('bannerLockIcon');
-        if (lockBtnText && lockIcon) {
+        const lockBtn = document.getElementById('bannerLockSessionBtn');
+        if (lockBtn) {
           if (isClosed) {
-            lockBtnText.textContent = "Reopen Session";
-            lockIcon.setAttribute('data-lucide', 'unlock');
+            lockBtn.innerHTML = '<i data-lucide="unlock" style="width: 14px; height: 14px; color: #34d399; flex-shrink: 0;"></i><span id="bannerLockBtnText">Reopen</span>';
+            lockBtn.title = 'Session is Closed & Locked. Click to Reopen.';
           } else {
-            lockBtnText.textContent = "Close & Lock";
-            lockIcon.setAttribute('data-lucide', 'lock');
+            lockBtn.innerHTML = '<i data-lucide="lock" style="width: 14px; height: 14px; flex-shrink: 0;"></i><span id="bannerLockBtnText">Close & Lock</span>';
+            lockBtn.title = 'Close and Lock Session';
           }
         }
 
