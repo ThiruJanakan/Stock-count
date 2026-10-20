@@ -2166,7 +2166,7 @@
       </div>
 
       <div class="session-banner-actions">
-        <select class="form-select admin-only" id="sessionSelector" onchange="changeActiveSession(this.value)">
+        <select class="form-select" id="sessionSelector" onchange="changeActiveSession(this.value)">
           <option value="">Loading Sessions...</option>
         </select>
 
@@ -2733,10 +2733,10 @@
         </div>
       </div>
 
-      <!-- Parsed Data Preview -->
+      <!-- Parsed Data Preview & Session Activation -->
       <div class="card" id="sheetPreviewCard" style="display: none;">
         <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
-          <span>Spreadsheet Preview (<span id="parsedRowCount">0</span> rows detected)</span>
+          <span>Spreadsheet Ready (<span id="parsedRowCount">0</span> items detected)</span>
           <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
             <button class="btn btn-danger btn-sm" id="removeSelectedPreviewBtn" onclick="removeSelectedPreviewItems()" style="display: none;" title="Remove selected rows from this spreadsheet before committing">
               <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
@@ -2746,10 +2746,40 @@
               <i data-lucide="map-pin-off" style="width: 14px; height: 14px;"></i>
               <span>Remove Zone from Preview</span>
             </button>
-            <button class="btn btn-success btn-sm" id="commitSheetBtn" onclick="commitSheetToSession()">
-              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
-              <span>Commit to Active Session</span>
+            <button class="btn btn-secondary btn-sm" id="commitSheetBtn" onclick="commitSheetToSession()" title="Append or merge these items into the current active session">
+              <i data-lucide="file-plus" style="width: 14px; height: 14px;"></i>
+              <span>Append to Active Session</span>
             </button>
+          </div>
+        </div>
+
+        <!-- NEW SESSION ACTIVATION PANEL -->
+        <div style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; color: var(--accent); font-weight: 700; font-size: 0.95rem;">
+            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+            <span>Activate Uploaded Sheet as a New Count Session</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; align-items: end;">
+            <div>
+              <label class="form-label" style="font-weight: 700; color: var(--text);">Session Name / Title <span style="color: var(--accent-rose);">*</span></label>
+              <input type="text" id="uploadSessionTitleInput" class="form-input" placeholder="e.g. Raw Materials Stock Count - October 2026" />
+              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Visible to all operators in the session selector.</div>
+            </div>
+            <div>
+              <label class="form-label" style="font-weight: 700; color: var(--text);">Count Mode (Blind vs Open)</label>
+              <select id="uploadSessionCountTypeSelect" class="form-select">
+                <option value="BLIND_COUNT" selected>Blind Count (System Qty hidden from counters)</option>
+                <option value="BLIND_ALL">Strict Blind (Hidden from counters & executives)</option>
+                <option value="OPEN_COUNT">Open Count (System Qty visible to all)</option>
+              </select>
+              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Determines whether book quantities are hidden while scanning.</div>
+            </div>
+            <div>
+              <button class="btn btn-success" id="activateUploadedSessionBtn" onclick="activateUploadedDatasheetSession()" style="width: 100%; justify-content: center; height: 42px; font-weight: 700; font-size: 0.92rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
+                <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
+                <span>Activate as Active Session</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3633,197 +3663,10 @@
         { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, created_at: new Date().toISOString() },
         { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, created_at: new Date().toISOString() }
       ],
-      sessions: [
-        {
-          id: "ses-101",
-          session_code: "SES-" + new Date().toISOString().slice(0, 10).replace(/-/g, '') + "-01",
-          title: "Main Warehouse Stock Verification - Cycle 1",
-          description: "Centralized Count for Raw Materials and Finished Goods",
-          count_type: "BLIND_COUNT",
-          status: "ACTIVE",
-          total_items: 0,
-          counted_items: 0,
-          progress_percent: 0,
-          created_at: new Date().toISOString()
-        }
-      ],
-      items: [
-        {
-          id: "item-seed-1",
-          session_id: "ses-101",
-          sku: "RM-PARA-001",
-          item_name: "Paracetamol Micronized IP Powder (50kg)",
-          barcode: "8901234000101",
-          batch_no: "BAT-PARA-2401",
-          expiry_date: "2027-08-30",
-          zone_location: "Aisle 1 - Raw Materials",
-          system_qty: 40,
-          total_counted_qty: 0,
-          variance_qty: -40,
-          uom: "DRUM",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-2",
-          session_id: "ses-101",
-          sku: "RM-AMOX-002",
-          item_name: "Amoxicillin Trihydrate Compacted Powder (25kg)",
-          barcode: "8901234000102",
-          batch_no: "BAT-AMOX-2309",
-          expiry_date: "2026-11-08",
-          zone_location: "Aisle 1 - Raw Materials",
-          system_qty: 25,
-          total_counted_qty: 0,
-          variance_qty: -25,
-          uom: "DRUM",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-3",
-          session_id: "ses-101",
-          sku: "PM-BLIS-010",
-          item_name: "Aluminium Blister Printed Foil 250mm",
-          barcode: "8901234000103",
-          batch_no: "PKG-FOIL-2405",
-          expiry_date: "2028-05-15",
-          zone_location: "Aisle 2 - Packaging",
-          system_qty: 150,
-          total_counted_qty: 0,
-          variance_qty: -150,
-          uom: "ROLL",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-4",
-          session_id: "ses-101",
-          sku: "PM-CART-022",
-          item_name: "Lina Paracetamol 500mg Outer Printed Cartons",
-          barcode: "8901234000104",
-          batch_no: "PKG-CART-2402",
-          expiry_date: "2029-01-01",
-          zone_location: "Aisle 2 - Packaging",
-          system_qty: 5000,
-          total_counted_qty: 0,
-          variance_qty: -5000,
-          uom: "PCS",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-5",
-          session_id: "ses-101",
-          sku: "PM-BOTT-035",
-          item_name: "Amber Glass Syrup Bottles 100ml USP Type III",
-          barcode: "8901234000105",
-          batch_no: "PKG-BOTT-2401",
-          expiry_date: "2030-01-01",
-          zone_location: "Aisle 3 - Containers",
-          system_qty: 12000,
-          total_counted_qty: 0,
-          variance_qty: -12000,
-          uom: "BTL",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-6",
-          session_id: "ses-101",
-          sku: "FG-PARA-500",
-          item_name: "Lina Paracetamol Tablets 500mg (10x10 Blister Pack)",
-          barcode: "8901234000106",
-          batch_no: "BAT-PARA-2304",
-          expiry_date: "2026-10-10",
-          zone_location: "Warehouse FG - Rack A",
-          system_qty: 850,
-          total_counted_qty: 0,
-          variance_qty: -850,
-          uom: "BOX",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-7",
-          session_id: "ses-101",
-          sku: "FG-COUGH-100",
-          item_name: "Lina Cough Expectorant Syrup 100ml Bottle",
-          barcode: "8901234000107",
-          batch_no: "BAT-SYRP-2402",
-          expiry_date: "2026-12-15",
-          zone_location: "Warehouse FG - Rack B",
-          system_qty: 620,
-          total_counted_qty: 0,
-          variance_qty: -620,
-          uom: "BTL",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "item-seed-8",
-          session_id: "ses-101",
-          sku: "FG-AMOX-250",
-          item_name: "Amoxicillin Oral Dry Suspension 250mg/5ml",
-          barcode: "8901234000108",
-          batch_no: "BAT-DRYS-2403",
-          expiry_date: "2026-11-20",
-          zone_location: "Warehouse FG - Rack C",
-          system_qty: 410,
-          total_counted_qty: 0,
-          variance_qty: -410,
-          uom: "BTL",
-          is_unlisted: false,
-          created_at: new Date().toISOString()
-        }
-      ],
-      logs: [],   // Append-only scan logs
-      audit_trails: [
-        {
-          id: "adt-seed-1",
-          timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-          user_id: "u-admin",
-          username: "admin",
-          role: "ADMIN",
-          action: "SESSION_CREATED",
-          category: "SESSION",
-          details: "Created Cycle Count Session: SES-01 (Main Warehouse Stock Verification)",
-          target: "ses-101"
-        },
-        {
-          id: "adt-seed-2",
-          timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
-          user_id: "u-admin",
-          username: "admin",
-          role: "ADMIN",
-          action: "USER_CREATED",
-          category: "USER_MGMT",
-          details: "Provisioned floor operator counter1 (Operator Alpha)",
-          target: "counter1"
-        },
-        {
-          id: "adt-seed-3",
-          timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-          user_id: "u-sup",
-          username: "executive1",
-          role: "EXECUTIVE",
-          action: "USER_CREATED",
-          category: "USER_MGMT",
-          details: "Floor Executive provisioned new counter operator counter2 (Operator Beta)",
-          target: "counter2"
-        },
-        {
-          id: "adt-seed-4",
-          timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-          user_id: "u-admin",
-          username: "admin",
-          role: "ADMIN",
-          action: "BLIND_MODE_CHANGED",
-          category: "AUDIT",
-          details: "Active session SES-01 configured to Blind Count mode (system quantities hidden from floor counters)",
-          target: "ses-101"
-        }
-      ]
+      sessions: [],
+      items: [],
+      logs: [],
+      audit_trails: []
     };
 
     // ==========================================
@@ -4027,25 +3870,30 @@
           });
           if (updatedUsers) saveDatabase(parsed);
         }
-        if (!parsed.items || parsed.items.length === 0) {
-          parsed.items = DEFAULT_DB.items;
-          saveDatabase(parsed);
+        if (!Array.isArray(parsed.sessions)) parsed.sessions = [];
+        if (!Array.isArray(parsed.items)) parsed.items = [];
+        if (!Array.isArray(parsed.logs)) parsed.logs = [];
+        if (!Array.isArray(parsed.audit_trails)) parsed.audit_trails = [];
+
+        // Purge legacy mock seed data (ses-101 and item-seed-*) from user storage
+        let needsSave = false;
+        if (parsed.sessions.some(s => s.id === 'ses-101' || (s.title && s.title.includes('Main Warehouse Stock Verification')))) {
+          parsed.sessions = parsed.sessions.filter(s => s.id !== 'ses-101' && !(s.title && s.title.includes('Main Warehouse Stock Verification')));
+          needsSave = true;
         }
-        // Ensure audit_trails array exists
-        if (!parsed.audit_trails || !Array.isArray(parsed.audit_trails) || parsed.audit_trails.length === 0) {
-          parsed.audit_trails = (DEFAULT_DB.audit_trails || []).slice();
-          saveDatabase(parsed);
+        if (parsed.items.some(i => i.session_id === 'ses-101' || String(i.id).startsWith('item-seed-'))) {
+          parsed.items = parsed.items.filter(i => i.session_id !== 'ses-101' && !String(i.id).startsWith('item-seed-'));
+          needsSave = true;
         }
-        // Sync pharmaceutical batch_no & expiry_date to items if missing
-        let itmsUpdated = false;
-        (parsed.items || []).forEach(itm => {
-          const seedMatch = DEFAULT_DB.items.find(s => s.sku === itm.sku);
-          if (seedMatch) {
-            if (!itm.batch_no && seedMatch.batch_no) { itm.batch_no = seedMatch.batch_no; itmsUpdated = true; }
-            if (!itm.expiry_date && seedMatch.expiry_date) { itm.expiry_date = seedMatch.expiry_date; itmsUpdated = true; }
-          }
-        });
-        if (itmsUpdated) saveDatabase(parsed);
+        if (parsed.logs.some(l => l.session_id === 'ses-101')) {
+          parsed.logs = parsed.logs.filter(l => l.session_id !== 'ses-101');
+          needsSave = true;
+        }
+        if (parsed.audit_trails.some(a => a.target === 'ses-101' || String(a.id).startsWith('adt-seed-'))) {
+          parsed.audit_trails = parsed.audit_trails.filter(a => a.target !== 'ses-101' && !String(a.id).startsWith('adt-seed-'));
+          needsSave = true;
+        }
+        if (needsSave) saveDatabase(parsed);
         return parsed;
       } catch (e) {
         return DEFAULT_DB;
@@ -4855,20 +4703,31 @@
     // ==========================================
     function refreshActiveSession() {
       appDb = loadDatabase();
-      if (!appDb.sessions || appDb.sessions.length === 0) {
-        appDb.sessions = DEFAULT_DB.sessions;
-        saveDatabase(appDb);
-      }
-
-      activeSession = appDb.sessions.find(s => s.status === 'ACTIVE') || appDb.sessions[0];
-      
       const select = document.getElementById('sessionSelector');
-      if (select) {
-        select.innerHTML = appDb.sessions.map(s => `
-          <option value="${s.id}" ${activeSession && activeSession.id === s.id ? 'selected' : ''}>
-            ${s.session_code} - ${s.title} (${s.status})
-          </option>
-        `).join('');
+
+      if (!appDb.sessions || appDb.sessions.length === 0) {
+        activeSession = null;
+        if (select) {
+          select.innerHTML = '<option value="">-- No Active Count Session --</option>';
+        }
+        const titleEl = document.getElementById('activeSessionTitle');
+        if (titleEl) titleEl.textContent = 'No Active Session';
+        const codeEl = document.getElementById('activeSessionCode');
+        if (codeEl) codeEl.innerHTML = '<span class="badge badge-warning">Upload Datasheet to Start</span>';
+      } else {
+        if (!activeSession || !appDb.sessions.some(s => s.id === activeSession.id)) {
+          activeSession = appDb.sessions.find(s => s.status === 'ACTIVE') || appDb.sessions[0];
+        } else {
+          activeSession = appDb.sessions.find(s => s.id === activeSession.id) || activeSession;
+        }
+
+        if (select) {
+          select.innerHTML = appDb.sessions.map(s => `
+            <option value="${s.id}" ${activeSession && activeSession.id === s.id ? 'selected' : ''}>
+              ${s.session_code} - ${s.title} (${s.status})
+            </option>
+          `).join('');
+        }
       }
 
       if (activeSession) {
@@ -5064,7 +4923,26 @@
     }
 
     function updateMetricsAndFeeds() {
-      if (!activeSession) return;
+      if (!activeSession) {
+        const pPercent = document.getElementById('dashProgressPercent');
+        if (pPercent) pPercent.textContent = '0%';
+        const pBar = document.getElementById('dashProgressBar');
+        if (pBar) pBar.style.width = '0%';
+        const cRatio = document.getElementById('dashCountedRatio');
+        if (cRatio) cRatio.textContent = '0 of 0 items verified';
+        const dMatch = document.getElementById('dashMatchedCount');
+        if (dMatch) dMatch.textContent = '0';
+        const dDiscrep = document.getElementById('dashDiscrepancyCount');
+        if (dDiscrep) dDiscrep.textContent = '0';
+        const dUnlisted = document.getElementById('dashUnlistedCount');
+        if (dUnlisted) dUnlisted.textContent = '0';
+        const zoneContainer = document.getElementById('zoneBreakdownList');
+        if (zoneContainer) {
+          zoneContainer.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 1.5rem;">No active session. Upload a master sheet to begin.</div>';
+        }
+        renderDashboardLiveFeed();
+        return;
+      }
       appDb = loadDatabase();
 
       const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
@@ -6832,6 +6710,95 @@
     }
 
     // ==========================================
+
+    async function activateUploadedDatasheetSession() {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && !isExecutive(currentUser) && currentUser.role !== 'MANAGER')) {
+        showToast('Only Manager, Administrator, or Executive can activate sessions.', 'error');
+        return;
+      }
+      if (!parsedSheetData || parsedSheetData.length === 0) {
+        showToast('No items to activate. Please upload a spreadsheet first.', 'error');
+        return;
+      }
+
+      const titleInput = document.getElementById('uploadSessionTitleInput');
+      const countTypeSelect = document.getElementById('uploadSessionCountTypeSelect');
+      const sessionTitle = (titleInput ? titleInput.value : '').trim();
+
+      if (!sessionTitle) {
+        showToast('Please enter a Session Name / Title before activating.', 'error');
+        if (titleInput) titleInput.focus();
+        return;
+      }
+
+      const countType = countTypeSelect ? countTypeSelect.value : 'BLIND_COUNT';
+      appDb = loadDatabase();
+      if (!Array.isArray(appDb.sessions)) appDb.sessions = [];
+      if (!Array.isArray(appDb.items)) appDb.items = [];
+
+      // Generate unique session code SES-YYYYMMDD-XX
+      const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const seqNum = (appDb.sessions.length + 1).toString().padStart(2, '0');
+      const newSessionCode = `SES-${datePart}-${seqNum}`;
+      const newSessionId = `ses-${Date.now()}`;
+
+      // Create new session object
+      const newSession = {
+        id: newSessionId,
+        session_code: newSessionCode,
+        title: sessionTitle,
+        description: `Master inventory uploaded by ${currentUser.full_name || currentUser.username} (${parsedSheetData.length} items)`,
+        count_type: countType,
+        status: 'ACTIVE',
+        total_items: parsedSheetData.length,
+        counted_items: 0,
+        progress_percent: 0,
+        created_at: new Date().toISOString()
+      };
+
+      // Set items session_id to this new session
+      const itemsToCommit = parsedSheetData.map((item, idx) => ({
+        ...item,
+        id: `item-${Date.now()}-${idx}`,
+        session_id: newSessionId,
+        total_counted_qty: 0,
+        variance_qty: -(parseFloat(item.system_qty) || 0)
+      }));
+
+      // Add to database
+      appDb.sessions.push(newSession);
+      appDb.items = appDb.items.concat(itemsToCommit);
+      activeSession = newSession;
+
+      saveDatabase(appDb);
+      logAuditEvent('SESSION_CREATED', `Created and activated count session "${newSession.session_code} - ${newSession.title}" with ${itemsToCommit.length} items by ${currentUser.username}`, newSession.session_code, 'SESSION');
+
+      // Clear preview state
+      parsedSheetData = [];
+      previewSelectedItemIndices.clear();
+      const previewCard = document.getElementById('sheetPreviewCard');
+      if (previewCard) previewCard.style.display = 'none';
+      const progressBox = document.getElementById('uploadProgressBox');
+      if (progressBox) progressBox.style.display = 'none';
+      const fileInput = document.getElementById('sheetFileInput');
+      if (fileInput) fileInput.value = '';
+
+      showToast(`Session "${newSession.title}" is now ACTIVE with ${itemsToCommit.length} items!`, 'success', 5000);
+      playBeep(true);
+
+      // Refresh all views
+      refreshActiveSession();
+      renderSessionsTable();
+      updateMetricsAndFeeds();
+      updateLocationDropdowns();
+      filterCounterFloorTable();
+      filterReconciliationTable();
+
+      // Navigate to Counter Scanning floor checklist so counting can begin immediately
+      switchView('counting');
+    }
+    window.activateUploadedDatasheetSession = activateUploadedDatasheetSession;
+
     // SPREADSHEET UPLOAD & RESET LOGIC (MANAGER & EXECUTIVE)
     // ==========================================
     async function handleClearCurrentSheet() {
@@ -6955,6 +6922,7 @@
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
+      window._lastUploadedFileName = file.name;
 
       const progressBox = document.getElementById('uploadProgressBox');
       const progressLabel = document.getElementById('uploadProgressLabel');
@@ -7161,6 +7129,14 @@
 
       countEl.textContent = items.length;
       card.style.display = 'block';
+
+      // Pre-fill session title from uploaded file name if input is empty
+      const titleInput = document.getElementById('uploadSessionTitleInput');
+      if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
+        const rawName = window._lastUploadedFileName || '';
+        const cleanName = rawName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
+        titleInput.value = cleanName ? (cleanName.charAt(0).toUpperCase() + cleanName.slice(1)) : 'Stock Verification Session';
+      }
 
       if (items.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-dim);">All preview items have been removed.</td></tr>`;
