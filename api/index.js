@@ -6,6 +6,8 @@
  */
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -209,6 +211,56 @@ module.exports = async function handler(req, res) {
       'Access-Control-Max-Age': '86400'
     });
     return res.end();
+  }
+
+  // 0. Static PWA and Asset Handlers (Guarantees HTTP 200 on Vercel)
+  if (reqUrl === '/sw.js' || reqUrl.endsWith('/sw.js')) {
+    const swPath = path.join(__dirname, '..', 'sw.js');
+    if (fs.existsSync(swPath)) {
+      res.writeHead(200, {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Service-Worker-Allowed': '/',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(fs.readFileSync(swPath));
+    }
+  }
+
+  if (reqUrl === '/manifest.webmanifest' || reqUrl.endsWith('/manifest.webmanifest') || reqUrl === '/manifest.json' || reqUrl.endsWith('/manifest.json')) {
+    const mfPath = path.join(__dirname, '..', 'manifest.json');
+    if (fs.existsSync(mfPath)) {
+      res.writeHead(200, {
+        'Content-Type': 'application/manifest+json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache'
+      });
+      return res.end(fs.readFileSync(mfPath));
+    }
+  }
+
+  if (reqUrl === '/lina-logo.png' || reqUrl.endsWith('/lina-logo.png')) {
+    const logoPath = path.join(__dirname, '..', 'lina-logo.png');
+    if (fs.existsSync(logoPath)) {
+      res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(fs.readFileSync(logoPath));
+    }
+  }
+
+  if (reqUrl === '/lina-stock-count.apk' || reqUrl.endsWith('/lina-stock-count.apk')) {
+    const apkPath = path.join(__dirname, '..', 'lina-stock-count.apk');
+    if (fs.existsSync(apkPath)) {
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.android.package-archive',
+        'Content-Disposition': 'attachment; filename="lina-stock-count.apk"',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(fs.readFileSync(apkPath));
+    }
   }
 
   // 1. Health API

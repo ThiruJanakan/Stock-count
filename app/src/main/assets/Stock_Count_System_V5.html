@@ -12,7 +12,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Lina Stock" />
-  <link rel="apple-touch-icon" href="lina-logo.png" />
+  <link rel="apple-touch-icon" href="assets/lina_logo.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/lina_logo.jpg" />
   <meta name="theme-color" content="#0284c7" />
   
   <!-- Modern Google Fonts -->
@@ -8537,7 +8538,7 @@
     // Register PWA Service Worker for offline caching and installation
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
           console.warn('Service worker registration failed:', err);
         });
       });
