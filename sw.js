@@ -3,7 +3,7 @@
  * Progressive Web Application (PWA) Service Worker
  */
 
-const CACHE_NAME = 'lina-stock-cache-v2';
+const CACHE_NAME = 'lina-stock-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -67,7 +67,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first, network fallback for static resources
+  // Network-first for navigation / HTML requests so installed APK and PWA users immediately receive live updates
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache).catch(() => {});
+          }).catch(() => {});
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match(event.request).then((cached) => {
+          return cached || caches.match('/index.html') || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  // Cache-first, network fallback for static resources (scripts, images, stylesheets)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
@@ -75,7 +95,6 @@ self.addEventListener('fetch', (event) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
-        // Only cache http/https URLs
         if (event.request.url.startsWith('http://') || event.request.url.startsWith('https://')) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {

@@ -54,8 +54,8 @@ android {
         applicationId = "com.linamanufacturing.stockcount"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "5.0"
         buildConfigField("String", "AUTH_USERNAME", "\"$authUsername\"")
         buildConfigField("String", "AUTH_SALT_HEX", "\"$authSaltHex\"")
         buildConfigField("String", "AUTH_HASH_HEX", "\"$authHash\"")
