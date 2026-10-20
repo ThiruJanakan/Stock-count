@@ -291,7 +291,7 @@
     }
 
     .role-ADMIN { background: var(--accent-rose-subtle); color: var(--accent-rose); border: 1px solid rgba(220, 38, 38, 0.28); }
-    .role-SUPERVISOR { background: var(--accent-amber-subtle); color: var(--accent-amber); border: 1px solid rgba(217, 119, 6, 0.28); }
+    .role-SUPERVISOR, .role-EXECUTIVE { background: var(--accent-amber-subtle); color: var(--accent-amber); border: 1px solid rgba(217, 119, 6, 0.28); }
     .role-COUNTER { background: var(--accent-subtle); color: var(--accent); border: 1px solid rgba(2, 132, 199, 0.28); }
 
     /* Tab Bar Navigation */
@@ -2131,7 +2131,7 @@
             <span id="bannerBlindBtnText">Blind Mode</span>
           </button>
 
-          <!-- Download Excel button (Governed by Admin approval for Supervisor) -->
+          <!-- Download Excel button (Governed by Admin approval for Executive) -->
           <button class="btn btn-secondary btn-sm" id="bannerExportExcelBtn" onclick="exportSessionAuditExcel()" title="Download Full Excel Audit Sheet">
             <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
             <span>Download Excel</span>
@@ -2376,7 +2376,7 @@
         <i data-lucide="lock" style="width: 20px; height: 20px; color: var(--accent-rose); flex-shrink: 0;"></i>
         <div>
           <span style="font-weight: 800; color: var(--text);">SESSION CLOSED & LOCKED:</span>
-          <span> This counting session has been closed by the supervisor/admin. Counting is read-only. No further scans or counts can be logged.</span>
+          <span> This counting session has been closed by the executive/admin. Counting is read-only. No further scans or counts can be logged.</span>
         </div>
       </div>
 
@@ -2451,13 +2451,13 @@
               <i data-lucide="check-square" style="width: 14px; height: 14px;"></i>
               <span id="selectedQueueBtnText">Show Selected Set (0)</span>
             </button>
-            <!-- Admin & Supervisor: Delete Selected Floor Items -->
-            <button class="btn btn-danger btn-sm admin-only" id="deleteSelectedFloorItemsBtn" onclick="deleteSelectedFloorItems()" style="display: none;" title="Admin & Supervisor: Permanently delete selected items from this session">
+            <!-- Admin & Executive: Delete Selected Floor Items -->
+            <button class="btn btn-danger btn-sm admin-only" id="deleteSelectedFloorItemsBtn" onclick="deleteSelectedFloorItems()" style="display: none;" title="Admin & Executive: Permanently delete selected items from this session">
               <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
               <span id="deleteSelectedFloorBtnText">Delete Selected (0)</span>
             </button>
-            <!-- Admin & Supervisor: Delete Entire Zone -->
-            <button class="btn btn-danger btn-sm admin-only" id="deleteZoneFloorBtn" onclick="openDeleteZoneModal()" title="Admin & Supervisor: Delete all items in a specific zone from this session">
+            <!-- Admin & Executive: Delete Entire Zone -->
+            <button class="btn btn-danger btn-sm admin-only" id="deleteZoneFloorBtn" onclick="openDeleteZoneModal()" title="Admin & Executive: Delete all items in a specific zone from this session">
               <i data-lucide="map-pin-off" style="width: 14px; height: 14px;"></i>
               <span>Delete Entire Zone</span>
             </button>
@@ -2629,18 +2629,18 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- VIEW 4: UPLOAD DATA SHEET & RESET (MANAGER & SUPERVISOR) -->
+    <!-- VIEW 4: UPLOAD DATA SHEET & RESET (MANAGER & EXECUTIVE) -->
     <!-- ========================================== -->
     <section class="view-section admin-only" id="view-upload">
       <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
-          <span>Upload Master Inventory Sheet (Manager & Supervisor)</span>
+          <span>Upload Master Inventory Sheet (Manager & Executive)</span>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button class="btn btn-secondary btn-sm" onclick="downloadStandardExcelTemplate()" title="Download Official Master Inventory Spreadsheet Template (.xlsx)">
               <i data-lucide="download" style="width: 14px; height: 14px; color: var(--accent);"></i>
               <span>Download Excel Template</span>
             </button>
-            <button class="btn btn-secondary btn-sm" onclick="openDeleteZoneModal()" title="Admin & Supervisor: Remove all items of a specific warehouse zone from this session">
+            <button class="btn btn-secondary btn-sm" onclick="openDeleteZoneModal()" title="Admin & Executive: Remove all items of a specific warehouse zone from this session">
               <i data-lucide="map-pin-off" style="width: 14px; height: 14px; color: var(--accent-rose);"></i>
               <span>Delete Zone from Session</span>
             </button>
@@ -2758,7 +2758,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- VIEW 6: USER MANAGEMENT (ADMIN & SUPERVISOR) -->
+    <!-- VIEW 6: USER MANAGEMENT (ADMIN & EXECUTIVE) -->
     <!-- ========================================== -->
     <section class="view-section admin-only" id="view-users">
       <div class="card">
@@ -2797,7 +2797,7 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- VIEW 7: AUDIT TRAIL & SYSTEM BACKUP (ADMIN & SUPERVISOR) -->
+    <!-- VIEW 7: AUDIT TRAIL & SYSTEM BACKUP (ADMIN & EXECUTIVE) -->
     <!-- ========================================== -->
     <section class="view-section admin-only" id="view-audit">
       <!-- Enterprise System Database Backup & Disaster Recovery Card (Admin Only) -->
@@ -2949,7 +2949,7 @@
           <label class="form-label">System Role</label>
           <select id="newRole" class="form-select">
             <option value="COUNTER" selected>Counter / Floor Operator</option>
-            <option value="SUPERVISOR">Floor Supervisor</option>
+            <option value="EXECUTIVE">Floor Executive</option>
           </select>
           <p id="newRoleHelpText" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.25rem;"></p>
         </div>
@@ -2994,7 +2994,7 @@
           <label class="form-label">System Role</label>
           <select id="editRole" class="form-select">
             <option value="COUNTER">Counter / Floor Operator</option>
-            <option value="SUPERVISOR">Floor Supervisor</option>
+            <option value="EXECUTIVE">Floor Executive</option>
             <option value="ADMIN" disabled>Administrator (Protected)</option>
           </select>
           <p id="editRoleHelpText" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.25rem;">Administrator permissions are protected and cannot be assigned dynamically.</p>
@@ -3043,8 +3043,8 @@
         <div class="form-group">
           <label class="form-label">Count Mode</label>
           <select id="newSessionCountType" class="form-select">
-            <option value="BLIND_COUNT">Blind for Counters (Supervisors can view book stock)</option>
-            <option value="BLIND_ALL">Strict Blind (Hidden from Counters & Supervisors - Manager Only)</option>
+            <option value="BLIND_COUNT">Blind for Counters (Executives can view book stock)</option>
+            <option value="BLIND_ALL">Strict Blind (Hidden from Counters & Executives - Manager Only)</option>
             <option value="OPEN_COUNT">Open Count (System Qty visible to all users)</option>
           </select>
         </div>
@@ -3322,13 +3322,13 @@
               </p>
               <div style="margin-top: 0.5rem; font-size: 0.76rem; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.35rem;">
                 <i data-lucide="check" style="width: 13px; height: 13px;"></i>
-                <span>Supervisors & Managers can view system stock and variances to guide recounts.</span>
+                <span>Executives & Managers can view system stock and variances to guide recounts.</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Option 2: Strict Blind (Hidden from Counters AND Supervisors) -->
+        <!-- Option 2: Strict Blind (Hidden from Counters AND Executives) -->
         <div class="session-mode-card" id="modeCardBlindAll" onclick="selectSessionControlMode('BLIND_ALL')">
           <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
             <div class="mode-icon-box strict">
@@ -3336,15 +3336,15 @@
             </div>
             <div style="flex: 1;">
               <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem;">
-                <span style="font-weight: 800; font-size: 0.98rem; color: var(--text);">Strict Blind (Hide from Supervisors & Counters)</span>
+                <span style="font-weight: 800; font-size: 0.98rem; color: var(--text);">Strict Blind (Hide from Executives & Counters)</span>
                 <span class="badge" style="background: var(--accent-rose-subtle); border: 1px solid rgba(220, 38, 38, 0.3); color: var(--accent-rose); font-size: 0.7rem;">STRICT AUDIT · MANAGER ONLY</span>
               </div>
               <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.45;">
-                <strong>Manager hides system qty from supervisors as well.</strong> Neither floor counters nor supervisors can see expected stock or live variance calculations.
+                <strong>Manager hides system qty from executives as well.</strong> Neither floor counters nor executives can see expected stock or live variance calculations.
               </p>
               <div style="margin-top: 0.5rem; font-size: 0.76rem; color: var(--accent-rose); display: flex; align-items: center; gap: 0.35rem;">
                 <i data-lucide="lock" style="width: 13px; height: 13px;"></i>
-                <span>Only Central Manager / Admin can view book stock. Eliminates supervisor bias & collusion.</span>
+                <span>Only Central Manager / Admin can view book stock. Eliminates executive bias & collusion.</span>
               </div>
             </div>
           </div>
@@ -3362,7 +3362,7 @@
                 <span class="badge badge-uncounted" style="font-size: 0.7rem;">TRANSPARENT COUNT</span>
               </div>
               <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.45;">
-                All operators, supervisors, and managers see expected system quantities and live +/- variances directly on screen.
+                All operators, executives, and managers see expected system quantities and live +/- variances directly on screen.
               </p>
             </div>
           </div>
@@ -3390,7 +3390,7 @@
             Password Reset Policy
           </h3>
           <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 0.6rem; line-height: 1.55;">
-            For inventory security and audit chain-of-custody, <strong>counters and supervisors cannot reset passwords on their own</strong>.
+            For inventory security and audit chain-of-custody, <strong>counters and executives cannot reset passwords on their own</strong>.
           </p>
           <div style="margin-top: 0.85rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
             <p style="font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem;">
@@ -3512,7 +3512,7 @@
     </div>
   </div>
 
-  <!-- Modal: Delete Entire Zone (Admin & Supervisor) -->
+  <!-- Modal: Delete Entire Zone (Admin & Executive) -->
   <div id="deleteZoneModalBackdrop" class="modal-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 100000; align-items: center; justify-content: center; padding: 1rem;">
     <div class="custom-modal-dialog" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); max-width: 480px; width: 100%; padding: 1.5rem; box-shadow: var(--shadow-lg);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -3577,7 +3577,7 @@
     const DEFAULT_DB = {
       users: [
         { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-sup", username: "supervisor1", full_name: "Floor Supervisor", role: "SUPERVISOR", is_active: true, created_at: new Date().toISOString() },
+        { id: "u-sup", username: "executive1", full_name: "Floor Executive", role: "EXECUTIVE", is_active: true, created_at: new Date().toISOString() },
         { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, created_at: new Date().toISOString() },
         { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, created_at: new Date().toISOString() }
       ],
@@ -3753,11 +3753,11 @@
           id: "adt-seed-3",
           timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
           user_id: "u-sup",
-          username: "supervisor1",
-          role: "SUPERVISOR",
+          username: "executive1",
+          role: "EXECUTIVE",
           action: "USER_CREATED",
           category: "USER_MGMT",
-          details: "Floor Supervisor provisioned new counter operator counter2 (Operator Beta)",
+          details: "Floor Executive provisioned new counter operator counter2 (Operator Beta)",
           target: "counter2"
         },
         {
@@ -3959,6 +3959,16 @@
           return DEFAULT_DB;
         }
         const parsed = JSON.parse(raw);
+        // Auto-migrate supervisor role to executive
+        if (parsed.users && Array.isArray(parsed.users)) {
+          let updatedUsers = false;
+          parsed.users.forEach(u => {
+            if (u.role === 'SUPERVISOR') { u.role = 'EXECUTIVE'; updatedUsers = true; }
+            if (u.full_name === 'Floor Supervisor') { u.full_name = 'Floor Executive'; updatedUsers = true; }
+            if (u.username === 'supervisor1') { u.username = 'executive1'; updatedUsers = true; }
+          });
+          if (updatedUsers) saveDatabase(parsed);
+        }
         if (!parsed.items || parsed.items.length === 0) {
           parsed.items = DEFAULT_DB.items;
           saveDatabase(parsed);
@@ -4014,10 +4024,10 @@
       // Administrator and Manager have full visibility
       if (user.role === 'ADMIN' || user.role === 'MANAGER') return true;
       const countMode = session.count_type || 'BLIND_COUNT';
-      // In BLIND_ALL, both Floor Counters and Supervisors are blind
+      // In BLIND_ALL, both Floor Counters and Executives are blind
       if (countMode === 'BLIND_ALL') return false;
-      // In BLIND_COUNT, Floor Counters are blind, Supervisors can view
-      if (countMode === 'BLIND_COUNT') return user.role === 'SUPERVISOR';
+      // In BLIND_COUNT, Floor Counters are blind, Executives can view
+      if (countMode === 'BLIND_COUNT') return isExecutive(user);
       // For any open count session, counters cannot view system qty to prevent deduction
       return user.role !== 'COUNTER';
     }
@@ -4160,6 +4170,10 @@
       }
     }
 
+    function isExecutive(user) {
+      return user && (isExecutive(user) || isExecutive(user));
+    }
+
     function isManagerOrAdmin(user) {
       return user && (user.role === 'ADMIN' || user.role === 'MANAGER');
     }
@@ -4235,22 +4249,22 @@
         let icon = 'sliders-horizontal';
 
         if (newMode === 'BLIND_ALL') {
-          confirmTitle = 'Enable Strict Blind (Hide from Supervisors & Counters)?';
-          confirmMsg = `Are you sure you want to hide System Quantities from BOTH Floor Counters AND Supervisors for session "${session.session_code}"?`;
+          confirmTitle = 'Enable Strict Blind (Hide from Executives & Counters)?';
+          confirmMsg = `Are you sure you want to hide System Quantities from BOTH Floor Counters AND Executives for session "${session.session_code}"?`;
           confirmItems = [
-            'Neither Counters nor Floor Supervisors will see expected Book Stock.',
-            'Discrepancy amounts and live variance calculations will be locked from supervisors.',
+            'Neither Counters nor Floor Executives will see expected Book Stock.',
+            'Discrepancy amounts and live variance calculations will be locked from executives.',
             'Only Central Manager / Admin can view book quantities and variances.',
-            'Guarantees 100% unbiased audit and eliminates supervisor bias.'
+            'Guarantees 100% unbiased audit and eliminates executive bias.'
           ];
           confirmType = 'danger';
           icon = 'shield-alert';
         } else if (newMode === 'BLIND_COUNT') {
-          confirmTitle = 'Enable Blind for Counters (Visible to Supervisors)?';
+          confirmTitle = 'Enable Blind for Counters (Visible to Executives)?';
           confirmMsg = `Are you sure you want to hide System Quantities from Floor Counters for session "${session.session_code}"?`;
           confirmItems = [
             'Floor counters cannot see book stock numbers or variance calculations.',
-            'Supervisors and Managers can view system stock for real-time monitoring and recount management.',
+            'Executives and Managers can view system stock for real-time monitoring and recount management.',
             'Recommended standard mode for warehouse cycle counts.'
           ];
           confirmType = 'warning';
@@ -4286,9 +4300,9 @@
       closeSessionControlModal();
 
       if (newMode === 'BLIND_ALL') {
-        showToast(`Session "${session.session_code}" set to STRICT BLIND: System Qty is now hidden from BOTH Counters and Supervisors (Manager Eyes Only).`, 'success');
+        showToast(`Session "${session.session_code}" set to STRICT BLIND: System Qty is now hidden from BOTH Counters and Executives (Manager Eyes Only).`, 'success');
       } else if (newMode === 'BLIND_COUNT') {
-        showToast(`Session "${session.session_code}" set to BLIND COUNT: System Qty is hidden from Counters (Visible to Supervisors).`, 'info');
+        showToast(`Session "${session.session_code}" set to BLIND COUNT: System Qty is hidden from Counters (Visible to Executives).`, 'info');
       } else {
         showToast(`Session "${session.session_code}" set to OPEN COUNT: System Qty is visible to all users.`, 'info');
       }
@@ -4376,11 +4390,11 @@
       }
       updateMobileThemeLabels();
 
-      // Show/hide admin, manager & supervisor tabs
+      // Show/hide admin, manager & executive tabs
       const isManager = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER';
-      const isSuper = currentUser.role === 'SUPERVISOR';
+      const isExec = isExecutive(currentUser);
       
-      // Admin, Manager & Supervisor shared (Live Dashboard, Counter scanning, Upload sheets, Reconciliation, Sessions list, Excel download, Lock session)
+      // Admin, Manager & Executive shared (Live Dashboard, Counter scanning, Upload sheets, Reconciliation, Sessions list, Excel download, Lock session)
       document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = (isManager || isSuper) ? '' : 'none';
       });
@@ -4402,9 +4416,9 @@
       const sub = document.getElementById('userManagementSubtitle');
       if (sub) {
         if (isSuper) {
-          sub.textContent = 'Floor Supervisor Portal: Provision and manage Floor Counter operators for active counting.';
+          sub.textContent = 'Floor Executive Portal: Provision and manage Floor Counter operators for active counting.';
         } else {
-          sub.textContent = 'Administrator Portal: Provision supervisors, counters, and manage system access.';
+          sub.textContent = 'Administrator Portal: Provision executives, counters, and manage system access.';
         }
       }
 
@@ -4552,7 +4566,11 @@
 
       // 2. Offline / Local Fallback Authentication
       appDb = loadDatabase();
-      const found = appDb.users.find(u => u.username.toLowerCase() === uName.toLowerCase());
+      const found = appDb.users.find(u => 
+        u.username.toLowerCase() === uName.toLowerCase() || 
+        (uName.toLowerCase() === 'supervisor1' && (u.username.toLowerCase() === 'executive1' || isExecutive(u))) ||
+        (uName.toLowerCase() === 'executive1' && (u.username.toLowerCase() === 'supervisor1' || isExecutive(u)))
+      );
 
       if (!found) {
         await logAuditEvent('LOGIN_FAILED', `Failed login attempt for unknown user: "${uName}"`, uName, 'AUTH');
@@ -4650,19 +4668,19 @@
     function switchView(viewName) {
       if (!currentUser) return;
       const isManager = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER';
-      const isSuper = currentUser.role === 'SUPERVISOR';
+      const isSuper = isExecutive(currentUser);
 
       // Strict RBAC Navigation Guards
       if (viewName === 'users' && !isManager && !isSuper) {
-        showToast('Access Denied: User Management requires Supervisor or Administrator permissions.', 'error');
+        showToast('Access Denied: User Management requires Executive or Administrator permissions.', 'error');
         return;
       }
       if (viewName === 'audit' && !isManager && !isSuper) {
-        showToast('Access Denied: Audit Ledger requires Supervisor or Administrator permissions.', 'error');
+        showToast('Access Denied: Audit Ledger requires Executive or Administrator permissions.', 'error');
         return;
       }
       if ((viewName === 'upload' || viewName === 'sessions' || viewName === 'reconciliation') && !isManager && !isSuper) {
-        showToast('Access Denied: This portal requires Supervisor or Administrator permissions.', 'error');
+        showToast('Access Denied: This portal requires Executive or Administrator permissions.', 'error');
         return;
       }
 
@@ -4850,7 +4868,7 @@
           addUnlistedTableBtn.title = isClosed ? 'Session is CLOSED and LOCKED' : 'Add Unlisted Floor Item';
         }
 
-        // Supervisor Excel Download Authorization in Active Session Banner
+        // Executive Excel Download Authorization in Active Session Banner
         const dlBtn = document.getElementById('bannerExportExcelBtn');
         if (dlBtn && currentUser) {
           if (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER') {
@@ -4860,9 +4878,9 @@
             dlBtn.style.cursor = 'pointer';
             dlBtn.title = "Download Full Excel Audit Sheet";
             dlBtn.innerHTML = `<i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i><span>Download Excel</span>`;
-          } else if (currentUser.role === 'SUPERVISOR') {
+          } else if (isExecutive(currentUser)) {
             dlBtn.style.display = '';
-            if (activeSession && activeSession.supervisor_report_approved) {
+            if (activeSession && activeSession.executive_report_approved) {
               dlBtn.disabled = false;
               dlBtn.style.opacity = '1';
               dlBtn.style.cursor = 'pointer';
@@ -4912,8 +4930,8 @@
     }
 
     async function toggleSessionLock(sessionId) {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Only Admin, Manager, or Supervisor can change session lock status.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Only Admin, Manager, or Executive can change session lock status.', 'error');
         return;
       }
 
@@ -4930,7 +4948,7 @@
             'Floor counters will no longer be able to submit scans or counts.',
             'Adding unlisted items will be disabled.',
             'All records will be preserved as final audit data.',
-            'Supervisors or Admin can reopen this session at any time if required.'
+            'Executives or Admin can reopen this session at any time if required.'
           ],
           confirmText: 'Close & Lock Session',
           cancelText: 'Keep Active',
@@ -5321,7 +5339,7 @@
           items: [
             'This item does not exist in the uploaded spreadsheet.',
             'Would you like to register this as an Unlisted Floor Item now?',
-            'Once added, all counters and supervisors will see it immediately.'
+            'Once added, all counters and executives will see it immediately.'
           ],
           confirmText: 'Add Unlisted Item',
           cancelText: 'Cancel',
@@ -5690,10 +5708,10 @@
         }
       });
 
-      // Update Delete Selected Floor Items button visibility for Admin & Supervisor
+      // Update Delete Selected Floor Items button visibility for Admin & Executive
       const deleteFloorBtn = document.getElementById('deleteSelectedFloorItemsBtn');
       const deleteFloorText = document.getElementById('deleteSelectedFloorBtnText');
-      const canManageFloor = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER' || currentUser.role === 'SUPERVISOR');
+      const canManageFloor = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER' || isExecutive(currentUser));
       if (deleteFloorBtn && deleteFloorText) {
         if (count > 0 && canManageFloor) {
           deleteFloorBtn.style.display = 'inline-flex';
@@ -5722,10 +5740,10 @@
       }
     }
 
-    // Admin & Supervisor: Delete Selected Floor Items
+    // Admin & Executive: Delete Selected Floor Items
     async function deleteSelectedFloorItems() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators and Supervisors can delete items.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators and Executives can delete items.', 'error');
         return;
       }
       if (!activeSession) return;
@@ -5772,10 +5790,10 @@
       filterReconciliationTable();
     }
 
-    // Admin & Supervisor: Open Delete Entire Zone Modal
+    // Admin & Executive: Open Delete Entire Zone Modal
     function openDeleteZoneModal() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators and Supervisors can delete zones.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators and Executives can delete zones.', 'error');
         return;
       }
       if (!activeSession) {
@@ -5926,14 +5944,14 @@
       }
 
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
-      const isSupervisor = currentUser && currentUser.role === 'SUPERVISOR';
+      const isExecutive = currentUser && isExecutive(currentUser);
       const hideSystemQty = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       const blindIndicator = document.getElementById('blindModeIndicator');
       if (blindIndicator) {
         if (hideSystemQty) {
           blindIndicator.style.display = 'inline-flex';
-          blindIndicator.innerHTML = (countMode === 'BLIND_ALL' && isSupervisor)
+          blindIndicator.innerHTML = (countMode === 'BLIND_ALL' && isExecutive)
             ? `<i data-lucide="shield-alert" style="width: 14px; height: 14px; margin-right: 4px;"></i> STRICT BLIND: System Qty & Variances Hidden by Admin`
             : `<i data-lucide="eye-off" style="width: 14px; height: 14px; margin-right: 4px;"></i> BLIND AUDIT: System Qty & Variances Hidden`;
         } else {
@@ -5995,7 +6013,7 @@
           </span>
         ` : `
           ${system} <span style="font-size: 0.72rem; color: var(--text-dim);">${item.uom || 'PCS'}</span>
-          ${countMode === 'BLIND_ALL' ? `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 3px; padding: 1px 4px; margin-left: 3px; vertical-align: middle;" title="Hidden from floor counters & supervisors">STRICT</span>` : (countMode === 'BLIND_COUNT' ? `<span style="font-size: 0.65rem; color: #fbbf24; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 3px; padding: 1px 4px; margin-left: 3px; vertical-align: middle;" title="Hidden from floor counters">BLIND</span>` : '')}
+          ${countMode === 'BLIND_ALL' ? `<span style="font-size: 0.65rem; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 3px; padding: 1px 4px; margin-left: 3px; vertical-align: middle;" title="Hidden from floor counters & executives">STRICT</span>` : (countMode === 'BLIND_COUNT' ? `<span style="font-size: 0.65rem; color: #fbbf24; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 3px; padding: 1px 4px; margin-left: 3px; vertical-align: middle;" title="Hidden from floor counters">BLIND</span>` : '')}
         `;
 
         return `
@@ -6101,7 +6119,7 @@
 
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
       const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
-      const isSupervisor = currentUser && currentUser.role === 'SUPERVISOR';
+      const isExecutive = currentUser && isExecutive(currentUser);
       const hideReconValues = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       tbody.innerHTML = filtered.map(item => {
@@ -6152,7 +6170,7 @@
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text);">${counted}</td>
             <td>${reconVarianceDisplay}</td>
             <td>${statusBadge}</td>
-            <td class="admin-only" style="display: ${isManager || isSupervisor ? '' : 'none'};">
+            <td class="admin-only" style="display: ${isManager || isExecutive ? '' : 'none'};">
               <button class="btn btn-secondary btn-sm" onclick="openEditRecordDrawer('${item.id}')">
                 <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                 <span>Edit</span>
@@ -6190,8 +6208,8 @@
 
     function handleSaveRecordEdit(e) {
       e.preventDefault();
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators or Supervisors can edit count records.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators or Executives can edit count records.', 'error');
         return;
       }
       if (activeSession && activeSession.status === 'CLOSED') {
@@ -6230,7 +6248,7 @@
         });
 
         saveDatabase(appDb);
-        logAuditEvent('VARIANCE_ADJUSTED', `Supervisor/Admin adjusted count for SKU ${appDb.items[itmIdx].sku}: sysQty ${sysQty}, countedQty ${countQty} by ${currentUser.username}`, appDb.items[itmIdx].sku, 'AUDIT');
+        logAuditEvent('VARIANCE_ADJUSTED', `Executive/Admin adjusted count for SKU ${appDb.items[itmIdx].sku}: sysQty ${sysQty}, countedQty ${countQty} by ${currentUser.username}`, appDb.items[itmIdx].sku, 'AUDIT');
         showToast(`Record updated for ${appDb.items[itmIdx].sku}!`, 'success');
         closeEditRecordDrawer();
         updateMetricsAndFeeds();
@@ -6241,7 +6259,7 @@
     }
 
     // ==========================================
-    // MULTI-SHEET EXECUTIVE EXCEL AUDIT EXPORT (ADMIN & APPROVED SUPERVISOR)
+    // MULTI-SHEET EXECUTIVE EXCEL AUDIT EXPORT (ADMIN & APPROVED EXECUTIVE)
     // ==========================================
     function exportSessionAuditExcel(sessionId) {
       if (!currentUser || currentUser.role === 'COUNTER') {
@@ -6261,10 +6279,10 @@
         return;
       }
 
-      // Check Supervisor export approval
-      if (currentUser.role === 'SUPERVISOR') {
-        if (!session.supervisor_report_approved) {
-          showToast(`Supervisor export is locked for session "${session.session_code}". Requires Central Admin approval.`, 'error');
+      // Check Executive export approval
+      if (isExecutive(currentUser)) {
+        if (!session.executive_report_approved) {
+          showToast(`Executive export is locked for session "${session.session_code}". Requires Central Admin approval.`, 'error');
           playBeep(false);
           return;
         }
@@ -6327,8 +6345,8 @@
         { "Metric / Parameter": "SESSION AUDIT CODE", "Value": session.session_code, "Audit Context & Notes": "Unique Audit Tracking Identifier" },
         { "Metric / Parameter": "SESSION TITLE", "Value": session.title, "Audit Context & Notes": session.description || "Warehouse Stock Verification" },
         { "Metric / Parameter": "AUDIT STATUS", "Value": session.status === 'CLOSED' ? "CLOSED & LOCKED" : "ACTIVE VERIFICATION", "Audit Context & Notes": session.status === 'CLOSED' ? `Locked at ${session.closed_at || 'N/A'} by ${session.closed_by || 'Admin'}` : "Physical floor counting active" },
-        { "Metric / Parameter": "AUDIT COUNT METHODOLOGY", "Value": (session.count_type || 'BLIND_COUNT').replace('_', ' '), "Audit Context & Notes": session.count_type === 'BLIND_ALL' ? "Strict Blind (Hidden from Counters & Supervisors)" : (session.count_type === 'BLIND_COUNT' ? "Blind Count (Hidden from Counters)" : "Open Theoretical Count") },
-        { "Metric / Parameter": "SUPERVISOR EXPORT PERMISSION", "Value": session.supervisor_report_approved ? "APPROVED BY ADMIN" : "RESTRICTED (ADMIN ONLY)", "Audit Context & Notes": "Central Admin authorization governance" },
+        { "Metric / Parameter": "AUDIT COUNT METHODOLOGY", "Value": (session.count_type || 'BLIND_COUNT').replace('_', ' '), "Audit Context & Notes": session.count_type === 'BLIND_ALL' ? "Strict Blind (Hidden from Counters & Executives)" : (session.count_type === 'BLIND_COUNT' ? "Blind Count (Hidden from Counters)" : "Open Theoretical Count") },
+        { "Metric / Parameter": "EXECUTIVE EXPORT PERMISSION", "Value": session.executive_report_approved ? "APPROVED BY ADMIN" : "RESTRICTED (ADMIN ONLY)", "Audit Context & Notes": "Central Admin authorization governance" },
         { "Metric / Parameter": "EXPORT GENERATED BY", "Value": `${currentUser.full_name || currentUser.username} (${currentUser.role})`, "Audit Context & Notes": `Exported on ${new Date().toLocaleString()}` },
         { "Metric / Parameter": "----------------------------------------", "Value": "----------------------------------------", "Audit Context & Notes": "----------------------------------------" },
         { "Metric / Parameter": "TOTAL REGISTERED SKUS / ITEMS", "Value": totalMaster, "Audit Context & Notes": "Total distinct inventory records" },
@@ -6599,8 +6617,8 @@
         playBeep(false);
         return;
       }
-      if (currentUser.role === 'SUPERVISOR' && activeSession && !activeSession.supervisor_report_approved) {
-        showToast(`Supervisor report download requires Administrator approval for session "${activeSession.session_code}".`, 'error');
+      if (isExecutive(currentUser) && activeSession && !activeSession.executive_report_approved) {
+        showToast(`Executive report download requires Administrator approval for session "${activeSession.session_code}".`, 'error');
         playBeep(false);
         return;
       }
@@ -6736,11 +6754,11 @@
     }
 
     // ==========================================
-    // SPREADSHEET UPLOAD & RESET LOGIC (MANAGER & SUPERVISOR)
+    // SPREADSHEET UPLOAD & RESET LOGIC (MANAGER & EXECUTIVE)
     // ==========================================
     async function handleClearCurrentSheet() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPERVISOR' && currentUser.role !== 'MANAGER')) {
-        showToast('Only Manager or Supervisor has authority to clear inventory sheets.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && !isExecutive(currentUser) && currentUser.role !== 'MANAGER')) {
+        showToast('Only Manager or Executive has authority to clear inventory sheets.', 'error');
         return;
       }
       if (!activeSession) {
@@ -7097,8 +7115,8 @@
     }
 
     function commitSheetToSession() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPERVISOR' && currentUser.role !== 'MANAGER')) {
-        showToast('Only Manager, Administrator, or Supervisor can upload sheets.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && !isExecutive(currentUser) && currentUser.role !== 'MANAGER')) {
+        showToast('Only Manager, Administrator, or Executive can upload sheets.', 'error');
         return;
       }
       if (!activeSession) {
@@ -7220,7 +7238,7 @@
       const tbody = document.getElementById('usersTableBody');
       if (!tbody) return;
       appDb = loadDatabase();
-      const isSuper = currentUser && currentUser.role === 'SUPERVISOR';
+      const isSuper = currentUser && isExecutive(currentUser);
       const isManager = isManagerOrAdmin(currentUser);
 
       tbody.innerHTML = appDb.users.map(u => {
@@ -7297,7 +7315,7 @@
     // USER EDIT & SOFT-REMOVE ACTIONS
     // ==========================================
     function openEditUserDrawer(userId) {
-      if (!currentUser || (!isManagerOrAdmin(currentUser) && currentUser.role !== 'SUPERVISOR')) {
+      if (!currentUser || (!isManagerOrAdmin(currentUser) && !isExecutive(currentUser))) {
         showToast('Unauthorized: You do not have permission to edit user details.', 'error');
         return;
       }
@@ -7308,8 +7326,8 @@
         return;
       }
 
-      if (currentUser.role === 'SUPERVISOR' && user.role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only manage Counter accounts.', 'error');
+      if (isExecutive(currentUser) && user.role !== 'COUNTER') {
+        showToast('Unauthorized: Executives can only manage Counter accounts.', 'error');
         return;
       }
 
@@ -7321,7 +7339,7 @@
 
       const roleSelect = document.getElementById('editRole');
       const roleHelp = document.getElementById('editRoleHelpText');
-      const isSuper = currentUser.role === 'SUPERVISOR';
+      const isSuper = isExecutive(currentUser);
       const isRootAdmin = user.username === 'admin' || user.id === 'u-admin';
 
       if (roleSelect) {
@@ -7329,17 +7347,17 @@
           roleSelect.innerHTML = `<option value="ADMIN" selected>Central Administrator (Fixed)</option>`;
           roleSelect.disabled = true;
           if (roleHelp) roleHelp.textContent = 'Central Admin role is immutable for system security.';
-        } else if (isSuper) {
+        } else if (isExec) {
           roleSelect.innerHTML = `<option value="COUNTER" selected>Counter / Floor Operator</option>`;
           roleSelect.disabled = true;
-          if (roleHelp) roleHelp.textContent = 'Supervisors are authorized to manage Counter accounts only.';
+          if (roleHelp) roleHelp.textContent = 'Executives are authorized to manage Counter accounts only.';
         } else {
           roleSelect.disabled = false;
           roleSelect.innerHTML = `
             <option value="COUNTER" ${user.role === 'COUNTER' ? 'selected' : ''}>Counter / Floor Operator</option>
-            <option value="SUPERVISOR" ${user.role === 'SUPERVISOR' ? 'selected' : ''}>Floor Supervisor</option>
+            <option value="EXECUTIVE" ${isExecutive(user) ? 'selected' : ''}>Floor Executive</option>
           `;
-          if (roleHelp) roleHelp.textContent = 'Select between Floor Supervisor and Counter operator.';
+          if (roleHelp) roleHelp.textContent = 'Select between Floor Executive and Counter operator.';
         }
       }
 
@@ -7365,7 +7383,7 @@
 
     async function handleSaveUserEdit(e) {
       e.preventDefault();
-      if (!currentUser || (!isManagerOrAdmin(currentUser) && currentUser.role !== 'SUPERVISOR')) {
+      if (!currentUser || (!isManagerOrAdmin(currentUser) && !isExecutive(currentUser))) {
         showToast('Unauthorized: You do not have permission to edit users.', 'error');
         return;
       }
@@ -7386,8 +7404,8 @@
       const user = appDb.users[userIdx];
       const isRootAdmin = user.username === 'admin' || user.id === 'u-admin';
 
-      if (currentUser.role === 'SUPERVISOR' && user.role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only modify Counter accounts.', 'error');
+      if (isExecutive(currentUser) && user.role !== 'COUNTER') {
+        showToast('Unauthorized: Executives can only modify Counter accounts.', 'error');
         return;
       }
 
@@ -7416,7 +7434,7 @@
     }
 
     async function toggleUserSoftRemove(userId) {
-      if (!currentUser || (!isManagerOrAdmin(currentUser) && currentUser.role !== 'SUPERVISOR')) {
+      if (!currentUser || (!isManagerOrAdmin(currentUser) && !isExecutive(currentUser))) {
         showToast('Unauthorized: You do not have permission to change user status.', 'error');
         return;
       }
@@ -7438,8 +7456,8 @@
         return;
       }
 
-      if (currentUser.role === 'SUPERVISOR' && user.role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only deactivate Counter accounts.', 'error');
+      if (isExecutive(currentUser) && user.role !== 'COUNTER') {
+        showToast('Unauthorized: Executives can only deactivate Counter accounts.', 'error');
         return;
       }
 
@@ -7473,12 +7491,12 @@
     }
 
     function openNewUserDrawer() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators and Supervisors can create users.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators and Executives can create users.', 'error');
         return;
       }
 
-      const isSuper = currentUser.role === 'SUPERVISOR';
+      const isSuper = isExecutive(currentUser);
       const roleSelect = document.getElementById('newRole');
       const roleHelp = document.getElementById('newRoleHelpText');
 
@@ -7487,17 +7505,17 @@
           roleSelect.innerHTML = `<option value="COUNTER" selected>Counter / Floor Operator</option>`;
           roleSelect.disabled = true;
           if (roleHelp) {
-            roleHelp.textContent = 'Floor Supervisors are authorized to provision Counter accounts only.';
+            roleHelp.textContent = 'Floor Executives are authorized to provision Counter accounts only.';
             roleHelp.style.color = '#f59e0b';
           }
         } else {
           roleSelect.disabled = false;
           roleSelect.innerHTML = `
             <option value="COUNTER" selected>Counter / Floor Operator</option>
-            <option value="SUPERVISOR">Floor Supervisor</option>
+            <option value="EXECUTIVE">Floor Executive</option>
           `;
           if (roleHelp) {
-            roleHelp.textContent = 'Security Policy: Administrators can provision Floor Supervisors and Counters. Admin accounts are fixed.';
+            roleHelp.textContent = 'Security Policy: Administrators can provision Floor Executives and Counters. Admin accounts are fixed.';
             roleHelp.style.color = 'var(--text-dim)';
           }
         }
@@ -7515,24 +7533,24 @@
 
     async function handleCreateUser(e) {
       e.preventDefault();
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
         showToast('Unauthorized: You do not have permission to create user accounts.', 'error');
         return;
       }
 
-      const isSuper = currentUser.role === 'SUPERVISOR';
+      const isSuper = isExecutive(currentUser);
       const roleSelect = document.getElementById('newRole');
       let role = isSuper ? 'COUNTER' : (roleSelect ? roleSelect.value : document.getElementById('newRole').value);
 
       // Strict security policy: Admin accounts CANNOT be created by anyone!
       if (role === 'ADMIN') {
-        showToast('Security Policy: Admin accounts cannot be created. Administrators can only provision Floor Supervisors or Counters.', 'error');
+        showToast('Security Policy: Admin accounts cannot be created. Administrators can only provision Floor Executives or Counters.', 'error');
         return;
       }
 
-      // Strict supervisor boundary: Counter accounts only!
+      // Strict executive boundary: Counter accounts only!
       if (isSuper && role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only create Counter accounts.', 'error');
+        showToast('Unauthorized: Executives can only create Counter accounts.', 'error');
         return;
       }
 
@@ -7580,8 +7598,8 @@
     let currentResetTargetUser = null;
 
     function openResetPasswordModal(userId) {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators or Supervisors can reset user passwords.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators or Executives can reset user passwords.', 'error');
         return;
       }
 
@@ -7592,9 +7610,9 @@
         return;
       }
 
-      // Supervisors can only reset passwords for Counter accounts
-      if (currentUser.role === 'SUPERVISOR' && target.role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only reset passwords for Counter accounts.', 'error');
+      // Executives can only reset passwords for Counter accounts
+      if (isExecutive(currentUser) && target.role !== 'COUNTER') {
+        showToast('Unauthorized: Executives can only reset passwords for Counter accounts.', 'error');
         return;
       }
 
@@ -7644,8 +7662,8 @@
 
     async function handleAdminResetPassword(e) {
       e.preventDefault();
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Administrators or Supervisors can reset user passwords.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators or Executives can reset user passwords.', 'error');
         return;
       }
 
@@ -7665,8 +7683,8 @@
       }
 
       const targetUser = appDb.users[uIndex];
-      if (currentUser.role === 'SUPERVISOR' && targetUser.role !== 'COUNTER') {
-        showToast('Unauthorized: Supervisors can only reset passwords for Counter accounts.', 'error');
+      if (isExecutive(currentUser) && targetUser.role !== 'COUNTER') {
+        showToast('Unauthorized: Executives can only reset passwords for Counter accounts.', 'error');
         return;
       }
       // Generate unique cryptographic salt and SHA-256 hash
@@ -8001,7 +8019,7 @@
       showToast('Audit trail exported as CSV successfully.', 'success');
     }
 
-    // Sessions Management Table (Supervisor & Manager/Admin)
+    // Sessions Management Table (Executive & Manager/Admin)
     function renderSessionsTable() {
       const tbody = document.getElementById('sessionsTableBody');
       if (!tbody) return;
@@ -8065,17 +8083,17 @@
                     <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: #f59e0b;"></i>
                     <span>Visibility</span>
                   </button>
-                  <button class="btn btn-secondary btn-sm admin-exclusive" onclick="toggleSupervisorReportApproval('${s.id}')" title="Configure Supervisor Excel Export Permission">
-                    <i data-lucide="${s.supervisor_report_approved ? 'file-check-2' : 'file-lock-2'}" style="width: 14px; height: 14px; color: ${s.supervisor_report_approved ? '#34d399' : '#f59e0b'};"></i>
-                    <span>${s.supervisor_report_approved ? 'Sup. Export: ON' : 'Sup. Export: OFF'}</span>
+                  <button class="btn btn-secondary btn-sm admin-exclusive" onclick="toggleExecutiveReportApproval('${s.id}')" title="Configure Executive Excel Export Permission">
+                    <i data-lucide="${s.executive_report_approved ? 'file-check-2' : 'file-lock-2'}" style="width: 14px; height: 14px; color: ${s.executive_report_approved ? '#34d399' : '#f59e0b'};"></i>
+                    <span>${s.executive_report_approved ? 'Exec. Export: ON' : 'Exec. Export: OFF'}</span>
                   </button>
                 ` : ''}
-                ${(isManager || (currentUser && currentUser.role === 'SUPERVISOR' && s.supervisor_report_approved)) ? `
+                ${(isManager || (currentUser && isExecutive(currentUser) && s.executive_report_approved)) ? `
                   <button class="btn btn-secondary btn-sm" onclick="exportSessionAuditExcel('${s.id}')" title="Download Full 5-Sheet Executive Excel Report">
                     <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
                     <span>Excel</span>
                   </button>
-                ` : (currentUser && currentUser.role === 'SUPERVISOR') ? `
+                ` : (currentUser && isExecutive(currentUser)) ? `
                   <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.55; cursor: not-allowed;" title="Central Admin authorization required to export report for this session">
                     <i data-lucide="lock" style="width: 14px; height: 14px; color: #f59e0b;"></i>
                     <span>Excel (Locked)</span>
@@ -8099,7 +8117,7 @@
       lucide.createIcons();
     }
 
-    function toggleSupervisorReportApproval(sessionId) {
+    function toggleExecutiveReportApproval(sessionId) {
       if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
         showToast('Unauthorized: Only Administrators can configure report permissions.', 'error');
         return;
@@ -8108,16 +8126,16 @@
       const s = (appDb.sessions || []).find(x => x.id === sessionId);
       if (!s) return;
 
-      s.supervisor_report_approved = !s.supervisor_report_approved;
+      s.executive_report_approved = !s.executive_report_approved;
       if (activeSession && activeSession.id === sessionId) {
-        activeSession.supervisor_report_approved = s.supervisor_report_approved;
+        activeSession.executive_report_approved = s.executive_report_approved;
       }
       saveDatabase(appDb);
 
-      const statusStr = s.supervisor_report_approved ? 'APPROVED' : 'RESTRICTED';
-      logAuditEvent('SUPERVISOR_REPORT_PERMISSION', `Supervisor report download ${statusStr} for session ${s.session_code} by ${currentUser.username}`, s.session_code, 'ADMIN');
+      const statusStr = s.executive_report_approved ? 'APPROVED' : 'RESTRICTED';
+      logAuditEvent('EXECUTIVE_REPORT_PERMISSION', `Executive report download ${statusStr} for session ${s.session_code} by ${currentUser.username}`, s.session_code, 'ADMIN');
 
-      showToast(`Supervisor Excel download is now ${statusStr} for session "${s.session_code}".`, s.supervisor_report_approved ? 'success' : 'info');
+      showToast(`Executive Excel download is now ${statusStr} for session "${s.session_code}".`, s.executive_report_approved ? 'success' : 'info');
       playBeep(true);
       renderSessionsTable();
     }
@@ -8235,8 +8253,8 @@
     }
 
     function openNewSessionDrawer() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Supervisors and Administrators can create sessions.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Executives and Administrators can create sessions.', 'error');
         return;
       }
       const code = `SES-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(10 + Math.random() * 90)}`;
@@ -8253,8 +8271,8 @@
 
     function handleCreateSession(e) {
       e.preventDefault();
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && currentUser.role !== 'SUPERVISOR')) {
-        showToast('Unauthorized: Only Supervisors and Administrators can create sessions.', 'error');
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Executives and Administrators can create sessions.', 'error');
         return;
       }
       const code = document.getElementById('newSessionCode').value;
