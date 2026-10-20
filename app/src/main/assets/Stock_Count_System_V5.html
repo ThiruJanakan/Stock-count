@@ -7546,7 +7546,7 @@
             </button>
           `);
         } else {
-          actions.push(`<span style="font-size: 0.74rem; color: var(--text-dim); font-style: italic;">Protected Root Admin</span>`);
+          actions.push(`<span style="font-size: 0.74rem; color: var(--text-dim); font-style: italic;">${isRootAdmin ? 'Root Admin (Protected)' : 'Protected Account'}</span>`);
         }
 
         const actionBtnsHtml = `<div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">${actions.join('')}</div>`;

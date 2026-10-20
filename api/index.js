@@ -646,10 +646,18 @@ module.exports = async function handler(req, res) {
 
     const updateFields = { updated_at: new Date().toISOString() };
     if (body.full_name !== undefined) updateFields.full_name = String(body.full_name).trim();
-    if (body.role !== undefined) {
-      if ((authUser.role === 'EXECUTIVE' || authUser.role === 'SUPERVISOR') && body.role !== 'COUNTER') {
+    if (authUser.role === 'EXECUTIVE' || authUser.role === 'SUPERVISOR') {
+      if (body.role && body.role !== 'COUNTER') {
         return sendJson(403, { error: 'Executives can only set role to COUNTER' });
       }
+      if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+        const targetRes = await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(userId) + '&select=role');
+        if (targetRes && targetRes.data && targetRes.data[0] && targetRes.data[0].role !== 'COUNTER') {
+          return sendJson(403, { error: 'Forbidden: Executives can only edit Counter accounts' });
+        }
+      }
+    }
+    if (body.role !== undefined) {
       updateFields.role = body.role.toUpperCase();
     }
     if (body.is_active !== undefined) updateFields.is_active = Boolean(body.is_active);
