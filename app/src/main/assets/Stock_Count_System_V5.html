@@ -4237,7 +4237,7 @@
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
           credentials: 'same-origin',
-          body: JSON.stringify({ session, items: items || [] })
+          body: JSON.stringify({ session: { ...session, title: session.title || session.name || session.session_code || session.id }, items: items || [] })
         });
         if (res.ok) {
           console.log(`[Cloud Sync] Session ${session.session_code || session.id} successfully synced to Cloud.`);
@@ -7635,6 +7635,7 @@
 
       document.getElementById('editUserDrawerBackdrop').classList.add('open');
       document.getElementById('editUserDrawer').classList.add('open');
+      const editPass = document.getElementById('editPassword'); if (editPass) editPass.value = '';
       document.getElementById('editFullName').focus();
     }
 
