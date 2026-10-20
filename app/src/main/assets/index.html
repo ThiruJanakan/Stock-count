@@ -5945,7 +5945,16 @@
       const statusFilter = document.getElementById('counterStatusFilter')?.value || 'ALL';
       const badge = document.getElementById('floorItemsCountBadge');
 
-      if (!tbody || !activeSession) return;
+      if (!tbody) return;
+      if (!activeSession) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2.5rem; color: var(--text-dim);">
+          <i data-lucide="calendar-x" style="width: 32px; height: 32px; margin: 0 auto 0.5rem; display: block; opacity: 0.4;"></i>
+          No active count session found. Please create or select an active session in "Count Sessions".
+        </td></tr>`;
+        if (badge) badge.textContent = `0 items`;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
       appDb = loadDatabase();
 
       const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
@@ -6009,14 +6018,14 @@
       }
 
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
-      const isExecutive = currentUser && isExecutive(currentUser);
+      const isExec = currentUser && isExecutive(currentUser);
       const hideSystemQty = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       const blindIndicator = document.getElementById('blindModeIndicator');
       if (blindIndicator) {
         if (hideSystemQty) {
           blindIndicator.style.display = 'inline-flex';
-          blindIndicator.innerHTML = (countMode === 'BLIND_ALL' && isExecutive)
+          blindIndicator.innerHTML = (countMode === 'BLIND_ALL' && isExec)
             ? `<i data-lucide="shield-alert" style="width: 14px; height: 14px; margin-right: 4px;"></i> STRICT BLIND: System Qty & Variances Hidden by Admin`
             : `<i data-lucide="eye-off" style="width: 14px; height: 14px; margin-right: 4px;"></i> BLIND AUDIT: System Qty & Variances Hidden`;
         } else {
@@ -6137,10 +6146,14 @@
     // ==========================================
     function filterReconciliationTable() {
       const tbody = document.getElementById('reconTableBody');
-      const search = (document.getElementById('reconSearchInput').value || '').trim().toLowerCase();
-      const statusFilter = document.getElementById('reconFilterStatus').value;
+      const search = (document.getElementById('reconSearchInput')?.value || '').trim().toLowerCase();
+      const statusFilter = document.getElementById('reconFilterStatus')?.value || 'ALL';
 
-      if (!tbody || !activeSession) return;
+      if (!tbody) return;
+      if (!activeSession) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-dim);">No active count session found.</td></tr>`;
+        return;
+      }
       appDb = loadDatabase();
 
       const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
@@ -6184,7 +6197,7 @@
 
       const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
       const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
-      const isExecutive = currentUser && isExecutive(currentUser);
+      const isExec = currentUser && isExecutive(currentUser);
       const hideReconValues = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       tbody.innerHTML = filtered.map(item => {
@@ -6235,7 +6248,7 @@
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text);">${counted}</td>
             <td>${reconVarianceDisplay}</td>
             <td>${statusBadge}</td>
-            <td class="admin-only" style="display: ${isManager || isExecutive ? '' : 'none'};">
+            <td class="admin-only" style="display: ${isManager || isExec ? '' : 'none'};">
               <button class="btn btn-secondary btn-sm" onclick="openEditRecordDrawer('${item.id}')">
                 <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                 <span>Edit</span>

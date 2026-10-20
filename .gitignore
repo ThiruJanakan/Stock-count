@@ -13,4 +13,6 @@ data/
 .env
 scratch/
 .vscode/
+bin/
+app/bin/
 
