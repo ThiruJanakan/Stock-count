@@ -28,6 +28,26 @@
     {
       "source": "/favicon.ico",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/Stock_Count_System_V5.html",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/vendor/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/api/index.js"
     }
   ],
   "headers": [

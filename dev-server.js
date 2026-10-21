@@ -86,9 +86,11 @@ try {
   SUPABASE_HOST = new URL(SUPABASE_URL).hostname;
 } catch (_) {}
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (_) {}
 
 // ============================================================================
 // 1. SUPABASE REST API CLIENT HELPER
@@ -1292,4 +1294,11 @@ if (require.main === module) {
   });
 }
 
-module.exports = server;
+function handler(req, res) {
+  server.emit('request', req, res);
+}
+Object.assign(handler, server);
+handler.listen = (...args) => server.listen(...args);
+handler.close = (...args) => server.close(...args);
+
+module.exports = handler;
