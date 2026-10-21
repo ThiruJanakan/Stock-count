@@ -9,10 +9,11 @@ Document Reference : LINA-SDP-ENG-2026-V5.0
 Classification     : CONFIDENTIAL / INTERNAL ENTERPRISE SPECIFICATION
 Target Release     : Production V5.0 (PWA & Android Hybrid System)
 Author / Lead      : Senior Lead Systems Analyst & Enterprise Software Architect
-Corporate Entity   : Lina Manufacturing (Pvt) Ltd (Hemas Group Healthcare Arm)
-Operating Location : Bandaragama & Moratuwa Pharmaceutical Formulations Facilities, Sri Lanka
+Corporate Entity   : Lina Manufacturing (Pvt) Ltd (Sunshine Healthcare Lanka / Sunshine Holdings Group)
+Operating Location : Kadawatha Pharmaceutical Formulations Facility, Sri Lanka
 Date of Issue      : October 2026
 Methodology        : Object-Oriented System Analysis and Design (OOSAD)
+
 ```
 
 ---
@@ -36,7 +37,7 @@ Unauthorized reproduction, digital extraction, reverse engineering, or external 
 
 ## ABSTRACT
 
-In pharmaceutical and high-precision manufacturing, regulatory compliance (cGMP, WHO-GMP, NMRA Sri Lanka) requires stringent inventory integrity, traceability, and batch-level reconciliation. Lina Manufacturing (Pvt) Ltd, the pharmaceutical manufacturing subsidiary of Hemas Pharmaceuticals, currently manages active pharmaceutical ingredients (APIs), excipients, primary packaging materials, and finished goods across multi-warehouse locations in Bandaragama and Moratuwa. Historically, periodic wall-to-wall stocktakes and cycle counts relied upon paper tally sheets, clipboard logs, and post-audit spreadsheet transcriptions. 
+In pharmaceutical and high-precision manufacturing, regulatory compliance (cGMP, WHO-GMP, NMRA Sri Lanka) requires stringent inventory integrity, traceability, and batch-level reconciliation. Lina Manufacturing (Pvt) Ltd, the pharmaceutical manufacturing subsidiary of Sunshine Healthcare Lanka (Pvt) Ltd under the Sunshine Holdings PLC conglomerate, currently manages active pharmaceutical ingredients (APIs), excipients, primary packaging materials, and finished goods across its manufacturing and warehousing facilities in Kadawatha, Sri Lanka. Historically, periodic wall-to-wall stocktakes and cycle counts relied upon paper tally sheets, clipboard logs, and post-audit spreadsheet transcriptions. 
 
 This legacy approach exposed operations to acute operational risks: severe stocktake downtime, transcription errors, compromised counting objectivity from counters viewing expected system quantities, absence of cryptographic audit logging, and risk of spreadsheet formula tampering.
 
@@ -50,7 +51,8 @@ This project delivers the **Lina Central Stock Count & Inventory Auditing Platfo
 
 ## ACKNOWLEDGMENTS
 
-The engineering and systems analysis team extends sincere gratitude to the Executive Board of Lina Manufacturing (Pvt) Ltd and Hemas Pharmaceuticals for their sponsorship and operational access. Special appreciation is accorded to the warehouse operations staff, floor supervisors, inventory controllers, and quality compliance auditors across the Bandaragama manufacturing plant whose daily operational insights directly informed our user stories, state-transition models, and defensive UX paradigms.
+The engineering and systems analysis team extends sincere gratitude to the Executive Board of Lina Manufacturing (Pvt) Ltd, Sunshine Healthcare Lanka, and Sunshine Holdings PLC for their sponsorship and operational access. Special appreciation is accorded to the warehouse operations staff, floor supervisors, inventory controllers, and quality compliance auditors across the Kadawatha pharmaceutical manufacturing plant whose daily operational insights directly informed our user stories, state-transition models, and defensive UX paradigms.
+
 
 ---
 
@@ -130,7 +132,7 @@ The engineering and systems analysis team extends sincere gratitude to the Execu
 # CHAPTER 01 - INTRODUCTION
 
 ## 1.1 Brief Introduction about the Client
-**Lina Manufacturing (Pvt) Ltd** is Sri Lanka’s premier pharmaceutical manufacturing enterprise, operating as a specialized production subsidiary under Hemas Pharmaceuticals and the Hemas Holdings PLC conglomerate. Headquartered with state-of-the-art formulation plants in Bandaragama and Moratuwa, Lina Manufacturing is recognized as the pioneer of locally manufactured respiratory inhalers (metered-dose inhalers and dry powder devices), oral solid dosages (tablets and capsules), and critical liquid formulations for both the state healthcare sector (Ministry of Health / Medical Supplies Division) and private commercial distribution.
+**Lina Manufacturing (Pvt) Ltd** is Sri Lanka’s premier pharmaceutical manufacturing enterprise, operating as a specialized production subsidiary under Sunshine Healthcare Lanka (Pvt) Ltd and the Sunshine Holdings PLC conglomerate. Headquartered with state-of-the-art formulation and cleanroom production facilities in Kadawatha, Sri Lanka, Lina Manufacturing is recognized as the pioneer of locally manufactured respiratory inhalers (metered-dose inhalers and dry powder devices), oral solid dosages (tablets and capsules), and critical liquid formulations for both the state healthcare sector (Ministry of Health / Medical Supplies Division) and private commercial distribution.
 
 Operating under stringent cGMP (Current Good Manufacturing Practices) and National Medicines Regulatory Authority (NMRA) guidelines, Lina manages vast inventories comprising:
 - Active Pharmaceutical Ingredients (APIs) requiring temperature-controlled vault storage.
@@ -138,20 +140,20 @@ Operating under stringent cGMP (Current Good Manufacturing Practices) and Nation
 - Critical primary packaging (aluminum canisters, PVC/PVDC foils, specialized valves).
 - Finished pharmaceutical products awaiting batch release and quality quarantine sign-off.
 
-The enterprise operates multiple warehousing zones, raw material stores, quarantined holding bays, cold rooms, and finished goods distribution warehouses across its facility footprints.
+The enterprise operates multiple warehousing zones, raw material stores, quarantined holding bays, cold rooms, and finished goods distribution warehouses across its Kadawatha manufacturing plant footprint.
 
 ```
        +-------------------------------------------------------------+
-       |               HEMAS HOLDINGS PLC (PARENT GROUP)             |
+       |              SUNSHINE HOLDINGS PLC (PARENT GROUP)           |
        +-------------------------------------------------------------+
                                       |
        +-------------------------------------------------------------+
-       |                  HEMAS PHARMACEUTICALS                      |
+       |               SUNSHINE HEALTHCARE LANKA (PVT) LTD           |
        +-------------------------------------------------------------+
                                       |
        +-------------------------------------------------------------+
        |               LINA MANUFACTURING (PVT) LTD                  |
-       |    (Bandaragama & Moratuwa Formulation Plants, Sri Lanka)   |
+       |       (Kadawatha Formulations Plant Complex, Sri Lanka)     |
        +-------------------------------------------------------------+
               |                             |                        |
 +---------------------------+  +-------------------------+  +-------------------------+
@@ -159,6 +161,7 @@ The enterprise operates multiple warehousing zones, raw material stores, quarant
 | (Controlled Temperature)  |  | (Foils, Canisters, Box) |  | (Quarantine & Released) |
 +---------------------------+  +-------------------------+  +-------------------------+
 ```
+
 
 ## 1.2 Business Process Overview
 The manufacturing and storage lifecycle requires frequent stock audits, structured into:
@@ -271,11 +274,11 @@ Cost analysis shows substantial savings by reducing production downtime and elim
 *Economic Feasibility Conclusion*: **HIGHLY FEASIBLE**. Payback achieved within **3.8 months** against reduced downtime costs.
 
 ## 1.7 Client Contact Details
-- **Client Organization**: Lina Manufacturing (Pvt) Ltd (A Member of Hemas Holdings PLC)
-- **Primary Facility**: Pharmaceutical Manufacturing Complex, Industrial Zone, Bandaragama, Sri Lanka
-- **Secondary Facility**: Formulations Unit, Kadawatha Road, Moratuwa, Sri Lanka
-- **Corporate Web Portal**: `https://www.hemas.com/our-businesses/healthcare/`
-- **Primary Stakeholder**: Department of Inventory Auditing, Supply Chain & Logistics
+- **Client Organization**: Lina Manufacturing (Pvt) Ltd (A Member of Sunshine Healthcare Lanka / Sunshine Holdings PLC)
+- **Primary Facility**: Pharmaceutical Formulations & Manufacturing Complex, Kadawatha, Sri Lanka
+- **Corporate Web Portals**: `https://www.sunshineholdings.net/` & `https://sunshinehealthcare.lk/`
+- **Primary Stakeholder**: Department of Inventory Auditing, Supply Chain & Warehousing
+
 
 ---
 
@@ -1057,7 +1060,8 @@ erDiagram
 | | `title` | `VARCHAR(128)` | NOT NULL | Descriptive title of the stocktake session |
 | | `count_type` | `VARCHAR(20)` | NOT NULL | Enum: `PHYSICAL`, `CYCLE`, `BLIND_COUNT`, `OPEN_COUNT` |
 | | `status` | `VARCHAR(20)` | NOT NULL, DEFAULT 'OPEN'| Enum: `OPEN`, `PAUSED`, `LOCKED`, `COMPLETED` |
-| | `warehouse_location`| `VARCHAR(64)` | NOT NULL | Plant location (e.g., `Bandaragama Raw Stores`) |
+| | `warehouse_location`| `VARCHAR(64)` | NOT NULL | Plant location (e.g., `Kadawatha Raw Material Stores`) |
+
 | | `created_by` | `VARCHAR(64)` | FOREIGN KEY -> `user_accounts(user_id)` | Session creator user identifier |
 | | `created_at` | `TIMESTAMP` | NOT NULL, DEFAULT NOW() | Creation timestamp |
 | | `closed_at` | `TIMESTAMP` | NULL | Timestamp of formal session closure |
@@ -1123,7 +1127,8 @@ erDiagram
 ### 3.8.2 Inventory Manager & Administrator Dashboard Wireframe
 ```
 +-----------------------------------------------------------------------------------+
-|  LINA STOCK COUNT V5.0   [Active: Bandaragama Raw Stores]   Role: [ADMIN: K. Thiru]|
+|  LINA STOCK COUNT V5.0   [Active: Kadawatha Raw Stores]   Role: [ADMIN: K. Thiru]|
+
 |  [Dashboard] [Sessions] [Counting Station] [Item Master] [Variance Analysis] [Audit]
 +-----------------------------------------------------------------------------------+
 |  ACTIVE SESSION: SES-2026-01 · Solid Formulation Raw Materials · Status: [OPEN]   |

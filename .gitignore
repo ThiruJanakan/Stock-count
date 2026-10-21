@@ -16,5 +16,4 @@ data/
 scratch/
 .vscode/
 bin/
-app/bin/
-
+node_modules/
