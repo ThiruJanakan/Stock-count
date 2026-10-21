@@ -3982,7 +3982,11 @@
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
       const span = document.createElement('span');
-      span.textContent = message;
+      if (typeof message === 'string' && message.includes('<') && message.includes('>')) {
+        span.innerHTML = message;
+      } else {
+        span.textContent = message;
+      }
       toast.appendChild(span);
       container.appendChild(toast);
       setTimeout(() => {
@@ -4032,6 +4036,7 @@
       confirmText = 'Confirm',
       cancelText = 'Cancel',
       confirmType = 'primary', // 'primary', 'danger', 'warning'
+      confirmClass = null,
       icon = 'alert-triangle'
     } = {}) {
       return new Promise((resolve) => {
@@ -4049,7 +4054,13 @@
         const iconEl = document.getElementById('customModalIcon');
 
         if (titleEl) titleEl.textContent = title;
-        if (messageEl) messageEl.textContent = message;
+        if (messageEl) {
+          if (typeof message === 'string' && message.includes('<') && message.includes('>')) {
+            messageEl.innerHTML = message;
+          } else {
+            messageEl.textContent = message;
+          }
+        }
 
         if (badgeEl) {
           if (badge) {
@@ -4069,9 +4080,11 @@
           }
         }
 
+        const effectiveType = (confirmType === 'danger' || confirmClass === 'btn-danger') ? 'danger' : ((confirmType === 'warning' || confirmClass === 'btn-warning') ? 'warning' : 'primary');
+
         if (confirmBtn) {
           confirmBtn.textContent = confirmText;
-          if (confirmType === 'danger') {
+          if (effectiveType === 'danger') {
             confirmBtn.className = 'btn btn-primary';
             confirmBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
             confirmBtn.style.boxShadow = '0 4px 14px rgba(239, 68, 68, 0.4)';
@@ -8421,6 +8434,7 @@
         title: `Delete Session: ${session.session_code}`,
         message: `Are you sure you want to permanently delete session <b>"${session.title}"</b> (${session.session_code})?<br><br><span style="color: var(--accent-rose); font-weight: 700;">WARNING:</span> All registered items, recorded physical counts, and logs belonging to this session will be permanently erased. All users will be alerted.`,
         confirmText: 'Delete Session',
+        confirmType: 'danger',
         confirmClass: 'btn-danger',
         icon: 'trash-2'
       });
