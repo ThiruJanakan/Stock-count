@@ -2889,10 +2889,16 @@
       <div class="card">
         <div class="card-title">
           <span>Stock Count Sessions</span>
-          <button class="btn btn-primary btn-sm" onclick="openNewSessionDrawer()">
-            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-            <span>Create Session</span>
-          </button>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm admin-only" onclick="openReplaceSheetForActiveSession()" title="Upload new or replacement spreadsheet for the active session">
+              <i data-lucide="file-up" style="width: 14px; height: 14px; color: var(--accent);"></i>
+              <span>Replace Sheet</span>
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openNewSessionDrawer()">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+              <span>Create Session</span>
+            </button>
+          </div>
         </div>
         <div class="table-container">
           <table id="sessionsTable">
@@ -7578,26 +7584,46 @@
 
     let smartReconcileAnalysis = null;
 
-    function openReplaceSheetForActiveSession() {
-      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
-        showToast('Unauthorized: Only Administrators can replace or update session datasheets.', 'error');
+        function openReplaceSheetForSession(sessionId) {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
+        showToast('Unauthorized: Only Administrators can replace session datasheets.', 'error');
         return;
       }
-      if (!activeSession) {
-        showToast('Please select an active session first.', 'warning');
+      appDb = loadDatabase();
+      const s = (appDb.sessions || []).find(x => x.id === sessionId);
+      if (!s) {
+        showToast('Session not found.', 'error');
         return;
       }
-      if (activeSession.status === 'CLOSED') {
+      if (s.status === 'CLOSED') {
         showToast('This session is CLOSED and LOCKED. Please reopen the session before replacing its sheet.', 'error');
         return;
       }
 
+      // Switch active session
+      activeSession = s;
+      localStorage.setItem('LINA_ACTIVE_SESSION_ID', s.id);
+      updateActiveSessionUI();
+
+      // Switch to upload view
       switchView('upload');
-      showToast(`Ready to replace datasheet for session "${activeSession.session_code}". Select or drop your new spreadsheet below.`, 'info', 5000);
-      const input = document.getElementById('sheetFileInput');
-      if (input) {
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast(`Ready to replace datasheet for session "${s.session_code} - ${s.title}". Choose your replacement spreadsheet now.`, 'info', 6000);
+
+      // Open file dialog automatically
+      setTimeout(() => {
+        const fileInput = document.getElementById('sheetFileInput');
+        if (fileInput) {
+          fileInput.click();
+        }
+      }, 350);
+    }
+
+    function openReplaceSheetForActiveSession() {
+      if (!activeSession) {
+        showToast('Please select a session first.', 'warning');
+        return;
       }
+      openReplaceSheetForSession(activeSession.id);
     }
 
     function commitSheetToSession() {
@@ -8775,6 +8801,10 @@
                   <span>${isCurrentActive ? 'Active (Counting)' : 'Select & Count'}</span>
                 </button>
                 ${isManager ? `
+                  <button class="btn btn-secondary btn-sm admin-exclusive" onclick="openReplaceSheetForSession('${s.id}')" title="Admin Control: Upload new or replacement datasheet for this session">
+                    <i data-lucide="file-up" style="width: 14px; height: 14px; color: var(--accent);"></i>
+                    <span>Replace Sheet</span>
+                  </button>
                   <button class="btn btn-secondary btn-sm admin-exclusive" onclick="toggleSessionBlindMode('${s.id}')" title="Manager Control: Configure System Qty Visibility">
                     <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: #f59e0b;"></i>
                     <span>Visibility</span>
@@ -9119,6 +9149,7 @@
     window.closeSmartSheetReconcileModal = closeSmartSheetReconcileModal;
     window.confirmSmartSheetReconcile = confirmSmartSheetReconcile;
     window.openReplaceSheetForActiveSession = openReplaceSheetForActiveSession;
+    window.openReplaceSheetForSession = openReplaceSheetForSession;
     window.closeAdminDeleteSessionModal = closeAdminDeleteSessionModal;
     window.submitAdminDeleteSession = submitAdminDeleteSession;
     window.updateSessionBannerVisibility = updateSessionBannerVisibility;
