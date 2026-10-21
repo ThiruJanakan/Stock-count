@@ -335,19 +335,32 @@
       color: var(--text);
     }
 
-    .nav-tab-btn.active {
-      color: var(--accent);
-      background: var(--accent-subtle);
-      border-bottom: 2.5px solid var(--accent);
+    .nav-tab-btn.active,
+    .nav-tab-btn[aria-selected="true"] {
+      color: var(--accent) !important;
+      background: var(--accent-subtle) !important;
+      border-bottom: 3.5px solid var(--accent) !important;
       border-radius: var(--radius-md) var(--radius-md) 0 0;
-      font-weight: 700;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+      font-weight: 800 !important;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.18) !important;
     }
 
-    [data-theme="dark"] .nav-tab-btn.active {
-      background: rgba(56, 189, 248, 0.12);
-      color: #38bdf8;
-      border-bottom-color: #38bdf8;
+    .nav-tab-btn.active i,
+    .nav-tab-btn[aria-selected="true"] i {
+      color: var(--accent) !important;
+      stroke-width: 2.5px;
+    }
+
+    [data-theme="dark"] .nav-tab-btn.active,
+    [data-theme="dark"] .nav-tab-btn[aria-selected="true"] {
+      background: rgba(56, 189, 248, 0.18) !important;
+      color: #38bdf8 !important;
+      border-bottom-color: #38bdf8 !important;
+    }
+
+    [data-theme="dark"] .nav-tab-btn.active i,
+    [data-theme="dark"] .nav-tab-btn[aria-selected="true"] i {
+      color: #38bdf8 !important;
     }
 
     .mobile-drawer-link.active {
@@ -4903,7 +4916,10 @@
       }
 
       document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.removeAttribute('aria-selected');
+      });
       document.querySelectorAll('.mobile-drawer-link').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.mobile-bottom-tab').forEach(btn => btn.classList.remove('active'));
 
@@ -4913,7 +4929,10 @@
       const targetBottomTab = document.querySelector(`.mobile-bottom-tab[data-view="${viewName}"]`);
 
       if (targetSec) targetSec.classList.add('active');
-      if (targetBtn) targetBtn.classList.add('active');
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.setAttribute('aria-selected', 'true');
+      }
       if (targetDrawerBtn) targetDrawerBtn.classList.add('active');
       if (targetBottomTab) targetBottomTab.classList.add('active');
 
@@ -9319,9 +9338,18 @@
     }
 
     // Register PWA Service Worker for offline caching and installation with auto-update detection
+    // Auto-clean old offline caches
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(k => {
+          if (k !== 'lina-stock-cache-v5') caches.delete(k);
+        });
+      }).catch(() => {});
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then((reg) => {
+        navigator.serviceWorker.register('./sw.js?v=5').then((reg) => {
           // Proactively check for updates on startup
           reg.update().catch(() => {});
 

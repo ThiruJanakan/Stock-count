@@ -50,7 +50,7 @@ function simulateVercelRequest(urlPath, method = 'GET', headers = {}, body = nul
         ...headers
       },
       socket: { remoteAddress: '127.0.0.1' },
-      on: function(event, handler) {
+      on: function (event, handler) {
         if (event === 'data' && body) {
           handler(Buffer.from(typeof body === 'object' ? JSON.stringify(body) : body));
         }
@@ -65,14 +65,14 @@ function simulateVercelRequest(urlPath, method = 'GET', headers = {}, body = nul
     let resBody = '';
 
     const mockRes = {
-      writeHead: function(status, h) {
+      writeHead: function (status, h) {
         statusCode = status;
         if (h) resHeaders = Object.assign(resHeaders, h);
       },
-      setHeader: function(k, v) {
+      setHeader: function (k, v) {
         resHeaders[k] = v;
       },
-      end: function(chunk) {
+      end: function (chunk) {
         if (chunk) resBody += chunk.toString();
         resolve({
           statusCode,
@@ -283,8 +283,8 @@ async function runAllRouteTests() {
   });
 
   await check('index.html switchView function highlights targetBtn and targetDrawerBtn', async () => {
-    assert(indexContent.includes("if (targetBtn) targetBtn.classList.add('active');"));
-    assert(indexContent.includes("if (targetDrawerBtn) targetDrawerBtn.classList.add('active');"));
+    assert(indexContent.includes("targetBtn.classList.add('active');"));
+    assert(indexContent.includes("targetDrawerBtn.classList.add('active');"));
   });
 
   await check('index.html contains admin delete session password modal', async () => {

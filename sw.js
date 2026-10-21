@@ -3,7 +3,7 @@
  * Progressive Web Application (PWA) Service Worker
  */
 
-const CACHE_NAME = 'lina-stock-cache-v3';
+const CACHE_NAME = 'lina-stock-cache-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -74,7 +74,7 @@ self.addEventListener('fetch', (event) => {
   // Network-first for navigation / HTML requests so installed APK and PWA users immediately receive live updates
   if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
     event.respondWith(
-      fetch(event.request).then((networkResponse) => {
+      fetch(event.request, { cache: 'no-cache' }).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
