@@ -2219,6 +2219,10 @@
           </button>
 
           <!-- Download Excel button (Governed by Admin approval for Executive) -->
+          <button class="btn btn-secondary btn-sm admin-exclusive" id="bannerReplaceSheetBtn" onclick="openReplaceSheetForActiveSession()" title="Admin Control: Upload new or replacement datasheet for active session">
+            <i data-lucide="file-up" style="width: 14px; height: 14px; color: var(--accent);"></i>
+            <span>Replace Sheet</span>
+          </button>
           <button class="btn btn-secondary btn-sm" id="bannerExportExcelBtn" onclick="exportSessionAuditExcel()" title="Download Full Excel Audit Sheet">
             <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
             <span>Download Excel</span>
@@ -7574,6 +7578,28 @@
 
     let smartReconcileAnalysis = null;
 
+    function openReplaceSheetForActiveSession() {
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
+        showToast('Unauthorized: Only Administrators can replace or update session datasheets.', 'error');
+        return;
+      }
+      if (!activeSession) {
+        showToast('Please select an active session first.', 'warning');
+        return;
+      }
+      if (activeSession.status === 'CLOSED') {
+        showToast('This session is CLOSED and LOCKED. Please reopen the session before replacing its sheet.', 'error');
+        return;
+      }
+
+      switchView('upload');
+      showToast(`Ready to replace datasheet for session "${activeSession.session_code}". Select or drop your new spreadsheet below.`, 'info', 5000);
+      const input = document.getElementById('sheetFileInput');
+      if (input) {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
     function commitSheetToSession() {
       if (!currentUser || (currentUser.role !== 'ADMIN' && !isExecutive(currentUser) && currentUser.role !== 'MANAGER')) {
         showToast('Only Manager, Administrator, or Executive can upload sheets.', 'error');
@@ -9092,6 +9118,7 @@
     window.resolveDuplicateSku = resolveDuplicateSku;
     window.closeSmartSheetReconcileModal = closeSmartSheetReconcileModal;
     window.confirmSmartSheetReconcile = confirmSmartSheetReconcile;
+    window.openReplaceSheetForActiveSession = openReplaceSheetForActiveSession;
     window.closeAdminDeleteSessionModal = closeAdminDeleteSessionModal;
     window.submitAdminDeleteSession = submitAdminDeleteSession;
     window.updateSessionBannerVisibility = updateSessionBannerVisibility;
