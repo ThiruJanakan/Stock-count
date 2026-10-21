@@ -337,8 +337,30 @@
 
     .nav-tab-btn.active {
       color: var(--accent);
-      border-bottom-color: var(--accent);
+      background: var(--accent-subtle);
+      border-bottom: 2.5px solid var(--accent);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
       font-weight: 700;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+    }
+
+    [data-theme="dark"] .nav-tab-btn.active {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-bottom-color: #38bdf8;
+    }
+
+    .mobile-drawer-link.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      font-weight: 700;
+      border-left: 4px solid var(--accent);
+    }
+
+    [data-theme="dark"] .mobile-drawer-link.active {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border-left-color: #38bdf8;
     }
 
     .tab-badge {
@@ -2174,7 +2196,7 @@
           <!-- Add Unlisted Item button visible to ALL users -->
           <button class="btn btn-primary btn-sm" id="bannerAddUnlistedBtn" onclick="openUnlistedItemDrawer()" title="Add floor item not in sheet">
             <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
-            <span>+ Add Unlisted</span>
+            <span>Add Unlisted</span>
           </button>
 
           <!-- Admin-exclusive Blind Mode Control -->
@@ -2558,7 +2580,7 @@
             </button>
             <button class="btn btn-primary btn-sm" id="counterAddUnlistedBtn" onclick="openUnlistedItemDrawer()">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-              <span>+ Add Unlisted</span>
+              <span>Add Unlisted</span>
             </button>
           </div>
         </div>
@@ -3403,6 +3425,146 @@
     </div>
   </div>
 
+  <!-- Dedicated Admin Delete Session Password Authorization Modal -->
+  <div class="modal-backdrop" id="adminDeleteSessionModalBackdrop" style="display: none;" onclick="if(event.target === this) closeAdminDeleteSessionModal()">
+    <div class="custom-modal-dialog" style="max-width: 500px;">
+      <div style="display: flex; gap: 1rem; align-items: flex-start;">
+        <div class="modal-icon-badge danger" style="background: var(--accent-rose-subtle); color: var(--accent-rose); border: 1px solid rgba(220, 38, 38, 0.25);">
+          <i data-lucide="trash-2" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <h3 style="font-size: 1.18rem; font-weight: 800; color: var(--text); margin: 0;" id="adminDeleteSessionTitle">Delete Counting Session</h3>
+          <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.4rem; line-height: 1.5;" id="adminDeleteSessionSubtitle">
+            Session: <strong id="adminDeleteSessionCode" style="font-family: var(--font-mono); color: var(--text);">SES-XXXXX</strong>
+          </p>
+
+          <!-- Critical Alert Box -->
+          <div style="margin-top: 0.85rem; padding: 0.85rem 1rem; background: var(--accent-rose-subtle); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--accent-rose); line-height: 1.5;">
+            <div style="font-weight: 800; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+              <i data-lucide="alert-octagon" style="width: 16px; height: 16px;"></i>
+              <span>THIS ACTION CANNOT BE UNDONE!</span>
+            </div>
+            <div>All registered items, recorded physical counts by floor counters, variance calculations, and audit logs for this session will be <strong>permanently and irreversibly destroyed</strong>.</div>
+          </div>
+
+          <!-- Password Prompt -->
+          <div style="margin-top: 1rem;">
+            <label class="form-label" for="adminDeleteSessionPasswordInput" style="font-size: 0.82rem; font-weight: 700; color: var(--text); display: block; margin-bottom: 0.35rem;">
+              Enter Administrator Password to Authorize Deletion:
+            </label>
+            <input type="password" id="adminDeleteSessionPasswordInput" class="form-input" placeholder="Enter administrator password..." autocomplete="current-password" style="width: 100%;" onkeydown="if(event.key === 'Enter') submitAdminDeleteSession()" />
+            <div id="adminDeleteSessionError" style="display: none; color: var(--accent-rose); font-size: 0.78rem; font-weight: 600; margin-top: 0.35rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions-footer" style="margin-top: 1.25rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeAdminDeleteSessionModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" id="adminDeleteSessionConfirmBtn" onclick="submitAdminDeleteSession()">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+          <span>Permanently Delete Session</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smart Sheet Replacement & Reconciliation Modal -->
+  <div class="modal-backdrop" id="smartSheetReconcileModalBackdrop" style="display: none;" onclick="if(event.target === this) closeSmartSheetReconcileModal()">
+    <div class="custom-modal-dialog" style="max-width: 640px; max-height: calc(100dvh - 2.5rem); overflow-y: auto;">
+      <div style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem;">
+        <div class="modal-icon-badge warning" style="background: var(--accent-amber-subtle); color: var(--accent-amber); border: 1px solid rgba(217, 119, 6, 0.3);">
+          <i data-lucide="file-spreadsheet" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <h3 style="font-size: 1.22rem; font-weight: 800; color: var(--text); margin: 0;">Reconcile Sheet Replacement</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem;" id="smartSheetSessionLabel">
+            Session: <strong style="font-family: var(--font-mono); color: var(--text);" id="smartSheetSessionCode">SES-XXXXX</strong>
+          </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeSmartSheetReconcileModal()">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+
+      <!-- Quick Stats Breakdown Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+        <div style="padding: 0.65rem 0.85rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Matching & Counted</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-emerald);" id="reconcileStatCounted">0</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);">Items counted on floor</div>
+        </div>
+        <div style="padding: 0.65rem 0.85rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Matching & Uncounted</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--text);" id="reconcileStatUncounted">0</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);">Awaiting floor count</div>
+        </div>
+        <div style="padding: 0.65rem 0.85rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">New In Sheet</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);" id="reconcileStatNew">0</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);">Brand new SKUs</div>
+        </div>
+        <div style="padding: 0.65rem 0.85rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Missing In Sheet</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-rose);" id="reconcileStatMissing">0</div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);" id="reconcileStatMissingCounted">0 were counted</div>
+        </div>
+      </div>
+
+      <!-- Option 1: Keep Recorded Counts on Matching Items -->
+      <div style="margin-bottom: 0.85rem; padding: 0.85rem 1rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+        <label style="display: flex; align-items: flex-start; gap: 0.65rem; cursor: pointer;">
+          <input type="checkbox" id="reconcileKeepCounts" checked style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent);" />
+          <div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: var(--text);">
+              Keep existing recorded physical counts for matching items
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.45;">
+              <span style="color: var(--accent-emerald); font-weight: 600;">Recommended:</span> Preserves the physical counts recorded by floor staff (<span id="reconcileKeepCountsText">0 items</span>). System stock will update to new sheet and variances will automatically recalculate. Uncheck only if you want floor staff to recount from 0.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Option 2: Add New Items -->
+      <div style="margin-bottom: 0.85rem; padding: 0.85rem 1rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);" id="reconcileNewItemsBox">
+        <label style="display: flex; align-items: flex-start; gap: 0.65rem; cursor: pointer;">
+          <input type="checkbox" id="reconcileAddNewItems" checked style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent);" />
+          <div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: var(--text);">
+              Add <span id="reconcileNewItemsCount">0</span> brand new items from spreadsheet into checklist
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.45;">
+              Appends new items with UNCOUNTED status so floor counters can scan and verify them.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Option 3: Handle Missing Old Items -->
+      <div style="margin-bottom: 1rem; padding: 0.85rem 1rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);" id="reconcileMissingItemsBox">
+        <label style="display: flex; align-items: flex-start; gap: 0.65rem; cursor: pointer;">
+          <input type="checkbox" id="reconcileRemoveMissing" style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent-rose);" />
+          <div>
+            <div style="font-size: 0.92rem; font-weight: 700; color: var(--text);" id="reconcileRemoveMissingTitle">
+              Remove <span id="reconcileMissingItemsCount">0</span> items missing from new sheet
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; line-height: 1.45;" id="reconcileRemoveMissingDesc">
+              <span style="color: var(--accent-rose); font-weight: 600;">Caution:</span> If unchecked, missing items will be safely preserved in this session as <strong>Unlisted floor items</strong> (so physical counts are not lost). Check this box only if you want to permanently discard them.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="modal-actions-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" onclick="closeSmartSheetReconcileModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="reconcileCommitBtn" onclick="confirmSmartSheetReconcile()">
+          <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+          <span>Apply Reconciled Sheet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Dedicated Admin Session Control & Visibility Modal -->
   <div class="modal-backdrop" id="sessionControlModalBackdrop" style="display: none;" onclick="if(event.target === this) closeSessionControlModal()">
     <div class="custom-modal-dialog" style="max-width: 580px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; margin: auto;">
@@ -4751,6 +4913,8 @@
       const targetBottomTab = document.querySelector(`.mobile-bottom-tab[data-view="${viewName}"]`);
 
       if (targetSec) targetSec.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+      if (targetDrawerBtn) targetDrawerBtn.classList.add('active');
       if (targetBottomTab) targetBottomTab.classList.add('active');
 
       // Dynamic Active Session Banner Scope: Only show on Dashboard, Counter Scanning & Reconciliation
@@ -7389,6 +7553,8 @@
       lucide.createIcons();
     }
 
+    let smartReconcileAnalysis = null;
+
     function commitSheetToSession() {
       if (!currentUser || (currentUser.role !== 'ADMIN' && !isExecutive(currentUser) && currentUser.role !== 'MANAGER')) {
         showToast('Only Manager, Administrator, or Executive can upload sheets.', 'error');
@@ -7409,26 +7575,233 @@
 
       appDb = loadDatabase();
       const existingItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
-      
-      const existingSkuMap = new Map();
-      existingItems.forEach(item => existingSkuMap.set(String(item.sku).trim().toLowerCase(), item));
 
-      const duplicates = parsedSheetData.filter(item => existingSkuMap.has(String(item.sku).trim().toLowerCase()));
-
-      if (duplicates.length > 0 && existingItems.length > 0) {
-        pendingDuplicateUploadRows = parsedSheetData;
-        const modalBackdrop = document.getElementById('duplicateSkuModalBackdrop');
-        const modalMsg = document.getElementById('duplicateSkuModalMessage');
-        if (modalMsg) {
-          modalMsg.textContent = `Found ${duplicates.length} item(s) in this spreadsheet that already exist in active session "${activeSession.session_code}". How would you like to handle existing items?`;
-        }
-        if (modalBackdrop) modalBackdrop.style.display = 'flex';
-        lucide.createIcons();
+      // If active session already has existing inventory, launch Smart Reconciliation
+      if (existingItems.length > 0) {
+        openSmartSheetReconcileModal(existingItems, parsedSheetData);
         return;
       }
 
-      // No duplicates or first upload: append directly
+      // First upload into an empty session: append directly
       executeSheetCommit('APPEND');
+    }
+
+    function openSmartSheetReconcileModal(existingItems, newRows) {
+      const existingSkuMap = new Map();
+      existingItems.forEach(item => {
+        const skuKey = String(item.sku || '').trim().toLowerCase();
+        if (skuKey) existingSkuMap.set(skuKey, item);
+      });
+
+      const newSkuMap = new Map();
+      newRows.forEach(item => {
+        const skuKey = String(item.sku || '').trim().toLowerCase();
+        if (skuKey) newSkuMap.set(skuKey, item);
+      });
+
+      const matchingCounted = [];
+      const matchingUncounted = [];
+      const newOnly = [];
+      const missingOld = [];
+
+      // Categorize new rows against existing session
+      newRows.forEach(newItem => {
+        const skuKey = String(newItem.sku || '').trim().toLowerCase();
+        if (existingSkuMap.has(skuKey)) {
+          const oldItem = existingSkuMap.get(skuKey);
+          const isCounted = (oldItem.status && oldItem.status !== 'UNCOUNTED') || (parseFloat(oldItem.total_counted_qty) > 0);
+          if (isCounted) {
+            matchingCounted.push({ oldItem, newItem });
+          } else {
+            matchingUncounted.push({ oldItem, newItem });
+          }
+        } else {
+          newOnly.push(newItem);
+        }
+      });
+
+      // Categorize existing items missing in new sheet
+      existingItems.forEach(oldItem => {
+        const skuKey = String(oldItem.sku || '').trim().toLowerCase();
+        if (!newSkuMap.has(skuKey)) {
+          const isCounted = (oldItem.status && oldItem.status !== 'UNCOUNTED') || (parseFloat(oldItem.total_counted_qty) > 0);
+          missingOld.push({ oldItem, isCounted });
+        }
+      });
+
+      const missingCounted = missingOld.filter(m => m.isCounted);
+
+      smartReconcileAnalysis = {
+        existingItems,
+        newRows,
+        matchingCounted,
+        matchingUncounted,
+        newOnly,
+        missingOld,
+        missingCounted
+      };
+
+      // Populate Modal UI
+      const modal = document.getElementById('smartSheetReconcileModalBackdrop');
+      const codeLabel = document.getElementById('smartSheetSessionCode');
+      const statCounted = document.getElementById('reconcileStatCounted');
+      const statUncounted = document.getElementById('reconcileStatUncounted');
+      const statNew = document.getElementById('reconcileStatNew');
+      const statMissing = document.getElementById('reconcileStatMissing');
+      const statMissingCounted = document.getElementById('reconcileStatMissingCounted');
+
+      const keepCountsText = document.getElementById('reconcileKeepCountsText');
+      const newItemsCount = document.getElementById('reconcileNewItemsCount');
+      const missingItemsCount = document.getElementById('reconcileMissingItemsCount');
+      const removeMissingTitle = document.getElementById('reconcileRemoveMissingTitle');
+      const removeMissingDesc = document.getElementById('reconcileRemoveMissingDesc');
+
+      if (codeLabel) codeLabel.textContent = `${activeSession.session_code} - ${activeSession.title}`;
+      if (statCounted) statCounted.textContent = String(matchingCounted.length);
+      if (statUncounted) statUncounted.textContent = String(matchingUncounted.length);
+      if (statNew) statNew.textContent = String(newOnly.length);
+      if (statMissing) statMissing.textContent = String(missingOld.length);
+      if (statMissingCounted) {
+        statMissingCounted.textContent = missingCounted.length > 0
+          ? `⚠️ ${missingCounted.length} counted!`
+          : `All uncounted`;
+        statMissingCounted.style.color = missingCounted.length > 0 ? 'var(--accent-rose)' : 'var(--text-dim)';
+        statMissingCounted.style.fontWeight = missingCounted.length > 0 ? '700' : 'normal';
+      }
+
+      if (keepCountsText) keepCountsText.textContent = `${matchingCounted.length} items`;
+      if (newItemsCount) newItemsCount.textContent = String(newOnly.length);
+      if (missingItemsCount) missingItemsCount.textContent = String(missingOld.length);
+
+      const removeMissingBox = document.getElementById('reconcileMissingItemsBox');
+      if (removeMissingBox) {
+        if (missingCounted.length > 0) {
+          removeMissingBox.style.background = 'var(--accent-rose-subtle)';
+          removeMissingBox.style.borderColor = 'rgba(220, 38, 38, 0.4)';
+        } else {
+          removeMissingBox.style.background = 'var(--bg-surface)';
+          removeMissingBox.style.borderColor = 'var(--border)';
+        }
+      }
+
+      if (removeMissingTitle) {
+        removeMissingTitle.innerHTML = missingCounted.length > 0
+          ? `Remove <span style="color: var(--accent-rose); font-weight: 700;">${missingOld.length} items</span> missing from new sheet (<strong style="color: var(--accent-rose);">${missingCounted.length} already counted on floor!</strong>)`
+          : `Remove ${missingOld.length} uncounted items missing from new sheet`;
+      }
+
+      if (removeMissingDesc) {
+        removeMissingDesc.innerHTML = missingCounted.length > 0
+          ? `<span style="color: var(--accent-rose); font-weight: 700;">HIGH CAUTION:</span> ${missingCounted.length} missing items have already been physically inspected and counted on the floor. <strong>Leave UNCHECKED</strong> to keep them safely as Unlisted floor items (Book Stock = 0, physical counts preserved). Only check this if you intend to permanently delete the counting work done for them.`
+          : `If unchecked, missing items will remain in this session. Check this box to remove items not present in the new sheet.`;
+      }
+
+      const keepCountsCheck = document.getElementById('reconcileKeepCounts');
+      const addNewsCheck = document.getElementById('reconcileAddNewItems');
+      const removeMissingCheck = document.getElementById('reconcileRemoveMissing');
+
+      if (keepCountsCheck) keepCountsCheck.checked = true;
+      if (addNewsCheck) addNewsCheck.checked = true;
+      if (removeMissingCheck) removeMissingCheck.checked = false; // Safe default: never lose floor counts
+
+      if (modal) modal.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeSmartSheetReconcileModal() {
+      const modal = document.getElementById('smartSheetReconcileModalBackdrop');
+      if (modal) modal.style.display = 'none';
+      smartReconcileAnalysis = null;
+    }
+
+    function confirmSmartSheetReconcile() {
+      if (!smartReconcileAnalysis) return;
+
+      const keepCounts = document.getElementById('reconcileKeepCounts') ? document.getElementById('reconcileKeepCounts').checked : true;
+      const addNewItems = document.getElementById('reconcileAddNewItems') ? document.getElementById('reconcileAddNewItems').checked : true;
+      const removeMissing = document.getElementById('reconcileRemoveMissing') ? document.getElementById('reconcileRemoveMissing').checked : false;
+
+      const {
+        existingItems,
+        newRows,
+        matchingCounted,
+        matchingUncounted,
+        newOnly,
+        missingOld
+      } = smartReconcileAnalysis;
+
+      closeSmartSheetReconcileModal();
+
+      appDb = loadDatabase();
+      const otherItems = (appDb.items || []).filter(i => i.session_id !== activeSession.id);
+
+      const finalSessionItems = [];
+
+      // 1. Process matching items
+      const allMatching = matchingCounted.concat(matchingUncounted);
+      allMatching.forEach(({ oldItem, newItem }) => {
+        const itemCopy = Object.assign({}, oldItem);
+        itemCopy.item_name = newItem.item_name || itemCopy.item_name;
+        itemCopy.barcode = newItem.barcode || itemCopy.barcode;
+        itemCopy.zone_location = newItem.zone_location || itemCopy.zone_location;
+        itemCopy.uom = newItem.uom || itemCopy.uom;
+        itemCopy.system_qty = (typeof newItem.system_qty === 'number') ? newItem.system_qty : (parseFloat(newItem.system_qty) || 0);
+
+        if (keepCounts) {
+          const currentCount = parseFloat(itemCopy.total_counted_qty) || 0;
+          itemCopy.variance_qty = currentCount - itemCopy.system_qty;
+          if (itemCopy.status !== 'UNCOUNTED') {
+            itemCopy.status = (itemCopy.variance_qty === 0) ? 'MATCHED' : 'DISCREPANCY';
+          }
+        } else {
+          itemCopy.total_counted_qty = 0;
+          itemCopy.status = 'UNCOUNTED';
+          itemCopy.variance_qty = 0 - itemCopy.system_qty;
+          itemCopy.count_records = [];
+        }
+        finalSessionItems.push(itemCopy);
+      });
+
+      // 2. Process new items
+      if (addNewItems && newOnly.length > 0) {
+        newOnly.forEach(item => {
+          finalSessionItems.push(item);
+        });
+      }
+
+      // 3. Process missing old items
+      if (!removeMissing && missingOld.length > 0) {
+        missingOld.forEach(({ oldItem, isCounted }) => {
+          const itemCopy = Object.assign({}, oldItem);
+          itemCopy.is_unlisted = true;
+          itemCopy.system_qty = 0;
+          itemCopy.variance_qty = (parseFloat(itemCopy.total_counted_qty) || 0) - itemCopy.system_qty;
+          finalSessionItems.push(itemCopy);
+        });
+      }
+
+      appDb.items = otherItems.concat(finalSessionItems);
+
+      const sessionInDb = (appDb.sessions || []).find(s => s.id === activeSession.id);
+      if (sessionInDb) {
+        sessionInDb.total_items = finalSessionItems.length;
+        sessionInDb.counted_items = finalSessionItems.filter(i => i.status && i.status !== 'UNCOUNTED').length;
+        sessionInDb.progress_percent = sessionInDb.total_items > 0
+          ? Math.round((sessionInDb.counted_items / sessionInDb.total_items) * 100)
+          : 0;
+        activeSession = sessionInDb;
+      }
+
+      saveDatabase(appDb);
+
+      const logSummary = `Reconciled sheet replacement in session ${activeSession.session_code}: ${allMatching.length} matching (${keepCounts ? 'counts kept' : 'counts reset'}), ${addNewItems ? newOnly.length : 0} new added, ${removeMissing ? missingOld.length + ' removed' : missingOld.length + ' retained as unlisted'}`;
+      logAuditEvent('SHEET_RECONCILE', logSummary, activeSession.session_code, currentUser.role);
+
+      showToast(`Sheet reconciled successfully! Total checklist: ${finalSessionItems.length} items.`, 'success', 5000);
+
+      switchView('counting');
+      if (window.renderSessionsTable) renderSessionsTable();
+      if (window.updateMetricsAndFeeds) updateMetricsAndFeeds();
     }
 
     function resolveDuplicateSku(action) {
@@ -8418,6 +8791,8 @@
       renderSessionsTable();
     }
 
+    let pendingDeleteSessionId = null;
+
     async function deleteSession(sessionId) {
       if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
         showToast('Unauthorized: Only Administrators can delete sessions.', 'error');
@@ -8430,16 +8805,99 @@
         return;
       }
 
-      const confirmed = await showConfirmModal({
-        title: `Delete Session: ${session.session_code}`,
-        message: `Are you sure you want to permanently delete session <b>"${session.title}"</b> (${session.session_code})?<br><br><span style="color: var(--accent-rose); font-weight: 700;">WARNING:</span> All registered items, recorded physical counts, and logs belonging to this session will be permanently erased. All users will be alerted.`,
-        confirmText: 'Delete Session',
-        confirmType: 'danger',
-        confirmClass: 'btn-danger',
-        icon: 'trash-2'
-      });
+      pendingDeleteSessionId = sessionId;
+      const modal = document.getElementById('adminDeleteSessionModalBackdrop');
+      const titleEl = document.getElementById('adminDeleteSessionTitle');
+      const codeEl = document.getElementById('adminDeleteSessionCode');
+      const passInput = document.getElementById('adminDeleteSessionPasswordInput');
+      const errEl = document.getElementById('adminDeleteSessionError');
 
-      if (!confirmed) return;
+      if (titleEl) titleEl.textContent = `Delete Session: ${session.title}`;
+      if (codeEl) codeEl.textContent = `${session.session_code} (${session.total_items || 0} items)`;
+      if (passInput) {
+        passInput.value = '';
+        passInput.style.borderColor = '';
+      }
+      if (errEl) errEl.style.display = 'none';
+
+      if (modal) modal.style.display = 'flex';
+      setTimeout(() => { if (passInput) passInput.focus(); }, 150);
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeAdminDeleteSessionModal() {
+      const modal = document.getElementById('adminDeleteSessionModalBackdrop');
+      if (modal) modal.style.display = 'none';
+      pendingDeleteSessionId = null;
+    }
+
+    async function verifyCurrentAdminPassword(enteredPassword) {
+      if (!enteredPassword || !currentUser) return false;
+      appDb = loadDatabase();
+      const currentUsername = String(currentUser.username || '').toLowerCase();
+      const dbUser = (appDb.users || []).find(u => u.username && u.username.toLowerCase() === currentUsername);
+
+      // Try authoritative server endpoint if online
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: currentUser.username, password: enteredPassword })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (data.token || data.user)) return true;
+        }
+      } catch (_) {}
+
+      // Standalone APK and offline WebCrypto PBKDF2 verification
+      if (dbUser) {
+        if (dbUser.password_salt && dbUser.password_hash) {
+          const v = await verifyPassword(enteredPassword, dbUser.password_salt, dbUser.password_hash);
+          return v === true || v === 'NEEDS_UPGRADE';
+        } else if (dbUser.password) {
+          return dbUser.password === enteredPassword;
+        }
+      }
+      return false;
+    }
+
+    async function submitAdminDeleteSession() {
+      if (!pendingDeleteSessionId) return;
+      const passInput = document.getElementById('adminDeleteSessionPasswordInput');
+      const errEl = document.getElementById('adminDeleteSessionError');
+      const enteredPassword = passInput ? passInput.value : '';
+
+      if (!enteredPassword) {
+        if (errEl) {
+          errEl.textContent = 'Please enter your administrator password to proceed.';
+          errEl.style.display = 'block';
+        }
+        if (passInput) passInput.focus();
+        return;
+      }
+
+      const isValid = await verifyCurrentAdminPassword(enteredPassword);
+      if (!isValid) {
+        if (errEl) {
+          errEl.textContent = 'Incorrect administrator password. Deletion unauthorized.';
+          errEl.style.display = 'block';
+        }
+        if (passInput) {
+          passInput.style.borderColor = 'var(--accent-rose)';
+          passInput.focus();
+          passInput.select();
+        }
+        playBeep(false);
+        return;
+      }
+
+      const sessionId = pendingDeleteSessionId;
+      closeAdminDeleteSessionModal();
+
+      appDb = loadDatabase();
+      const session = (appDb.sessions || []).find(s => s.id === sessionId);
+      if (!session) return;
 
       const deletedCode = session.session_code;
       const deletedTitle = session.title;
@@ -8613,6 +9071,10 @@
     window.downloadStandardExcelTemplate = downloadStandardExcelTemplate;
     window.commitSheetToSession = commitSheetToSession;
     window.resolveDuplicateSku = resolveDuplicateSku;
+    window.closeSmartSheetReconcileModal = closeSmartSheetReconcileModal;
+    window.confirmSmartSheetReconcile = confirmSmartSheetReconcile;
+    window.closeAdminDeleteSessionModal = closeAdminDeleteSessionModal;
+    window.submitAdminDeleteSession = submitAdminDeleteSession;
     window.updateSessionBannerVisibility = updateSessionBannerVisibility;
     window.exportReconciliationReport = exportReconciliationReport;
     window.exportSessionAuditExcel = exportSessionAuditExcel;
