@@ -24,6 +24,10 @@
     {
       "source": "/lina-stock-count.apk",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/api/index.js"
     }
   ],
   "headers": [

@@ -36,7 +36,7 @@ const {
   verifyCountSubmission,
   logSecurityEvent,
   getSecurityHeaders
-} = require('./security');
+} = require('../lib/security');
 
 // Load local .env fallback if present
 try {
@@ -210,65 +210,148 @@ module.exports = async function handler(req, res) {
     return res.end();
   }
 
-  // 2. Anti-Bot & Automated Scraper Detection
-  const botCheck = isMaliciousBotOrScraper(req);
-  if (botCheck.isBot) {
-    logSecurityEvent('ABUSE_BOT_DETECTED', botCheck.reason, req);
-    return sendJson(403, { error: 'Access Denied: Automated scraping or malicious traffic pattern detected' });
+  // 2. Static App Shell & Asset Streaming Handlers (Zero-failure serving on Vercel)
+  if (reqUrl === '/' || reqUrl === '/index.html' || reqUrl === '' || reqUrl === '/Stock_Count_System_V5.html') {
+    const candidatePaths = [
+      path.join(__dirname, '..', 'public', 'index.html'),
+      path.join(__dirname, '..', 'index.html'),
+      path.join(__dirname, '..', 'Stock_Count_System_V5.html')
+    ];
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(p));
+      }
+    }
   }
 
-  // 3. Static PWA and Asset Handlers
+  if (reqUrl === '/favicon.ico') {
+    const logoCandidate = [
+      path.join(__dirname, '..', 'public', 'lina-logo.png'),
+      path.join(__dirname, '..', 'lina-logo.png')
+    ];
+    for (const p of logoCandidate) {
+      if (fs.existsSync(p)) {
+        res.writeHead(200, {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(p));
+      }
+    }
+    res.writeHead(204);
+    return res.end();
+  }
+
   if (reqUrl === '/sw.js' || reqUrl.endsWith('/sw.js')) {
-    const swPath = path.join(__dirname, '..', 'sw.js');
-    if (fs.existsSync(swPath)) {
-      res.writeHead(200, {
-        'Content-Type': 'application/javascript; charset=utf-8',
-        'Service-Worker-Allowed': '/',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Access-Control-Allow-Origin': '*'
-      });
-      return res.end(fs.readFileSync(swPath));
+    const swCandidate = [
+      path.join(__dirname, '..', 'public', 'sw.js'),
+      path.join(__dirname, '..', 'sw.js')
+    ];
+    for (const swPath of swCandidate) {
+      if (fs.existsSync(swPath)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Service-Worker-Allowed': '/',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(swPath));
+      }
     }
   }
 
   if (reqUrl === '/manifest.webmanifest' || reqUrl.endsWith('/manifest.webmanifest') || reqUrl === '/manifest.json' || reqUrl.endsWith('/manifest.json')) {
-    const mfPath = path.join(__dirname, '..', 'manifest.json');
-    if (fs.existsSync(mfPath)) {
-      res.writeHead(200, {
-        'Content-Type': 'application/manifest+json; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-cache'
-      });
-      return res.end(fs.readFileSync(mfPath));
+    const mfCandidate = [
+      path.join(__dirname, '..', 'public', 'manifest.json'),
+      path.join(__dirname, '..', 'manifest.json')
+    ];
+    for (const mfPath of mfCandidate) {
+      if (fs.existsSync(mfPath)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/manifest+json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache'
+        });
+        return res.end(fs.readFileSync(mfPath));
+      }
     }
   }
 
   if (reqUrl === '/lina-logo.png' || reqUrl.endsWith('/lina-logo.png')) {
-    const logoPath = path.join(__dirname, '..', 'lina-logo.png');
-    if (fs.existsSync(logoPath)) {
-      res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=86400',
-        'Access-Control-Allow-Origin': '*'
-      });
-      return res.end(fs.readFileSync(logoPath));
+    const logoCandidate = [
+      path.join(__dirname, '..', 'public', 'lina-logo.png'),
+      path.join(__dirname, '..', 'lina-logo.png')
+    ];
+    for (const logoPath of logoCandidate) {
+      if (fs.existsSync(logoPath)) {
+        res.writeHead(200, {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(logoPath));
+      }
     }
   }
 
   if (reqUrl === '/lina-stock-count.apk' || reqUrl.endsWith('/lina-stock-count.apk')) {
-    const apkPath = path.join(__dirname, '..', 'lina-stock-count.apk');
-    if (fs.existsSync(apkPath)) {
-      res.writeHead(200, {
-        'Content-Type': 'application/vnd.android.package-archive',
-        'Content-Disposition': 'attachment; filename="lina-stock-count.apk"',
-        'Access-Control-Allow-Origin': '*'
-      });
-      return res.end(fs.readFileSync(apkPath));
+    const apkCandidate = [
+      path.join(__dirname, '..', 'public', 'lina-stock-count.apk'),
+      path.join(__dirname, '..', 'lina-stock-count.apk')
+    ];
+    for (const apkPath of apkCandidate) {
+      if (fs.existsSync(apkPath)) {
+        res.writeHead(200, {
+          'Content-Type': 'application/vnd.android.package-archive',
+          'Content-Disposition': 'attachment; filename="lina-stock-count.apk"',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(apkPath));
+      }
     }
   }
 
-  // 4. API Endpoints Protection & Rate Limiting
+  if (reqUrl.startsWith('/vendor/') || reqUrl.startsWith('/assets/')) {
+    const assetCandidate = [
+      path.join(__dirname, '..', 'public', reqUrl),
+      path.join(__dirname, '..', reqUrl)
+    ];
+    for (const target of assetCandidate) {
+      if (fs.existsSync(target) && fs.statSync(target).isFile()) {
+        const ext = path.extname(target).toLowerCase();
+        const mimeTypes = {
+          '.js': 'application/javascript; charset=utf-8',
+          '.css': 'text/css; charset=utf-8',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.svg': 'image/svg+xml',
+          '.json': 'application/json'
+        };
+        res.writeHead(200, {
+          'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+          'Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*'
+        });
+        return res.end(fs.readFileSync(target));
+      }
+    }
+  }
+
+  // 3. API Endpoints Abuse Defense & Anti-Bot Firewall
   if (reqUrl.startsWith('/api/')) {
+    const botCheck = isMaliciousBotOrScraper(req);
+    if (botCheck.isBot) {
+      logSecurityEvent('ABUSE_BOT_DETECTED', botCheck.reason, req);
+      return sendJson(403, { error: 'Access Denied: Automated scraping or malicious traffic pattern detected' });
+    }
+
     const apiLimit = generalApiLimiter.isAllowed(clientIp);
     if (!apiLimit.allowed) {
       logSecurityEvent('RATE_LIMIT_EXCEEDED', `General API limit exceeded by ${clientIp}`, req);

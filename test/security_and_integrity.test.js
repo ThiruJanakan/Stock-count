@@ -29,7 +29,7 @@ try {
   console.warn('Server already started or loading error:', e.message);
 }
 
-const { resetAllRateLimits } = require('../api/security');
+const { resetAllRateLimits } = require('../lib/security');
 
 const SERVER_BASE = 'http://localhost:5173';
 
@@ -77,8 +77,13 @@ function httpRequest(urlPath, options = {}, payload = null) {
 
 describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () => {
 
-  before(() => {
+  before((_, done) => {
     resetAllRateLimits();
+    if (server && !server.listening) {
+      server.listen(5173, '127.0.0.1', () => done());
+    } else {
+      done();
+    }
   });
 
   after(() => {

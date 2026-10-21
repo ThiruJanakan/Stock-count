@@ -44,7 +44,7 @@ const {
   verifyCountSubmission,
   logSecurityEvent,
   getSecurityHeaders
-} = require('./api/security');
+} = require('./lib/security');
 
 // Load environment variables from .env file
 const ROOT = process.cwd();
@@ -1277,17 +1277,19 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, HOST, () => {
-  console.log('\n  ======================================================');
-  console.log('  \x1b[36m%s\x1b[0m', '  Lina Manufacturing · Central Stock Count System');
-  console.log('  \x1b[32m%s\x1b[0m', `  [CONNECTED] Supabase Cloud: ${SUPABASE_URL}`);
-  console.log('  \x1b[32m%s\x1b[0m', `  [ACTIVE] Local SQLite Engine: ${sqliteDb ? 'ONLINE' : 'OFFLINE'}`);
-  console.log('  \x1b[32m%s\x1b[0m', '  [ACTIVE] Multi-Tier Rate Limiting & IDOR Engine: ONLINE');
-  console.log('  ======================================================');
-  console.log(`  Local URL:   \x1b[32mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/\x1b[0m`);
-  console.log(`  Health API:  \x1b[33mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health\x1b[0m`);
-  console.log(`  Stock API:   \x1b[33mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/stock/db\x1b[0m`);
-  console.log('  ======================================================\n');
-});
+if (require.main === module) {
+  server.listen(PORT, HOST, () => {
+    console.log('\n  ======================================================');
+    console.log('  \x1b[36m%s\x1b[0m', '  Lina Manufacturing · Central Stock Count System');
+    console.log('  \x1b[32m%s\x1b[0m', `  [CONNECTED] Supabase Cloud: ${SUPABASE_URL}`);
+    console.log('  \x1b[32m%s\x1b[0m', `  [ACTIVE] Local SQLite Engine: ${sqliteDb ? 'ONLINE' : 'OFFLINE'}`);
+    console.log('  \x1b[32m%s\x1b[0m', '  [ACTIVE] Multi-Tier Rate Limiting & IDOR Engine: ONLINE');
+    console.log('  ======================================================');
+    console.log(`  Local URL:   \x1b[32mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/\x1b[0m`);
+    console.log(`  Health API:  \x1b[33mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health\x1b[0m`);
+    console.log(`  Stock API:   \x1b[33mhttp://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/stock/db\x1b[0m`);
+    console.log('  ======================================================\n');
+  });
+}
 
 module.exports = server;
