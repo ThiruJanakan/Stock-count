@@ -37,6 +37,16 @@ const {
   dataScrapingLimiter,
   isMaliciousBotOrScraper,
   checkSqlInjection,
+  checkScriptInjection,
+  checkMaliciousInput,
+  sanitizeString,
+  sanitizeHtml,
+  sanitizeFormulaInjection,
+  validatePositiveNumber,
+  validateEnum,
+  validateIdentifier,
+  validateFileUpload,
+  validateAndSanitizeInput,
   hasPrototypePollution,
   deepScanPayload,
   verifySessionOwnership,
@@ -545,6 +555,18 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(data));
   }
 
+  // Universal Query Parameter Injection & Malicious Token Scanner
+  let parsedUrl = null;
+  try {
+    parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    for (const [paramName, paramVal] of parsedUrl.searchParams.entries()) {
+      if (checkMaliciousInput(paramName) || checkMaliciousInput(paramVal)) {
+        logSecurityEvent('QUERY_INJECTION_BLOCKED', `Malicious query param: ${paramName}=${paramVal}`, req);
+        return sendJson(400, { error: 'Malicious query parameter detected. Request blocked by security firewall.' });
+      }
+    }
+  } catch (_) {}
+
   if (reqMethod === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': req.headers.origin || `http://localhost:${PORT}`,
@@ -643,13 +665,29 @@ const server = http.createServer(async (req, res) => {
     if (reqUrl === '/api/auth/login' && reqMethod === 'POST') {
       try {
         const body = await parseJsonBody(req);
-        const username = (body.username || '').trim();
-        const password = (body.password || '').trim();
+        if (deepScanPayload(body)) {
+          return sendJson(400, { error: 'Malicious payload detected' });
+        }
 
-        if (checkSqlInjection(username) || checkSqlInjection(password)) {
-          logSecurityEvent('INJECTION_ATTEMPT', `Malicious SQL/Command input from IP: ${clientIp}`, req, { username });
+        const rawUsername = typeof body.username === 'string' ? body.username.trim() : '';
+        const rawPassword = typeof body.password === 'string' ? body.password.trim() : '';
+
+        if (checkMaliciousInput(rawUsername) || checkMaliciousInput(rawPassword)) {
+          logSecurityEvent('INJECTION_ATTEMPT', `Malicious SQL/Command input from IP: ${clientIp}`, req, { username: rawUsername });
           return sendJson(400, { error: 'Malicious input detected. Request blocked by security firewall.' });
         }
+
+        const userCheck = validateAndSanitizeInput('USERNAME', rawUsername, { required: true });
+        if (!userCheck.valid) {
+          logSecurityEvent('INJECTION_ATTEMPT', `Invalid username input from IP: ${clientIp}`, req, { username: rawUsername });
+          return sendJson(400, { error: userCheck.error });
+        }
+        const username = userCheck.value;
+
+        if (!rawPassword || rawPassword.length > 128) {
+          return sendJson(400, { error: 'Password is required (maximum 128 characters)' });
+        }
+        const password = rawPassword;
 
         // Check Lockout
         const lockCheck = checkLoginRateLimit(clientIp, username);
@@ -789,12 +827,28 @@ const server = http.createServer(async (req, res) => {
         const items = Array.isArray(body.items) ? body.items : [];
         if (!session || !session.id || !session.title) return sendJson(400, { error: 'Valid session required' });
 
+        const idCheck = validateIdentifier(session.id, 1, 64, 'Session ID');
+        if (!idCheck.valid) return sendJson(400, { error: idCheck.error });
+
+        const titleCheck = validateAndSanitizeInput('SESSION_TITLE', session.title, { required: true });
+        if (!titleCheck.valid) return sendJson(400, { error: titleCheck.error });
+
+        const codeCheck = validateAndSanitizeInput('SESSION_CODE', session.session_code || `SES-${Date.now()}`);
+        if (!codeCheck.valid) return sendJson(400, { error: codeCheck.error });
+
+        const descCheck = validateAndSanitizeInput('NOTES', session.description || '');
+        if (!descCheck.valid) return sendJson(400, { error: descCheck.error });
+
+        if (items.length > 50000) {
+          return sendJson(400, { error: 'Batch items limit exceeded (maximum 50,000 items)' });
+        }
+
         const now = new Date().toISOString();
         const sessionRow = {
-          id: session.id,
-          session_code: session.session_code || `SES-${Date.now()}`,
-          title: session.title,
-          description: session.description || '',
+          id: idCheck.value,
+          session_code: codeCheck.value,
+          title: titleCheck.value,
+          description: descCheck.value,
           count_type: toDbCountType(session.count_type),
           status: session.status || 'ACTIVE',
           total_items: items.length || session.total_items || 0,
@@ -905,8 +959,10 @@ const server = http.createServer(async (req, res) => {
 
       try {
         const body = await parseJsonBody(req);
-        const sessionId = body.id || (reqUrl.split('/api/stock/session/')[1] || '').trim();
-        if (!sessionId) return sendJson(400, { error: 'Session ID required' });
+        const rawSessionId = body.id || (reqUrl.split('/api/stock/session/')[1] || '').trim();
+        const idCheck = validateIdentifier(rawSessionId, 1, 64, 'Session ID');
+        if (!idCheck.valid) return sendJson(400, { error: idCheck.error });
+        const sessionId = idCheck.value;
 
         // IDOR Verification
         const targetSession = await dbGetSessionById(sessionId);
@@ -919,9 +975,17 @@ const server = http.createServer(async (req, res) => {
         }
 
         const updateFields = {};
-        if (body.status !== undefined) updateFields.status = body.status;
+        if (body.status !== undefined) {
+          const statusCheck = validateEnum(body.status, ['PLANNED', 'ACTIVE', 'PAUSED', 'CLOSED', 'COMPLETED', 'ARCHIVED'], 'Status');
+          if (!statusCheck.valid) return sendJson(400, { error: statusCheck.error });
+          updateFields.status = statusCheck.value;
+        }
         if (body.count_type !== undefined) updateFields.count_type = toDbCountType(body.count_type);
-        if (body.title !== undefined) updateFields.title = body.title;
+        if (body.title !== undefined) {
+          const titleCheck = validateAndSanitizeInput('SESSION_TITLE', body.title, { required: true });
+          if (!titleCheck.valid) return sendJson(400, { error: titleCheck.error });
+          updateFields.title = titleCheck.value;
+        }
         if (body.status === 'CLOSED') updateFields.closed_at = new Date().toISOString();
         if (body.status === 'ACTIVE') updateFields.closed_at = null;
 
@@ -949,7 +1013,10 @@ const server = http.createServer(async (req, res) => {
       const authUser = getAuthenticatedUser(req);
       if (!authUser || authUser.role === 'COUNTER') return sendJson(403, { error: 'Forbidden' });
 
-      const sessionId = (reqUrl.split('/api/stock/session/')[1] || '').trim();
+      const rawSessionId = (reqUrl.split('/api/stock/session/')[1] || '').trim();
+      const idCheck = validateIdentifier(rawSessionId, 1, 64, 'Session ID');
+      if (!idCheck.valid) return sendJson(400, { error: idCheck.error });
+      const sessionId = idCheck.value;
       if (sessionId) {
         // IDOR Verification
         const targetSession = await dbGetSessionById(sessionId);
@@ -989,24 +1056,46 @@ const server = http.createServer(async (req, res) => {
           return sendJson(400, { error: 'Malicious payload rejected by security filter' });
         }
 
-        const sku = String(body.sku || '').trim();
-        const batchNo = String(body.batch_no || '').trim();
-        const location = String(body.location || '').trim();
-        const qty = parseFloat(body.counted_qty);
+        const skuCheck = validateAndSanitizeInput('SKU', body.sku, { required: true });
+        if (!skuCheck.valid) return sendJson(400, { error: skuCheck.error });
+        const sku = skuCheck.value;
 
-        if (!sku || isNaN(qty) || qty < 0) {
-          return sendJson(400, { error: 'Valid SKU and non-negative quantity required' });
+        const qtyCheck = validatePositiveNumber(body.counted_qty, 10000000, true);
+        if (!qtyCheck.valid) return sendJson(400, { error: qtyCheck.error });
+        const qty = qtyCheck.value;
+
+        const locCheck = validateAndSanitizeInput('LOCATION', body.location || '');
+        if (!locCheck.valid) return sendJson(400, { error: locCheck.error });
+        const location = locCheck.value;
+
+        const sesCheck = validateIdentifier(body.session_id, 1, 64, 'Session ID');
+        if (!sesCheck.valid) return sendJson(400, { error: sesCheck.error });
+        const sessionId = sesCheck.value;
+
+        const rawBatch = sanitizeString(body.batch_no || '', 64);
+        if (checkMaliciousInput(rawBatch)) {
+          return sendJson(400, { error: 'Malicious characters detected in batch number' });
         }
+        const batchNo = rawBatch;
+
+        const rawItemName = sanitizeString(body.item_name || '', 128);
+        if (checkMaliciousInput(rawItemName)) {
+          return sendJson(400, { error: 'Malicious characters detected in item name' });
+        }
+        const itemName = rawItemName;
+
+        const uom = sanitizeString(body.uom || 'PCS', 16).toUpperCase();
+        const mode = body.mode === 'REPLACE' ? 'REPLACE' : 'ADD';
 
         // Verify target session is active
-        const targetSession = await dbGetSessionById(body.session_id);
+        const targetSession = await dbGetSessionById(sessionId);
         const countCheck = verifyCountSubmission(authUser, targetSession);
         if (!countCheck.allowed) {
           logSecurityEvent('COUNT_REJECTED', countCheck.error, req);
           return sendJson(countCheck.statusCode, { error: countCheck.error });
         }
 
-        const result = await dbInsertCountRecord(authUser, sku, qty, batchNo, location, body.item_name, body.uom, body.mode, body.session_id);
+        const result = await dbInsertCountRecord(authUser, sku, qty, batchNo, location, itemName, uom, mode, sessionId);
         return sendJson(200, { success: true, ...result });
       } catch (err) {
         logSecurityEvent('API_ERROR', err.message, req);
@@ -1039,17 +1128,27 @@ const server = http.createServer(async (req, res) => {
             return sendJson(429, { error: 'Account creation rate limit reached. Please wait.', retryAfter: creationLimit.retryAfter }, { 'Retry-After': String(creationLimit.retryAfter) });
           }
 
-          const newRole = body.role || 'COUNTER';
+          const userCheck = validateAndSanitizeInput('USERNAME', body.username, { required: true });
+          if (!userCheck.valid) return sendJson(400, { error: userCheck.error });
+          const username = userCheck.value;
+
+          const nameCheck = validateAndSanitizeInput('FULL_NAME', body.full_name || username, { required: true });
+          if (!nameCheck.valid) return sendJson(400, { error: nameCheck.error });
+          const fullName = nameCheck.value;
+
+          const roleCheck = validateAndSanitizeInput('ROLE', body.role || 'COUNTER');
+          if (!roleCheck.valid) return sendJson(400, { error: roleCheck.error });
+          const newRole = roleCheck.value;
+
           const accessCheck = verifyUserManagementAccess(authUser, null, newRole, 'CREATE');
           if (!accessCheck.allowed) {
             logSecurityEvent('PRIVILEGE_ESCALATION_BLOCKED', `${authUser.username} attempted unauthorized account creation of role ${newRole}`, req);
             return sendJson(accessCheck.statusCode, { error: accessCheck.error });
           }
 
-          const username = (body.username || '').trim().toLowerCase();
           const existing = await dbGetUserByUsername(username);
-          if (!username || existing) {
-            return sendJson(400, { error: 'Username is invalid or already taken' });
+          if (existing) {
+            return sendJson(400, { error: 'Username is already taken' });
           }
 
           const rawPass = body.password || 'counter123';
@@ -1067,7 +1166,7 @@ const server = http.createServer(async (req, res) => {
           await supabaseRequest('stock_users', 'POST', {
             id: userId,
             username,
-            full_name: body.full_name || username,
+            full_name: fullName,
             role: newRole,
             password_salt: salt,
             password_hash: hash,
@@ -1080,7 +1179,7 @@ const server = http.createServer(async (req, res) => {
             sqliteDb.prepare(`
               INSERT INTO users (id, username, full_name, role, password_salt, password_hash, is_active, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
-            `).run(userId, username, body.full_name || username, newRole, salt, hash, now, now);
+            `).run(userId, username, fullName, newRole, salt, hash, now, now);
           }
 
           dbLogAuditEvent(authUser, 'USER_CREATED', `Created user ${username} (${newRole})`, username, 'USER');
@@ -1090,7 +1189,17 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (action === 'SOFT_REMOVE') {
-          const userId = body.userId;
+          const rawUserId = body.userId || body.id;
+          const rawUsername = body.username;
+          if (rawUserId) {
+            const uIdCheck = validateIdentifier(rawUserId, 1, 64, 'User ID');
+            if (!uIdCheck.valid) return sendJson(400, { error: uIdCheck.error });
+          }
+          if (rawUsername) {
+            const uNameCheck = validateAndSanitizeInput('USERNAME', rawUsername);
+            if (!uNameCheck.valid) return sendJson(400, { error: uNameCheck.error });
+          }
+          const userId = rawUserId;
           const targetUser = await dbGetUserByUsername(body.username || '') || (sqliteDb ? sqliteDb.prepare("SELECT * FROM users WHERE id = ?").get(userId) : null);
           if (!targetUser) return sendJson(404, { error: 'User not found' });
 
@@ -1214,12 +1323,25 @@ const server = http.createServer(async (req, res) => {
         return sendJson(429, { error: 'Audit log query rate limit exceeded.', retryAfter: scrapeLimit.retryAfter }, { 'Retry-After': String(scrapeLimit.retryAfter) });
       }
 
-      const sbAuditRes = await supabaseRequest('audit_trails?select=*&order=timestamp.desc&limit=2000');
+      let queryLimit = 2000;
+      if (parsedUrl) {
+        const rawLimit = parsedUrl.searchParams.get('limit');
+        if (rawLimit) {
+          const numLimit = parseInt(rawLimit, 10);
+          if (Number.isFinite(numLimit) && numLimit > 0 && numLimit <= 2000) {
+            queryLimit = numLimit;
+          } else {
+            return sendJson(400, { error: 'Invalid query limit: must be a positive integer <= 2000' });
+          }
+        }
+      }
+
+      const sbAuditRes = await supabaseRequest(`audit_trails?select=*&order=timestamp.desc&limit=${queryLimit}`);
       if (sbAuditRes && sbAuditRes.status === 200) {
         return sendJson(200, { audit_trails: sbAuditRes.data });
       }
 
-      const trails = sqliteDb ? sqliteDb.prepare("SELECT * FROM audit_trails ORDER BY timestamp DESC LIMIT 2000").all() : [];
+      const trails = sqliteDb ? sqliteDb.prepare(`SELECT * FROM audit_trails ORDER BY timestamp DESC LIMIT ${queryLimit}`).all() : [];
       return sendJson(200, { audit_trails: trails });
     }
 
@@ -1300,5 +1422,13 @@ function handler(req, res) {
 Object.assign(handler, server);
 handler.listen = (...args) => server.listen(...args);
 handler.close = (...args) => server.close(...args);
+handler.on = (...args) => server.on(...args);
+handler.once = (...args) => server.once(...args);
+Object.defineProperty(handler, 'listening', {
+  get: () => server.listening,
+  configurable: true,
+  enumerable: true
+});
 
 module.exports = handler;
+

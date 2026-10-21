@@ -29,6 +29,16 @@ const {
   dataScrapingLimiter,
   isMaliciousBotOrScraper,
   checkSqlInjection,
+  checkScriptInjection,
+  checkMaliciousInput,
+  sanitizeString,
+  sanitizeHtml,
+  sanitizeFormulaInjection,
+  validatePositiveNumber,
+  validateEnum,
+  validateIdentifier,
+  validateFileUpload,
+  validateAndSanitizeInput,
   hasPrototypePollution,
   deepScanPayload,
   verifySessionOwnership,
@@ -198,6 +208,18 @@ module.exports = async function handler(req, res) {
     res.writeHead(statusCode, headers);
     res.end(JSON.stringify(data));
   }
+
+  // Universal Query Parameter Injection & Malicious Token Scanner
+  let parsedUrl = null;
+  try {
+    parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    for (const [paramName, paramVal] of parsedUrl.searchParams.entries()) {
+      if (checkMaliciousInput(paramName) || checkMaliciousInput(paramVal)) {
+        logSecurityEvent('QUERY_INJECTION_BLOCKED', `Malicious query param: ${paramName}=${paramVal}`, req);
+        return sendJson(400, { error: 'Malicious query parameter detected. Request rejected by security filter.' });
+      }
+    }
+  } catch (_) {}
 
   if (reqMethod === 'OPTIONS') {
     res.writeHead(204, {
@@ -405,14 +427,29 @@ module.exports = async function handler(req, res) {
   // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/auth/login') && reqMethod === 'POST') {
     const body = await parseBody(req);
-    const username = (body.username || '').trim();
-    const password = (body.password || '').trim();
+    if (deepScanPayload(body)) {
+      return sendJson(400, { error: 'Malicious payload detected' });
+    }
 
-    // Malicious Input Firewall
-    if (checkSqlInjection(username) || checkSqlInjection(password)) {
-      logSecurityEvent('INJECTION_ATTEMPT', `Malicious SQL/Command input from IP: ${clientIp}`, req, { username });
+    const rawUsername = typeof body.username === 'string' ? body.username.trim() : '';
+    const rawPassword = typeof body.password === 'string' ? body.password.trim() : '';
+
+    if (checkMaliciousInput(rawUsername) || checkMaliciousInput(rawPassword)) {
+      logSecurityEvent('INJECTION_ATTEMPT', `Malicious SQL/Command input from IP: ${clientIp}`, req, { username: rawUsername });
       return sendJson(400, { error: 'Malicious input detected. Request rejected by security filter.' });
     }
+
+    const userCheck = validateAndSanitizeInput('USERNAME', rawUsername, { required: true });
+    if (!userCheck.valid) {
+      logSecurityEvent('INJECTION_ATTEMPT', `Invalid username input from IP: ${clientIp}`, req, { username: rawUsername });
+      return sendJson(400, { error: userCheck.error });
+    }
+    const username = userCheck.value;
+
+    if (!rawPassword || rawPassword.length > 128) {
+      return sendJson(400, { error: 'Password is required (maximum 128 characters)' });
+    }
+    const password = rawPassword;
 
     // Rate Limiting & Lockout Check
     const lockCheck = checkLoginRateLimit(clientIp, username);
@@ -609,13 +646,29 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'Valid session object required with id and title' });
     }
 
+    const idCheck = validateIdentifier(session.id, 1, 64, 'Session ID');
+    if (!idCheck.valid) return sendJson(400, { error: idCheck.error });
+
+    const titleCheck = validateAndSanitizeInput('SESSION_TITLE', session.title, { required: true });
+    if (!titleCheck.valid) return sendJson(400, { error: titleCheck.error });
+
+    const codeCheck = validateAndSanitizeInput('SESSION_CODE', session.session_code || `SES-${Date.now()}`);
+    if (!codeCheck.valid) return sendJson(400, { error: codeCheck.error });
+
+    const descCheck = validateAndSanitizeInput('NOTES', session.description || '');
+    if (!descCheck.valid) return sendJson(400, { error: descCheck.error });
+
+    if (items.length > 50000) {
+      return sendJson(400, { error: 'Batch items limit exceeded (maximum 50,000 items)' });
+    }
+
     // Enforce ownership: assign session creator
     const now = new Date().toISOString();
     const sessionRow = {
-      id: session.id,
-      session_code: session.session_code || `SES-${Date.now()}`,
-      title: session.title,
-      description: session.description || '',
+      id: idCheck.value,
+      session_code: codeCheck.value,
+      title: titleCheck.value,
+      description: descCheck.value,
       count_type: toDbCountType(session.count_type),
       status: session.status || 'ACTIVE',
       total_items: items.length || session.total_items || 0,
@@ -881,14 +934,20 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'Malicious payload detected' });
     }
 
-    const sku = String(body.sku || '').trim();
-    const qty = parseFloat(body.counted_qty);
-    if (!sku || isNaN(qty) || qty < 0) {
-      return sendJson(400, { error: 'Valid SKU and non-negative quantity required' });
-    }
+    const skuCheck = validateAndSanitizeInput('SKU', body.sku, { required: true });
+    if (!skuCheck.valid) return sendJson(400, { error: skuCheck.error });
+    const sku = skuCheck.value;
 
-    // Verify target session is active
-    let targetSession = null;
+    const qtyCheck = validatePositiveNumber(body.counted_qty, 10000000, true);
+    if (!qtyCheck.valid) return sendJson(400, { error: qtyCheck.error });
+    const qty = qtyCheck.value;
+
+    const locCheck = validateAndSanitizeInput('LOCATION', body.location || '');
+    if (!locCheck.valid) return sendJson(400, { error: locCheck.error });
+    const location = locCheck.value;
+
+    const sesCheck = body.session_id ? validateIdentifier(body.session_id, 1, 64, 'Session ID') : { valid: true };
+    if (!sesCheck.valid) return sendJson(400, { error: sesCheck.error });
     let targetSessionId = body.session_id;
 
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {

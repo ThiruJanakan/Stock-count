@@ -11,6 +11,8 @@ data/
 *.tmp.*
 *.db
 .env
+.env.*
+*.env
 scratch/
 .vscode/
 bin/
