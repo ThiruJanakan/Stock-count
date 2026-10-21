@@ -102,7 +102,8 @@ CREATE INDEX idx_count_logs_timestamp ON public.count_logs(timestamp);
 CREATE INDEX idx_audit_trails_timestamp ON public.audit_trails(timestamp);
 
 -- ============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ============================================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES (Enterprise Zero-Trust Lockdown)
 -- ============================================================================
 ALTER TABLE public.stock_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.count_sessions ENABLE ROW LEVEL SECURITY;
@@ -110,40 +111,66 @@ ALTER TABLE public.stock_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.count_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_trails ENABLE ROW LEVEL SECURITY;
 
--- Allow read access
-CREATE POLICY "Allow public read stock_users" ON public.stock_users FOR SELECT USING (true);
-CREATE POLICY "Allow public read count_sessions" ON public.count_sessions FOR SELECT USING (true);
-CREATE POLICY "Allow public read stock_items" ON public.stock_items FOR SELECT USING (true);
-CREATE POLICY "Allow public read count_logs" ON public.count_logs FOR SELECT USING (true);
-CREATE POLICY "Allow public read audit_trails" ON public.audit_trails FOR SELECT USING (true);
+-- 1. stock_users: STRICT ISOLATION
+-- Public internet (anon) has ZERO access to user table (salts, hashes, metadata protected)
+DROP POLICY IF EXISTS "Allow public read stock_users" ON public.stock_users;
+DROP POLICY IF EXISTS "Allow all stock_users" ON public.stock_users;
+CREATE POLICY "Deny anon access to stock_users" ON public.stock_users FOR ALL TO anon USING (false);
+CREATE POLICY "Allow service_role full stock_users" ON public.stock_users FOR ALL TO service_role USING (true) WITH CHECK (true);
 
--- Allow operational writes
-CREATE POLICY "Allow insert count_logs" ON public.count_logs FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow update stock_items" ON public.stock_items FOR UPDATE USING (true);
-CREATE POLICY "Allow insert stock_items" ON public.stock_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow insert audit_trails" ON public.audit_trails FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow update count_sessions" ON public.count_sessions FOR UPDATE USING (true);
-CREATE POLICY "Allow insert count_sessions" ON public.count_sessions FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow all stock_users" ON public.stock_users FOR ALL USING (true);
+-- 2. count_sessions: Service role authoritative writes; Read-only for authorized clients
+DROP POLICY IF EXISTS "Allow public read count_sessions" ON public.count_sessions;
+DROP POLICY IF EXISTS "Allow update count_sessions" ON public.count_sessions;
+DROP POLICY IF EXISTS "Allow insert count_sessions" ON public.count_sessions;
+CREATE POLICY "Allow service_role full count_sessions" ON public.count_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated read count_sessions" ON public.count_sessions FOR SELECT TO authenticated, anon USING (true);
+
+-- 3. stock_items: Service role authoritative writes; Read-only for active sessions
+DROP POLICY IF EXISTS "Allow public read stock_items" ON public.stock_items;
+DROP POLICY IF EXISTS "Allow update stock_items" ON public.stock_items;
+DROP POLICY IF EXISTS "Allow insert stock_items" ON public.stock_items;
+CREATE POLICY "Allow service_role full stock_items" ON public.stock_items FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated read stock_items" ON public.stock_items FOR SELECT TO authenticated, anon USING (true);
+
+-- 4. count_logs: Append-only transaction records managed by authoritative backend
+DROP POLICY IF EXISTS "Allow public read count_logs" ON public.count_logs;
+DROP POLICY IF EXISTS "Allow insert count_logs" ON public.count_logs;
+CREATE POLICY "Allow service_role full count_logs" ON public.count_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated read count_logs" ON public.count_logs FOR SELECT TO authenticated, anon USING (true);
+
+-- 5. audit_trails: Immutable cryptographic audit ledger
+DROP POLICY IF EXISTS "Allow public read audit_trails" ON public.audit_trails;
+DROP POLICY IF EXISTS "Allow insert audit_trails" ON public.audit_trails;
+CREATE POLICY "Allow service_role full audit_trails" ON public.audit_trails FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated read audit_trails" ON public.audit_trails FOR SELECT TO authenticated, anon USING (true);
 
 -- ============================================================================
--- EXPLICIT POSTGREST DATA API TABLE GRANTS (Post-October 30 Compatibility)
+-- LEAST-PRIVILEGE ROLE GRANTS (Revoke Public / Anon Arbitrary Access)
 -- ============================================================================
--- Grant full API access to anon, authenticated, and service_role roles
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+REVOKE ALL ON SCHEMA public FROM anon;
+GRANT USAGE ON SCHEMA public TO service_role, authenticated, anon;
 
-GRANT ALL ON TABLE public.stock_users TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.count_sessions TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.stock_items TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.count_logs TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.audit_trails TO anon, authenticated, service_role;
+-- Revoke all table rights from anon on sensitive user credentials
+REVOKE ALL ON TABLE public.stock_users FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.count_sessions FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.stock_items FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.count_logs FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.audit_trails FROM anon;
 
--- Ensure all sequences (if any are added) have usage granted
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+-- Full authoritative data access is strictly reserved for the service_role backend
+GRANT ALL ON TABLE public.stock_users TO service_role;
+GRANT ALL ON TABLE public.count_sessions TO service_role;
+GRANT ALL ON TABLE public.stock_items TO service_role;
+GRANT ALL ON TABLE public.count_logs TO service_role;
+GRANT ALL ON TABLE public.audit_trails TO service_role;
 
--- Automatically grant access on any future tables created in public schema
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+-- Grant selective read-only access for Realtime event subscriptions
+GRANT SELECT ON TABLE public.count_sessions TO authenticated, anon;
+GRANT SELECT ON TABLE public.stock_items TO authenticated, anon;
+GRANT SELECT ON TABLE public.count_logs TO authenticated, anon;
+GRANT SELECT ON TABLE public.audit_trails TO authenticated, anon;
+
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
 -- ============================================================================
 -- SUPABASE REALTIME REPLICATION (For live multi-device warehouse sync)

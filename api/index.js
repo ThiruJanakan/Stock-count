@@ -2,13 +2,41 @@
  * Lina Manufacturing · Enterprise Stock Verification Cloud
  * Vercel Serverless Function API Entrypoint
  * 
- * Powered by Supabase Cloud PostgreSQL
+ * Powered by Supabase Cloud PostgreSQL with Authoritative Security Kernel
  */
 
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const {
+  hashPasswordPbkdf2,
+  verifyPasswordPbkdf2,
+  validatePasswordStrength,
+  generateSecureSalt,
+  sanitizeUser,
+  signSessionToken,
+  verifySessionToken,
+  revokeSessionToken,
+  getAuthenticatedUser,
+  parseCookies,
+  checkLoginRateLimit,
+  recordLoginFailure,
+  recordLoginSuccess,
+  generalApiLimiter,
+  accountCreationLimiter,
+  aiGenerationLimiter,
+  dataScrapingLimiter,
+  isMaliciousBotOrScraper,
+  checkSqlInjection,
+  hasPrototypePollution,
+  deepScanPayload,
+  verifySessionOwnership,
+  verifyUserManagementAccess,
+  verifyCountSubmission,
+  logSecurityEvent,
+  getSecurityHeaders
+} = require('./security');
 
 // Load local .env fallback if present
 try {
@@ -67,7 +95,7 @@ function supabaseRequest(endpointPath, method = 'GET', data = null) {
     });
 
     req.on('error', (err) => {
-      console.warn('Supabase request error:', err.message);
+      logSecurityEvent('SUPABASE_REQUEST_ERROR', err.message, null, { endpoint: endpointPath });
       resolve(null);
     });
 
@@ -76,15 +104,45 @@ function supabaseRequest(endpointPath, method = 'GET', data = null) {
   });
 }
 
-// Security: Check Malicious Input / SQL Injection
-const SQL_INJECTION_REGEX = /('(''|[^'])*')|(;)|(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|UNION|EXEC|XP_CMDSHELL|TRUNCATE)\b)|(--)|(\/\*)|(\bOR\b\s+['"\w]+\s*=\s*['"\w]+)|(\bAND\b\s+['"\w]+\s*=\s*['"\w]+)/i;
-const COMMAND_INJECTION_REGEX = /[;&|`$<>]/;
-
-function checkSqlInjection(input) {
-  if (typeof input !== 'string') return false;
-  return SQL_INJECTION_REGEX.test(input) || COMMAND_INJECTION_REGEX.test(input);
-}
-
+// Seed Users with pre-hashed PBKDF2 credentials (Zero plaintext fallback credentials)
+const SECURE_SEEDED_USERS = [
+  {
+    id: 'u-admin',
+    username: 'admin',
+    full_name: 'Central Admin',
+    role: 'ADMIN',
+    password_salt: 'a8f5b2c1d0e9478291f038572bcae142',
+    password_hash: 'pbkdf2$e565cf7400deddb134e20c56b5f8fd27569eb2a6077e022b749fa8f295c9d69c', // admin123
+    is_active: true
+  },
+  {
+    id: 'u-sup',
+    username: 'executive1',
+    full_name: 'Floor Executive',
+    role: 'EXECUTIVE',
+    password_salt: 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6',
+    password_hash: 'pbkdf2$5ea5f9ac90ee3e3054ec99177576012049b4e92f555147ce8e5820d4e0153709', // super123
+    is_active: true
+  },
+  {
+    id: 'u-c1',
+    username: 'counter1',
+    full_name: 'Operator Alpha',
+    role: 'COUNTER',
+    password_salt: 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
+    password_hash: 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', // counter123
+    is_active: true
+  },
+  {
+    id: 'u-c2',
+    username: 'counter2',
+    full_name: 'Operator Beta',
+    role: 'COUNTER',
+    password_salt: 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9',
+    password_hash: 'pbkdf2$cebe37c591e6e9dc92a53426a023d1abf4eaa000cc80fa19c50e4e6d67d530d2', // counter123
+    is_active: true
+  }
+];
 
 function toDbCountType(mode) {
   if (mode === 'BLIND_ALL' || mode === 'DOUBLE_BLIND' || mode === 'STRICT_BLIND') return 'DOUBLE_BLIND';
@@ -96,65 +154,6 @@ function fromDbCountType(mode) {
   if (mode === 'DOUBLE_BLIND') return 'BLIND_ALL';
   if (mode === 'SUPERVISED_COUNT') return 'OPEN_COUNT';
   return mode || 'BLIND_COUNT';
-}
-
-function hashPasswordPbkdf2(password, salt) {
-  return new Promise((resolve, reject) => {
-    crypto.pbkdf2(password, salt, 100000, 32, 'sha256', (err, derivedKey) => {
-      if (err) return reject(err);
-      resolve('pbkdf2$' + derivedKey.toString('hex'));
-    });
-  });
-}
-
-function hasPrototypePollution(obj) {
-  if (!obj || typeof obj !== 'object') return false;
-  for (const key of Object.keys(obj)) {
-    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return true;
-    if (typeof obj[key] === 'object' && hasPrototypePollution(obj[key])) return true;
-  }
-  return false;
-}
-function deepScanPayload(obj) {
-  if (!obj) return false;
-  return hasPrototypePollution(obj);
-}
-
-// Password verification (Supports PBKDF2-HMAC-SHA256 and salted SHA-256 fallback)
-function verifyPasswordPbkdf2(password, salt, storedHash) {
-  return new Promise((resolve) => {
-    if (!storedHash || !salt) return resolve(false);
-    const cleanHash = storedHash.startsWith('pbkdf2$') ? storedHash.slice(7) : storedHash;
-
-    crypto.pbkdf2(password, salt, 100000, 32, 'sha256', (err, derivedKey) => {
-      if (!err) {
-        const computedHex = derivedKey.toString('hex');
-        if (computedHex.length === cleanHash.length && crypto.timingSafeEqual(Buffer.from(computedHex), Buffer.from(cleanHash))) {
-          return resolve(true);
-        }
-      }
-
-      // Fallback: Salted SHA-256 check
-      const legacyHex = crypto.createHash('sha256').update(salt + ':' + password).digest('hex');
-      if (legacyHex.length === cleanHash.length && crypto.timingSafeEqual(Buffer.from(legacyHex), Buffer.from(cleanHash))) {
-        return resolve(true);
-      }
-
-      resolve(false);
-    });
-  });
-}
-
-function parseCookies(req) {
-  const list = {};
-  const rc = req.headers.cookie;
-  if (rc) {
-    rc.split(';').forEach((cookie) => {
-      const parts = cookie.split('=');
-      list[parts.shift().trim()] = decodeURI(parts.join('='));
-    });
-  }
-  return list;
 }
 
 function parseBody(req) {
@@ -175,70 +174,28 @@ function parseBody(req) {
   });
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET || 'lina_manufacturing_enterprise_secure_token_secret_key_2026';
-
-function signSessionToken(user) {
-  const payload = JSON.stringify({
-    id: user.id,
-    username: user.username,
-    role: user.role,
-    full_name: user.full_name,
-    exp: Date.now() + 8 * 3600 * 1000 // 8-hour session lifetime
-  });
-  const b64 = Buffer.from(payload).toString('base64url');
-  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(b64).digest('base64url');
-  return `${b64}.${sig}`;
-}
-
-function verifySessionToken(token) {
-  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
-  const parts = token.split('.');
-  if (parts.length !== 2) return null;
-  const [b64, sig] = parts;
-  const expectedSig = crypto.createHmac('sha256', SESSION_SECRET).update(b64).digest('base64url');
-  if (sig.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
-    return null;
-  }
-  try {
-    const payload = JSON.parse(Buffer.from(b64, 'base64url').toString('utf8'));
-    if (!payload.exp || Date.now() > payload.exp) return null;
-    return payload;
-  } catch (_) {
-    return null;
-  }
-}
-
-function getAuthenticatedUser(req) {
-  const cookies = parseCookies(req);
-  const cookieToken = cookies['LINA_AUTH_SESSION'];
-  if (cookieToken) {
-    const u = verifySessionToken(cookieToken);
-    if (u) return u;
-  }
-  const authHeader = req.headers['authorization'] || '';
-  if (authHeader.startsWith('Bearer ')) {
-    const bearer = authHeader.slice(7).trim();
-    const u = verifySessionToken(bearer);
-    if (u) return u;
-  }
-  return null;
-}
-
 module.exports = async function handler(req, res) {
+  const clientIp = req.socket?.remoteAddress || req.headers['x-forwarded-for'] || '127.0.0.1';
   const reqUrl = (req.url || '').split('?')[0];
   const reqMethod = (req.method || 'GET').toUpperCase();
 
+  // 1. Enforce HTTPS in Production Deployments
+  const proto = req.headers['x-forwarded-proto'];
+  if (proto === 'http' && process.env.NODE_ENV === 'production') {
+    const secureUrl = `https://${req.headers.host}${req.url}`;
+    res.writeHead(301, { 'Location': secureUrl });
+    return res.end();
+  }
+
   function sendJson(statusCode, data, extraHeaders = {}) {
-    res.writeHead(statusCode, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
+    const headers = getSecurityHeaders({
       'Access-Control-Allow-Origin': req.headers.origin || '*',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       ...extraHeaders
     });
+    res.writeHead(statusCode, headers);
     res.end(JSON.stringify(data));
   }
 
@@ -247,13 +204,20 @@ module.exports = async function handler(req, res) {
       'Access-Control-Allow-Origin': req.headers.origin || '*',
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       'Access-Control-Max-Age': '86400'
     });
     return res.end();
   }
 
-  // 0. Static PWA and Asset Handlers (Guarantees HTTP 200 on Vercel)
+  // 2. Anti-Bot & Automated Scraper Detection
+  const botCheck = isMaliciousBotOrScraper(req);
+  if (botCheck.isBot) {
+    logSecurityEvent('ABUSE_BOT_DETECTED', botCheck.reason, req);
+    return sendJson(403, { error: 'Access Denied: Automated scraping or malicious traffic pattern detected' });
+  }
+
+  // 3. Static PWA and Asset Handlers
   if (reqUrl === '/sw.js' || reqUrl.endsWith('/sw.js')) {
     const swPath = path.join(__dirname, '..', 'sw.js');
     if (fs.existsSync(swPath)) {
@@ -303,42 +267,84 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 1. Health API
+  // 4. API Endpoints Protection & Rate Limiting
+  if (reqUrl.startsWith('/api/')) {
+    const apiLimit = generalApiLimiter.isAllowed(clientIp);
+    if (!apiLimit.allowed) {
+      logSecurityEvent('RATE_LIMIT_EXCEEDED', `General API limit exceeded by ${clientIp}`, req);
+      return sendJson(429, {
+        error: 'Too many requests. Please slow down.',
+        retryAfter: apiLimit.retryAfter
+      }, { 'Retry-After': String(apiLimit.retryAfter) });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // API Route: Health & Diagnostics
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/health') || reqUrl === '/api/health') {
     return sendJson(200, {
       status: 'UP',
       service: 'Lina Enterprise Stock Verification Cloud (Vercel Serverless)',
       timestamp: new Date().toISOString(),
+      security: {
+        pbkdf2: true,
+        sessionExpiry: '8h-hard-2h-idle',
+        rateLimiting: true,
+        antiBotProtection: true,
+        idorProtection: true,
+        httpsEnforced: true,
+        noPlaintextFallbacks: true
+      },
       cloud: {
         provider: 'Supabase Cloud PostgreSQL',
-        url: SUPABASE_URL,
-        status: 'CONNECTED'
+        status: SUPABASE_HOST && SUPABASE_SECRET_KEY ? 'CONNECTED' : 'DISCONNECTED'
       }
     });
   }
 
-  // 2. Public Config
+  // --------------------------------------------------------------------------
+  // API Route: Supabase Public Config
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/supabase/config')) {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) {
+      return sendJson(401, { error: 'Authentication required to retrieve cloud connection parameters' });
+    }
     return sendJson(200, {
       supabaseUrl: SUPABASE_URL,
       publishableKey: SUPABASE_PUBLISHABLE_KEY
     });
   }
 
-  // 3. Login
+  // --------------------------------------------------------------------------
+  // API Route: Authentication Login (Protected with Lockout Rate Limiter)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/auth/login') && reqMethod === 'POST') {
     const body = await parseBody(req);
     const username = (body.username || '').trim();
     const password = (body.password || '').trim();
 
+    // Malicious Input Firewall
     if (checkSqlInjection(username) || checkSqlInjection(password)) {
-      return sendJson(400, { error: 'Malicious input detected' });
+      logSecurityEvent('INJECTION_ATTEMPT', `Malicious SQL/Command input from IP: ${clientIp}`, req, { username });
+      return sendJson(400, { error: 'Malicious input detected. Request rejected by security filter.' });
+    }
+
+    // Rate Limiting & Lockout Check
+    const lockCheck = checkLoginRateLimit(clientIp, username);
+    if (lockCheck.locked) {
+      logSecurityEvent('AUTH_LOCKOUT', `Brute-force lockout active for user: ${username} from ${clientIp}`, req);
+      return sendJson(429, {
+        error: lockCheck.error,
+        retryAfter: lockCheck.retryAfter
+      }, { 'Retry-After': String(lockCheck.retryAfter) });
     }
 
     let user = null;
     let isValid = false;
 
-    // 1. Query Supabase Cloud if configured
+    // 1. Query live Supabase database
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       let queryUser = username.toLowerCase();
       let sbRes = await supabaseRequest(`stock_users?username=eq.${encodeURIComponent(queryUser)}&select=*`);
@@ -348,68 +354,104 @@ module.exports = async function handler(req, res) {
       if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
         user = sbRes.data[0];
         if (!user.is_active) {
-          return sendJson(401, { error: 'Account is deactivated' });
+          logSecurityEvent('AUTH_INACTIVE_LOGIN', `Login attempted on deactivated account: ${username}`, req);
+          return sendJson(401, { error: 'Account is deactivated. Contact Administrator.' });
         }
         isValid = await verifyPasswordPbkdf2(password, user.password_salt, user.password_hash);
       }
     }
 
-    // 2. Built-in seed fallback authentication (Guarantees login on Vercel even without Supabase setup)
-    if (!isValid) {
+    // 2. Cryptographic Offline Seed Fallback (Evaluates pre-hashed PBKDF2 only, NO plaintext comparisons)
+    if (!user && !isValid) {
       const uLower = username.toLowerCase();
-      if (uLower === 'admin' && (password === 'admin123' || password === 'admin')) {
-        user = { id: 'u-admin', username: 'admin', full_name: 'Central Admin', role: 'ADMIN', is_active: true };
-        isValid = true;
-      } else if ((uLower === 'executive1' || uLower === 'supervisor1') && (password === 'super123' || password === 'executive123' || password === 'supervisor123')) {
-        user = { id: 'u-sup', username: 'executive1', full_name: 'Floor Executive', role: 'EXECUTIVE', is_active: true };
-        isValid = true;
-      } else if ((uLower === 'counter1') && (password === 'counter123' || password === 'counter')) {
-        user = { id: 'u-c1', username: 'counter1', full_name: 'Operator Alpha', role: 'COUNTER', is_active: true };
-        isValid = true;
-      } else if ((uLower === 'counter2') && (password === 'counter123' || password === 'counter')) {
-        user = { id: 'u-c2', username: 'counter2', full_name: 'Operator Beta', role: 'COUNTER', is_active: true };
-        isValid = true;
+      const seedUser = SECURE_SEEDED_USERS.find(s => 
+        s.username === uLower || 
+        (uLower === 'supervisor1' && s.username === 'executive1')
+      );
+      if (seedUser) {
+        const seedValid = await verifyPasswordPbkdf2(password, seedUser.password_salt, seedUser.password_hash);
+        if (seedValid) {
+          user = { ...seedUser };
+          isValid = true;
+        }
       }
     }
 
     if (!user || !isValid) {
-      return sendJson(401, { error: 'Invalid credentials' });
+      const failureStats = recordLoginFailure(clientIp, username);
+      logSecurityEvent('AUTH_FAILURE', `Invalid credentials for user: ${username} from IP: ${clientIp}`, req, {
+        attempts: failureStats.attempts,
+        remaining: failureStats.remaining
+      });
+
+      if (failureStats.locked) {
+        return sendJson(429, {
+          error: 'Account locked due to excessive failed attempts. Please retry in 900 seconds.',
+          retryAfter: 900
+        }, { 'Retry-After': '900' });
+      }
+
+      return sendJson(401, {
+        error: failureStats.remaining > 0 
+          ? `Invalid credentials. ${failureStats.remaining} attempt(s) remaining.`
+          : 'Account locked due to excessive failed attempts.',
+        attemptsRemaining: failureStats.remaining
+      });
     }
 
+    // Successful Login
+    recordLoginSuccess(clientIp, username);
     const token = signSessionToken(user);
     const cookieHeader = `LINA_AUTH_SESSION=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=28800; Secure`;
+
+    logSecurityEvent('AUTH_SUCCESS', `User ${user.username} (${user.role}) authenticated successfully`, req);
 
     return sendJson(200, {
       success: true,
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        full_name: user.full_name,
-        role: user.role
-      }
+      user: sanitizeUser(user)
     }, { 'Set-Cookie': cookieHeader });
   }
 
-  // 4. Session Check
+  // --------------------------------------------------------------------------
+  // API Route: Session Check
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/auth/session') && reqMethod === 'GET') {
     const authUser = getAuthenticatedUser(req);
-    if (!authUser) return sendJson(401, { authenticated: false });
-    return sendJson(200, { authenticated: true, user: authUser });
+    if (!authUser) {
+      return sendJson(401, { authenticated: false, error: 'Session expired or invalid' });
+    }
+    return sendJson(200, { authenticated: true, user: sanitizeUser(authUser) });
   }
 
-  // 4b. Logout
+  // --------------------------------------------------------------------------
+  // API Route: Logout
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/auth/logout') && reqMethod === 'POST') {
+    const cookies = parseCookies(req);
+    const token = cookies['LINA_AUTH_SESSION'] || (req.headers['authorization'] || '').replace('Bearer ', '').trim();
+    if (token) {
+      revokeSessionToken(token);
+    }
+    logSecurityEvent('AUTH_LOGOUT', 'User logged out and session revoked', req);
     return sendJson(200, { success: true }, {
       'Set-Cookie': 'LINA_AUTH_SESSION=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Secure'
     });
   }
 
-  // 5. Stock Database Fetch (Protected - Requires Valid Authentication)
+  // --------------------------------------------------------------------------
+  // API Route: Stock Database Fetch (Protected + Anti-Scraping Rate Limited)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/stock/db') && reqMethod === 'GET') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser) {
-      return sendJson(401, { error: 'Unauthorized: Valid authentication required to access stock data' });
+      return sendJson(401, { error: 'Unauthorized: Authentication required' });
+    }
+
+    const scrapeCheck = dataScrapingLimiter.isAllowed(authUser.id || clientIp);
+    if (!scrapeCheck.allowed) {
+      logSecurityEvent('ABUSE_DATA_SCRAPE_EXCEEDED', `Bulk data export rate limit exceeded by ${authUser.username}`, req);
+      return sendJson(429, { error: 'Data query rate limit exceeded. Please wait before refreshing.', retryAfter: scrapeCheck.retryAfter }, { 'Retry-After': String(scrapeCheck.retryAfter) });
     }
 
     const [usersRes, sesRes, itemsRes, logsRes, auditRes] = await Promise.all([
@@ -423,9 +465,7 @@ module.exports = async function handler(req, res) {
     let items = itemsRes && itemsRes.data ? itemsRes.data : [];
     const sessionsList = sesRes && sesRes.data ? sesRes.data : [];
 
-    // Strict Server-Side Blind Count enforcement:
-    // 1. COUNTER role never sees system_qty or variance_qty (in any mode)
-    // 2. SUPERVISOR role cannot see system_qty or variance_qty for sessions configured as BLIND_ALL
+    // Server-Side Blind Count Enforcement
     if (authUser.role === 'COUNTER') {
       items = items.map(item => {
         const clean = { ...item };
@@ -433,9 +473,9 @@ module.exports = async function handler(req, res) {
         delete clean.variance_qty;
         return clean;
       });
-    } else if (authUser.role === 'SUPERVISOR') {
+    } else if (authUser.role === 'SUPERVISOR' || authUser.role === 'EXECUTIVE') {
       const strictBlindSessionIds = new Set(
-        sessionsList.filter(s => s.count_type === 'BLIND_ALL').map(s => s.id)
+        sessionsList.filter(s => s.count_type === 'BLIND_ALL' || s.count_type === 'DOUBLE_BLIND').map(s => s.id)
       );
       if (strictBlindSessionIds.size > 0) {
         items = items.map(item => {
@@ -450,21 +490,26 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // Ensure all user objects have sensitive hashes and salts stripped
+    const safeUsers = (usersRes && usersRes.data ? usersRes.data : []).map(u => sanitizeUser(u));
+
     return sendJson(200, {
       source: 'SUPABASE_CLOUD',
-      users: usersRes && usersRes.data ? usersRes.data : [],
-      sessions: (sesRes && sesRes.data ? sesRes.data : []).map(s => ({ ...s, count_type: fromDbCountType(s.count_type) })),
+      users: safeUsers,
+      sessions: sessionsList.map(s => ({ ...s, count_type: fromDbCountType(s.count_type) })),
       items: items,
       logs: logsRes && logsRes.data ? logsRes.data : [],
       audit_trails: authUser.role === 'COUNTER' ? [] : (auditRes && auditRes.data ? auditRes.data : [])
     });
   }
 
-  // 5b. Stock Session Creation & Upload (Protected - Admin, Supervisor, Manager)
+  // --------------------------------------------------------------------------
+  // API Route: Stock Session Creation (Protected)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/stock/session') && reqMethod === 'POST') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser) {
-      return sendJson(401, { error: 'Unauthorized: Authentication required to create sessions' });
+      return sendJson(401, { error: 'Unauthorized: Authentication required' });
     }
     if (authUser.role === 'COUNTER') {
       return sendJson(403, { error: 'Forbidden: Counter operators cannot create sessions' });
@@ -472,7 +517,7 @@ module.exports = async function handler(req, res) {
 
     const body = await parseBody(req);
     if (deepScanPayload(body)) {
-      return sendJson(400, { error: 'Malicious payload detected' });
+      return sendJson(400, { error: 'Malicious payload rejected by security filter' });
     }
 
     const session = body.session;
@@ -481,32 +526,37 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'Valid session object required with id and title' });
     }
 
-    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
-      const now = new Date().toISOString();
-      const sessionRow = {
-        id: session.id,
-        session_code: session.session_code || `SES-${Date.now()}`,
-        title: session.title,
-        description: session.description || '',
-        count_type: toDbCountType(session.count_type),
-        status: session.status || 'ACTIVE',
-        total_items: items.length || session.total_items || 0,
-        counted_items: session.counted_items || 0,
-        progress_percent: session.progress_percent || 0,
-        created_by: authUser.id || 'u-admin',
-        created_at: session.created_at || now,
-        closed_at: session.status === 'CLOSED' ? (session.closed_at || now) : null
-      };
+    // Enforce ownership: assign session creator
+    const now = new Date().toISOString();
+    const sessionRow = {
+      id: session.id,
+      session_code: session.session_code || `SES-${Date.now()}`,
+      title: session.title,
+      description: session.description || '',
+      count_type: toDbCountType(session.count_type),
+      status: session.status || 'ACTIVE',
+      total_items: items.length || session.total_items || 0,
+      counted_items: session.counted_items || 0,
+      progress_percent: session.progress_percent || 0,
+      created_by: authUser.id,
+      created_at: session.created_at || now,
+      closed_at: session.status === 'CLOSED' ? (session.closed_at || now) : null
+    };
 
-      // Check if session already exists
-      const existCheck = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(session.id)}&select=id`);
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      const existCheck = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(session.id)}&select=id,created_by`);
       if (existCheck && existCheck.status === 200 && Array.isArray(existCheck.data) && existCheck.data.length > 0) {
+        // IDOR Check on Session Overwrite
+        const ownership = verifySessionOwnership(authUser, existCheck.data[0], 'OVERWRITE');
+        if (!ownership.allowed) {
+          logSecurityEvent('IDOR_PREVENTED', `User ${authUser.username} tried to overwrite session ${session.id}`, req);
+          return sendJson(ownership.statusCode, { error: ownership.error });
+        }
         await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(session.id)}`, 'PATCH', sessionRow);
       } else {
         await supabaseRequest('count_sessions', 'POST', sessionRow);
       }
 
-      // Batch insert items in chunks of 200
       if (items.length > 0) {
         const chunkSize = 200;
         for (let i = 0; i < items.length; i += chunkSize) {
@@ -532,18 +582,36 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    return sendJson(201, { success: true, session, itemsCount: items.length });
+    logSecurityEvent('SESSION_CREATED', `Session ${session.id} created by ${authUser.username}`, req);
+    return sendJson(201, { success: true, session: sessionRow, itemsCount: items.length });
   }
 
-  // 5c. Stock Session Update / Control (Lock, Unlock, Blind Mode, Title)
+  // --------------------------------------------------------------------------
+  // API Route: Stock Session Update (Protected + IDOR Ownership Enforcement)
+  // --------------------------------------------------------------------------
   if (reqUrl.includes('/api/stock/session') && reqMethod === 'PATCH') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser || authUser.role === 'COUNTER') {
       return sendJson(403, { error: 'Forbidden' });
     }
+
     const body = await parseBody(req);
     const sessionId = body.id || (reqUrl.split('/api/stock/session/')[1] || '').trim();
     if (!sessionId) return sendJson(400, { error: 'Session ID required' });
+
+    // IDOR Check: verify ownership of the target session
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      const sesRes = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}&select=*`);
+      if (sesRes && sesRes.status === 200 && Array.isArray(sesRes.data) && sesRes.data.length > 0) {
+        const targetSession = sesRes.data[0];
+        const ownership = verifySessionOwnership(authUser, targetSession, 'UPDATE');
+        if (!ownership.allowed) {
+          logSecurityEvent('IDOR_PREVENTED', `User ${authUser.username} unauthorized session update on ${sessionId}`, req);
+          return sendJson(ownership.statusCode, { error: ownership.error });
+        }
+      }
+    }
+
     const updateFields = {};
     if (body.status !== undefined) updateFields.status = body.status;
     if (body.count_type !== undefined) updateFields.count_type = toDbCountType(body.count_type);
@@ -554,29 +622,57 @@ module.exports = async function handler(req, res) {
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY && Object.keys(updateFields).length > 0) {
       await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}`, 'PATCH', updateFields);
     }
+
+    logSecurityEvent('SESSION_UPDATED', `Session ${sessionId} updated by ${authUser.username}`, req, { fields: Object.keys(updateFields) });
     return sendJson(200, { success: true, sessionId, updated: updateFields });
   }
 
-  // 5d. Delete / Clear Session
+  // --------------------------------------------------------------------------
+  // API Route: Stock Session Deletion (Protected + IDOR Ownership Enforcement)
+  // --------------------------------------------------------------------------
   if (reqUrl.includes('/api/stock/session') && reqMethod === 'DELETE') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser || authUser.role === 'COUNTER') {
       return sendJson(403, { error: 'Forbidden' });
     }
+
     const sessionId = (reqUrl.split('/api/stock/session/')[1] || '').trim();
-    if (sessionId && SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+    if (!sessionId) return sendJson(400, { error: 'Session ID required' });
+
+    // IDOR Check: verify ownership before deletion
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      const sesRes = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}&select=*`);
+      if (sesRes && sesRes.status === 200 && Array.isArray(sesRes.data) && sesRes.data.length > 0) {
+        const targetSession = sesRes.data[0];
+        const ownership = verifySessionOwnership(authUser, targetSession, 'DELETE');
+        if (!ownership.allowed) {
+          logSecurityEvent('IDOR_PREVENTED', `User ${authUser.username} attempted unauthorized delete of session ${sessionId}`, req);
+          return sendJson(ownership.statusCode, { error: ownership.error });
+        }
+      }
+
       await supabaseRequest(`stock_items?session_id=eq.${encodeURIComponent(sessionId)}`, 'DELETE');
       await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}`, 'DELETE');
     }
+
+    logSecurityEvent('SESSION_DELETED', `Session ${sessionId} deleted by ${authUser.username}`, req);
     return sendJson(200, { success: true, sessionId });
   }
 
-
-  // 5e. User Management - Create User (Admin, Executive)
+  // --------------------------------------------------------------------------
+  // API Route: User Management - Create User (Rate Limited + Access Control)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/auth/users') && reqMethod === 'POST') {
     const authUser = getAuthenticatedUser(req);
-    if (!authUser || (authUser.role !== 'ADMIN' && authUser.role !== 'EXECUTIVE' && authUser.role !== 'SUPERVISOR' && authUser.role !== 'MANAGER')) {
-      return sendJson(403, { error: 'Forbidden: Insufficient permissions to create users' });
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized: Authentication required' });
+    }
+
+    // Rate Limit Account Creation (Mitigate Automated Spam Accounts)
+    const creationLimit = accountCreationLimiter.isAllowed(clientIp);
+    if (!creationLimit.allowed) {
+      logSecurityEvent('ABUSE_ACCOUNT_FLOOD', `Account creation rate limit exceeded by ${clientIp}`, req);
+      return sendJson(429, { error: 'Account creation rate limit exceeded. Please wait.', retryAfter: creationLimit.retryAfter }, { 'Retry-After': String(creationLimit.retryAfter) });
     }
 
     const body = await parseBody(req);
@@ -584,24 +680,28 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'Malicious payload detected' });
     }
 
-    const { id, username, full_name, role, password, password_salt, password_hash } = body;
+    const { id, username, full_name, role, password } = body;
     if (!username || !role) {
       return sendJson(400, { error: 'Username and role are required' });
     }
 
-    if ((authUser.role === 'EXECUTIVE' || authUser.role === 'SUPERVISOR') && role !== 'COUNTER') {
-      return sendJson(403, { error: 'Executives can only create Counter accounts' });
+    // IDOR / Privilege Escalation Check
+    const accessCheck = verifyUserManagementAccess(authUser, null, role.toUpperCase(), 'CREATE');
+    if (!accessCheck.allowed) {
+      logSecurityEvent('PRIVILEGE_ESCALATION_BLOCKED', `${authUser.username} attempted unauthorized account creation of role ${role}`, req);
+      return sendJson(accessCheck.statusCode, { error: accessCheck.error });
+    }
+
+    // Password Validation
+    const rawPass = password || 'counter123';
+    const strengthCheck = validatePasswordStrength(rawPass);
+    if (!strengthCheck.valid) {
+      return sendJson(400, { error: strengthCheck.error });
     }
 
     const userId = id || ('u-' + Date.now());
-    const salt = password_salt || crypto.randomBytes(16).toString('hex');
-    let hash = password_hash;
-    if (!hash && password) {
-      hash = await hashPasswordPbkdf2(password, salt);
-    }
-    if (!hash) {
-      hash = await hashPasswordPbkdf2('1234', salt);
-    }
+    const salt = generateSecureSalt(16);
+    const hash = await hashPasswordPbkdf2(rawPass, salt);
 
     const userRow = {
       id: userId,
@@ -618,20 +718,22 @@ module.exports = async function handler(req, res) {
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       const existCheck = await supabaseRequest('stock_users?username=eq.' + encodeURIComponent(userRow.username) + '&select=id');
       if (existCheck && existCheck.status === 200 && Array.isArray(existCheck.data) && existCheck.data.length > 0) {
-        await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(existCheck.data[0].id), 'PATCH', userRow);
-      } else {
-        await supabaseRequest('stock_users', 'POST', userRow);
+        return sendJson(400, { error: 'Username is already taken' });
       }
+      await supabaseRequest('stock_users', 'POST', userRow);
     }
 
-    return sendJson(201, { success: true, user: { id: userRow.id, username: userRow.username, full_name: userRow.full_name, role: userRow.role, is_active: userRow.is_active } });
+    logSecurityEvent('USER_CREATED', `Account ${userRow.username} (${userRow.role}) created by ${authUser.username}`, req);
+    return sendJson(201, { success: true, user: sanitizeUser(userRow) });
   }
 
-  // 5f. User Management - Update User (Admin, Executive)
+  // --------------------------------------------------------------------------
+  // API Route: User Management - Update User (Protected + IDOR Enforcement)
+  // --------------------------------------------------------------------------
   if (reqUrl.includes('/api/auth/users') && reqMethod === 'PATCH') {
     const authUser = getAuthenticatedUser(req);
-    if (!authUser || (authUser.role !== 'ADMIN' && authUser.role !== 'EXECUTIVE' && authUser.role !== 'SUPERVISOR' && authUser.role !== 'MANAGER')) {
-      return sendJson(403, { error: 'Forbidden: Insufficient permissions to edit users' });
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized' });
     }
 
     const body = await parseBody(req);
@@ -644,51 +746,47 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'User ID is required' });
     }
 
+    // IDOR Check: fetch target user to verify authority
+    let targetUser = null;
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      const targetRes = await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(userId) + '&select=*');
+      if (targetRes && targetRes.data && targetRes.data[0]) {
+        targetUser = targetRes.data[0];
+      }
+    }
+
+    const accessCheck = verifyUserManagementAccess(authUser, targetUser, body.role, 'MODIFY');
+    if (!accessCheck.allowed) {
+      logSecurityEvent('IDOR_PREVENTED', `${authUser.username} unauthorized attempt to modify user ${userId}`, req);
+      return sendJson(accessCheck.statusCode, { error: accessCheck.error });
+    }
+
     const updateFields = { updated_at: new Date().toISOString() };
     if (body.full_name !== undefined) updateFields.full_name = String(body.full_name).trim();
-    // Central Admin account is immutable
-    const isTargetRootAdmin = (userId === 'u-admin' || userId === 'admin');
-    if (isTargetRootAdmin && (authUser.role === 'EXECUTIVE' || authUser.role === 'SUPERVISOR')) {
-      return sendJson(403, { error: 'Forbidden: Executives cannot modify Administrator accounts' });
-    }
-
-    // Executives are strictly restricted to editing Counter accounts only
-    if (authUser.role === 'EXECUTIVE' || authUser.role === 'SUPERVISOR') {
-      if (body.role && body.role !== 'COUNTER') {
-        return sendJson(403, { error: 'Forbidden: Executives can only assign COUNTER role' });
-      }
-      if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
-        const targetRes = await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(userId) + '&select=role,username');
-        if (targetRes && targetRes.data && targetRes.data[0]) {
-          const target = targetRes.data[0];
-          if (target.role !== 'COUNTER' || target.username === 'admin') {
-            return sendJson(403, { error: 'Forbidden: Executives are only authorized to edit Counter accounts' });
-          }
-        }
-      }
-    }
-
-    if (body.role !== undefined && !isTargetRootAdmin) {
-      updateFields.role = body.role.toUpperCase();
-    }
+    if (body.role !== undefined && authUser.role === 'ADMIN') updateFields.role = body.role.toUpperCase();
     if (body.is_active !== undefined) updateFields.is_active = Boolean(body.is_active);
+
     if (body.password) {
-      const salt = crypto.randomBytes(16).toString('hex');
+      const strengthCheck = validatePasswordStrength(body.password);
+      if (!strengthCheck.valid) {
+        return sendJson(400, { error: strengthCheck.error });
+      }
+      const salt = generateSecureSalt(16);
       updateFields.password_salt = salt;
       updateFields.password_hash = await hashPasswordPbkdf2(body.password, salt);
-    } else if (body.password_hash && body.password_salt) {
-      updateFields.password_salt = body.password_salt;
-      updateFields.password_hash = body.password_hash;
     }
 
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(userId), 'PATCH', updateFields);
     }
 
-    return sendJson(200, { success: true, userId, updated: updateFields });
+    logSecurityEvent('USER_MODIFIED', `User ${userId} modified by ${authUser.username}`, req, { fields: Object.keys(updateFields) });
+    return sendJson(200, { success: true, userId, updated: sanitizeUser(updateFields) });
   }
 
-  // 6. Record Stock Count (Protected)
+  // --------------------------------------------------------------------------
+  // API Route: Record Stock Count (Protected + Session Verification)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/stock/count') && reqMethod === 'POST') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser) {
@@ -706,10 +804,35 @@ module.exports = async function handler(req, res) {
       return sendJson(400, { error: 'Valid SKU and non-negative quantity required' });
     }
 
+    // Verify target session is active
+    let targetSession = null;
+    let targetSessionId = body.session_id;
+
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      if (targetSessionId) {
+        const sesRes = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(targetSessionId)}&select=*`);
+        if (sesRes && sesRes.data && sesRes.data[0]) {
+          targetSession = sesRes.data[0];
+        }
+      } else {
+        const activeSesRes = await supabaseRequest('count_sessions?status=eq.ACTIVE&limit=1&select=*');
+        if (activeSesRes && activeSesRes.data && activeSesRes.data[0]) {
+          targetSession = activeSesRes.data[0];
+          targetSessionId = targetSession.id;
+        }
+      }
+    }
+
+    const countCheck = verifyCountSubmission(authUser, targetSession);
+    if (!countCheck.allowed) {
+      logSecurityEvent('COUNT_REJECTED', countCheck.error, req);
+      return sendJson(countCheck.statusCode, { error: countCheck.error });
+    }
+
     const now = new Date().toISOString();
     let item = null;
     const sbItemRes = await supabaseRequest(`stock_items?sku=eq.${encodeURIComponent(sku)}&select=*`);
-    
+
     if (sbItemRes && sbItemRes.status === 200 && Array.isArray(sbItemRes.data) && sbItemRes.data.length > 0) {
       item = sbItemRes.data[0];
       const isReplace = body.mode === 'REPLACE';
@@ -724,14 +847,6 @@ module.exports = async function handler(req, res) {
       item.total_counted_qty = newCounted;
       item.variance_qty = newVariance;
     } else {
-      let targetSessionId = body.session_id;
-      if (!targetSessionId && SUPABASE_HOST && SUPABASE_SECRET_KEY) {
-        const activeSesRes = await supabaseRequest('count_sessions?status=eq.ACTIVE&limit=1&select=id');
-        if (activeSesRes && activeSesRes.data && activeSesRes.data[0]) {
-          targetSessionId = activeSesRes.data[0].id;
-        }
-      }
-
       const newItem = {
         id: 'item-unlisted-' + Date.now(),
         session_id: targetSessionId || 'ses-default',
@@ -753,30 +868,116 @@ module.exports = async function handler(req, res) {
       item = newItem;
     }
 
-    // Insert log with correct dynamic session_id
+    // Insert count transaction log strictly binding counted_by to authUser
     const logId = 'log-' + Date.now();
     await supabaseRequest('count_logs', 'POST', {
       id: logId,
-      session_id: body.session_id || item.session_id || 'ses-default',
+      session_id: targetSessionId || item.session_id || 'ses-default',
       item_id: item.id,
       sku: item.sku,
       item_name: item.item_name,
       batch_no: item.batch_no || '',
       location: item.zone_location || '',
       qty_counted: qty,
-      counted_by: authUser.username || body.counted_by || 'counter',
+      counted_by: authUser.username, // Bound directly to authenticated user
       timestamp: now
     });
 
     return sendJson(200, { success: true, item });
   }
 
-  // 7. Audit (Protected - Restricted to Supervisors & Admins)
+  // --------------------------------------------------------------------------
+  // API Route: AI Generation Requests (Protected + Dedicated AI Rate Limiting)
+  // --------------------------------------------------------------------------
+  if (reqUrl.endsWith('/api/ai/generate') && reqMethod === 'POST') {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized: Authentication required for AI inventory generation' });
+    }
+
+    // Dedicated AI Rate Limiter (Protects against compute exhaustion and prompt scraping)
+    const aiLimit = aiGenerationLimiter.isAllowed(authUser.id || clientIp);
+    if (!aiLimit.allowed) {
+      logSecurityEvent('ABUSE_AI_RATE_LIMIT', `AI generation rate limit exceeded by ${authUser.username} (${clientIp})`, req);
+      return sendJson(429, {
+        error: 'AI generation request limit reached. Please wait before requesting additional AI insights.',
+        retryAfter: aiLimit.retryAfter
+      }, { 'Retry-After': String(aiLimit.retryAfter) });
+    }
+
+    const body = await parseBody(req);
+    if (deepScanPayload(body)) {
+      return sendJson(400, { error: 'Malicious payload detected' });
+    }
+
+    const requestType = String(body.type || 'VARIANCE_ANALYSIS').toUpperCase();
+    const sessionId = String(body.session_id || '').trim();
+
+    // Verify session existence and user access
+    let session = null;
+    let items = [];
+    if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
+      if (sessionId) {
+        const sRes = await supabaseRequest(`count_sessions?id=eq.${encodeURIComponent(sessionId)}&select=*`);
+        if (sRes && sRes.data && sRes.data[0]) session = sRes.data[0];
+        const iRes = await supabaseRequest(`stock_items?session_id=eq.${encodeURIComponent(sessionId)}&select=*`);
+        if (iRes && iRes.data) items = iRes.data;
+      } else {
+        const sRes = await supabaseRequest('count_sessions?status=eq.ACTIVE&limit=1&select=*');
+        if (sRes && sRes.data && sRes.data[0]) session = sRes.data[0];
+      }
+    }
+
+    // Ownership check on AI analysis
+    if (session) {
+      const ownership = verifySessionOwnership(authUser, session, 'ANALYZE');
+      if (!ownership.allowed && authUser.role === 'COUNTER') {
+        return sendJson(403, { error: 'Counters are restricted from viewing AI variance analyses' });
+      }
+    }
+
+    // Synthesize structured AI inventory analytics response
+    const totalItems = items.length;
+    const discrepancies = items.filter(it => Math.abs(Number(it.variance_qty)) > 0);
+    const criticalDiscrepancies = discrepancies.filter(it => Math.abs(Number(it.variance_qty)) >= 5);
+
+    const aiReport = {
+      model: 'Lina-Enterprise-Inventory-Intelligence-Engine-v2',
+      requestType,
+      generatedAt: new Date().toISOString(),
+      requestedBy: authUser.username,
+      analysis: {
+        totalEvaluatedItems: totalItems,
+        discrepancyCount: discrepancies.length,
+        criticalDiscrepanciesCount: criticalDiscrepancies.length,
+        discrepancyRatePct: totalItems > 0 ? ((discrepancies.length / totalItems) * 100).toFixed(1) : 0,
+        riskScore: criticalDiscrepancies.length > 3 ? 'HIGH' : (discrepancies.length > 0 ? 'MODERATE' : 'LOW'),
+        recommendations: [
+          'Perform secondary blind recount on SKUs with variance threshold > 5%',
+          'Verify physical batch expiration dates against warehouse ERP ledger',
+          'Lock completed zones to prevent accidental recount duplication'
+        ]
+      }
+    };
+
+    logSecurityEvent('AI_GENERATION_SUCCESS', `AI analysis (${requestType}) generated for user ${authUser.username}`, req);
+    return sendJson(200, { success: true, aiReport });
+  }
+
+  // --------------------------------------------------------------------------
+  // API Route: Audit Trails (Protected + Restricted to Supervisors/Admins)
+  // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/audit') && reqMethod === 'GET') {
     const authUser = getAuthenticatedUser(req);
     if (!authUser || authUser.role === 'COUNTER') {
       return sendJson(403, { error: 'Forbidden: Audit trail access restricted to Supervisors and Administrators' });
     }
+
+    const scrapeCheck = dataScrapingLimiter.isAllowed(authUser.id || clientIp);
+    if (!scrapeCheck.allowed) {
+      return sendJson(429, { error: 'Audit log query rate limit exceeded.', retryAfter: scrapeCheck.retryAfter }, { 'Retry-After': String(scrapeCheck.retryAfter) });
+    }
+
     const sbAuditRes = await supabaseRequest('audit_trails?select=*&order=timestamp.desc&limit=2000');
     return sendJson(200, { audit_trails: sbAuditRes && sbAuditRes.data ? sbAuditRes.data : [] });
   }

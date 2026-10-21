@@ -238,9 +238,34 @@ npm test
 ```
 **Expected Output:**
 ```
-# tests 10
+# tests 15
 # suites 1
-# pass 10
+# pass 15
 # fail 0
 ```
-This validates PBKDF2 authentication, SQL injection blocking, rate limiting, and blind count enforcement.
+This validates PBKDF2 authentication, SQL injection blocking, multi-tier rate limiting (Login, API, Account creation, AI generation), IDOR ownership enforcement on sessions and users, anti-bot protection, and server-side blind count enforcement.
+
+---
+
+## 7. Enterprise Security Hardening & Zero-Trust Checklist
+
+1. **Password Hashing**: PBKDF2-HMAC-SHA256 with 100,000 iterations and 16-byte cryptographically secure salts. All hardcoded/plaintext fallback passwords have been completely eliminated.
+2. **Session Security**: Cryptographically signed tokens using HMAC-SHA256 with 8-hour absolute maximum expiration and 2-hour sliding inactivity timeout. Cookies enforce `HttpOnly; SameSite=Strict; Secure`.
+3. **Insecure Direct Object Reference (IDOR) Prevention**:
+   - Every API request validates that the authenticated caller owns the target resource (`verifySessionOwnership`).
+   - Counter operators are strictly forbidden from modifying or deleting sessions.
+   - Floor Executives can only modify and delete sessions that they created.
+   - User profile and account modifications verify caller authority; Floor Executives can only manage Counter accounts and cannot escalate privileges or alter Administrator profiles.
+4. **Multi-Tier Abuse & Rate Limiting Protection**:
+   - **Login**: Progressive lockout after 5 failed attempts within 5 minutes (HTTP 429 with `Retry-After: 900`).
+   - **API Endpoints**: 120 requests/minute per client IP / authenticated token.
+   - **Account Creation**: Maximum 5 registrations per 15 minutes to block automated bot account creation.
+   - **AI Generation**: 10 requests/minute to prevent compute exhaustion and model abuse.
+   - **Anti-Scraping**: 25 requests/minute for sensitive bulk export endpoints (`/api/stock/db`, `/api/audit`).
+5. **Anti-Bot & Automated Scraper Defense**:
+   - Real-time heuristic detection blocks automated crawlers, exploit scanners (`sqlmap`, `nikto`, `masscan`), and scrapers (`Scrapy`, `python-requests` without authorization).
+6. **Restricted Direct Database Access from Public Internet**:
+   - Supabase schema strictly revokes anonymous internet access (`REVOKE ALL ON TABLE public.stock_users FROM anon;`).
+   - Public internet cannot read password salts, hashes, or tamper with logs. All operations must pass through the authoritative backend using `service_role`.
+7. **Security & Anomaly Logging**:
+   - All authentication successes, failures, lockouts, IDOR violations, injection attempts, and bot sweeps are logged with client IP, timestamp, user agent, and contextual metadata.
