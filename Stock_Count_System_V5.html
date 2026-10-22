@@ -2446,7 +2446,7 @@
       <!-- Quick Full Backup Button (Admin Exclusive) -->
       
       <!-- Stock Database Chatbot Header Toggle Button -->
-      <button class="btn btn-secondary btn-sm chatbot-toggle-btn" id="headerChatbotBtn" onclick="toggleStockChatbot()" title="Stock Database Query Bot (100% Free &amp; Offline)" style="display: none;">
+      <button class="btn btn-secondary btn-sm chatbot-toggle-btn" id="headerChatbotBtn" onclick="toggleStockChatbot()" title="Stock Bot" style="display: none;">
         <i data-lucide="bot" style="width: 15px; height: 15px; color: var(--accent);"></i>
         <span class="theme-btn-label">Stock Bot</span>
       </button>
@@ -3226,9 +3226,10 @@
                 </td>
               </tr>
             </tbody>
-          </table>
-        </div>
+                  </div>
       </div>
+
+
     </section>
 
     <!-- ========================================== -->
@@ -3533,6 +3534,39 @@
               <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading users...</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    
+<!-- Stock Chatbot Access & Data Governance (Admin Only) -->
+      <div class="card admin-strict" style="margin-top: 1.25rem; border-color: rgba(14, 165, 233, 0.35); background: linear-gradient(180deg, rgba(14, 165, 233, 0.03) 0%, transparent 100%);">
+        <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <span style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.05rem; font-weight: 700;">
+              <i data-lucide="bot" style="width: 18px; height: 18px; color: var(--accent);"></i>
+              Stock Chatbot Access &amp; Data Governance
+            </span>
+            <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">
+              Admin Control: Manage role permissions, enforce session blind count rules, and configure stock visibility.
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openChatbotAdminConfigModal()">
+            <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+            <span>Configure Chatbot Permissions</span>
+          </button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;" id="chatbotGovernanceBadges">
+          <div style="padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Allowed Roles</div>
+            <div style="font-weight: 700; font-size: 0.8rem; margin-top: 2px;" id="cbGovRolesSummary">ADMIN, MANAGER, EXECUTIVE, COUNTER</div>
+          </div>
+          <div style="padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Session Blind Count Enforcement</div>
+            <div style="font-weight: 700; font-size: 0.8rem; margin-top: 2px; color: var(--accent-emerald);" id="cbGovBlindSummary">Active (Counters &amp; Execs Protected)</div>
+          </div>
+          <div style="padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card);">
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">User History Isolation</div>
+            <div style="font-weight: 700; font-size: 0.8rem; margin-top: 2px; color: var(--accent);">Strict Per-User Private Storage</div>
+          </div>
         </div>
       </div>
     </section>
@@ -4551,20 +4585,15 @@
         </div>
         <div>
           <div class="chatbot-header-title">
-            <span>Stock Data Bot</span>
-            <span class="chatbot-offline-pill">
-              <span class="pulse-dot" style="width: 5px; height: 5px;"></span> DB Live
-            </span>
-          </div>
-          <div class="chatbot-header-sub">
-            <span>Free Offline Data Retrieval · Zero API</span>
+            <span>Stock Bot</span>
           </div>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 0.35rem;">
-        <!-- Admin Settings Gear -->
-        <button type="button" class="btn-icon admin-strict" onclick="openChatbotAdminConfigModal()" title="Admin Control: Configure Chatbot Access &amp; Data Retrieval" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: var(--radius-xs);">
-          <i data-lucide="settings" style="width: 17px; height: 17px;"></i>
+      <div style="display: flex; align-items: center; gap: 0.4rem;">
+        <!-- Admin Access Rules Button -->
+        <button type="button" class="btn btn-secondary btn-xs admin-strict" onclick="openChatbotAdminConfigModal()" title="Configure Chatbot Access Rules &amp; Visibility" style="font-size: 0.7rem; padding: 2px 7px; display: inline-flex; align-items: center; gap: 4px;">
+          <i data-lucide="sliders" style="width: 12px; height: 12px;"></i>
+          <span>Access Rules</span>
         </button>
         <!-- Clear chat -->
         <button type="button" class="btn-icon" onclick="resetChatbotConversation()" title="Clear Chat History" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: var(--radius-xs);">
@@ -4577,29 +4606,15 @@
       </div>
     </div>
 
-    <!-- Predefined Question Chips Selector -->
-    <div class="chatbot-question-section">
-      <div class="chatbot-question-label">
-        <span>Predefined Database Questions:</span>
-        <span style="font-weight: 700; font-size: 0.68rem; color: var(--accent);" id="activeQuestionTag">📦 Complete History</span>
+    <!-- Predefined Question Section (Only Complete History) -->
+    <div class="chatbot-question-section" style="padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border); background: rgba(14, 165, 233, 0.04); display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-size: 0.74rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.35rem;">
+        <span>Predefined Query:</span>
+        <strong style="color: var(--text); font-size: 0.75rem;">Complete Item History</strong>
       </div>
-      <div class="chatbot-pills-row" id="chatbotQuestionPills">
-        <button type="button" class="chatbot-q-pill active" data-q="Q_FULL_HISTORY" onclick="selectChatbotQuestion('Q_FULL_HISTORY')">
-          <span>📦 Complete History</span>
-        </button>
-        <button type="button" class="chatbot-q-pill" data-q="Q_PHYSICAL_VS_SYSTEM" onclick="selectChatbotQuestion('Q_PHYSICAL_VS_SYSTEM')">
-          <span>⚖️ Physical vs System</span>
-        </button>
-        <button type="button" class="chatbot-q-pill" data-q="Q_SESSIONS_DATES" onclick="selectChatbotQuestion('Q_SESSIONS_DATES')">
-          <span>📅 Dates &amp; Sessions</span>
-        </button>
-        <button type="button" class="chatbot-q-pill" data-q="Q_ZONE_LOCATION" onclick="selectChatbotQuestion('Q_ZONE_LOCATION')">
-          <span>📍 Storage Zone</span>
-        </button>
-        <button type="button" class="chatbot-q-pill" data-q="Q_VARIANCE_AUDIT" onclick="selectChatbotQuestion('Q_VARIANCE_AUDIT')">
-          <span>⚠️ Variance &amp; Discrepancy</span>
-        </button>
-      </div>
+      <span class="badge" style="background: rgba(14, 165, 233, 0.12); color: var(--accent); font-size: 0.68rem; padding: 2px 8px; border: 1px solid rgba(14, 165, 233, 0.25);">
+        All Sessions
+      </span>
     </div>
 
     <!-- Messages Container -->
@@ -5430,8 +5445,11 @@
           el.style.display = isAdmin ? '' : 'none';
         });
 
-        // Update Chatbot visibility across Top Header, Mobile Drawer & Floating Launcher
-        try { updateChatbotAccessUI(); } catch (_) {}
+        // Update Chatbot visibility & load user-isolated chat history
+        try {
+          loadUserChatHistory();
+          updateChatbotAccessUI();
+        } catch (_) {}
 
         const sub = document.getElementById('userManagementSubtitle');
         if (sub) {
@@ -5691,6 +5709,11 @@
       }
       localStorage.removeItem("LINA_AUTH_USER");
       currentUser = null;
+      chatbotConversationHistory = [];
+      const chatContainer = document.getElementById('chatbotMessagesContainer');
+      if (chatContainer) chatContainer.innerHTML = '';
+      const chatInp = document.getElementById('chatbotSearchInput');
+      if (chatInp) chatInp.value = '';
       try { toggleStockChatbot(false); } catch (_) {}
       const cbLauncher = document.getElementById('chatbotLauncherBtn');
       if (cbLauncher) cbLauncher.style.display = 'none';
@@ -10325,38 +10348,46 @@
     }
 
     // ==========================================================================
-    // OFFLINE DATABASE CHATBOT LOGIC (ZERO LLM / 100% FREE & DETERMINISTIC)
+    // STOCK DATABASE CHATBOT LOGIC (DETERMINISTIC / ZERO-API / ISOLATED)
     // ==========================================================================
-    let selectedChatbotQuestion = 'Q_FULL_HISTORY';
     let chatbotConversationHistory = [];
 
-    const CHATBOT_QUESTIONS_DEF = {
-      'Q_FULL_HISTORY': {
-        title: 'Complete Count History Across All Sessions',
-        icon: '📦',
-        prompt: 'Show all sessions, counted dates, physical quantity, and book stock for an item.'
-      },
-      'Q_PHYSICAL_VS_SYSTEM': {
-        title: 'Physical vs System Quantity Breakdown',
-        icon: '⚖️',
-        prompt: 'Compare physical counted quantity vs book system stock per session.'
-      },
-      'Q_SESSIONS_DATES': {
-        title: 'Sessions & Dates Where Item Was Counted',
-        icon: '📅',
-        prompt: 'List all sessions and dates where this item was registered or counted.'
-      },
-      'Q_ZONE_LOCATION': {
-        title: 'Storage Zone & Warehouse Location',
-        icon: '📍',
-        prompt: 'Show the warehouse zone, aisle, and location for an item across sessions.'
-      },
-      'Q_VARIANCE_AUDIT': {
-        title: 'Variance & Discrepancy Audit Report',
-        icon: '⚠️',
-        prompt: 'Audit discrepancies, shortage/surplus variances, and verification status.'
+    function getUserChatStorageKey() {
+      if (!currentUser) return null;
+      return 'LINA_CHAT_HISTORY_' + String(currentUser.id || currentUser.username).toLowerCase();
+    }
+
+    function loadUserChatHistory() {
+      const key = getUserChatStorageKey();
+      if (!key) {
+        chatbotConversationHistory = [];
+        return;
       }
-    };
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (raw) {
+          chatbotConversationHistory = JSON.parse(raw);
+        } else {
+          chatbotConversationHistory = [];
+        }
+      } catch (_) {
+        chatbotConversationHistory = [];
+      }
+      if (!chatbotConversationHistory || chatbotConversationHistory.length === 0) {
+        initChatbotGreeting();
+      } else {
+        renderChatbotMessages();
+      }
+    }
+
+    function saveUserChatHistory() {
+      const key = getUserChatStorageKey();
+      if (!key) return;
+      try {
+        const trimmed = chatbotConversationHistory.slice(-50);
+        sessionStorage.setItem(key, JSON.stringify(trimmed));
+      } catch (_) {}
+    }
 
     function getChatbotSettings() {
       appDb = loadDatabase();
@@ -10371,14 +10402,37 @@
       return roles.includes(user.role) || (isExecutive(user) && roles.includes('EXECUTIVE'));
     }
 
+    // STRICT LOGICAL VISIBILITY RULE:
+    // Respects session count_type (BLIND_ALL, BLIND_COUNT, OPEN_COUNT) and user role
     function canChatbotViewSystemQty(user = currentUser, session = activeSession, settings = getChatbotSettings()) {
       if (!user) return false;
+      // Administrator has authoritative oversight, but session blind status is indicated
       if (user.role === 'ADMIN') return true;
+
+      // If Admin globally disabled system quantity retrieval in chatbot settings
       if (!settings.allow_system_qty) return false;
-      if (settings.enforce_blind_rules) {
-        return canUserViewSystemQtyAndVariances(user, session);
+
+      // Determine target session count mode (fallback to activeSession or strictest BLIND_ALL)
+      const countMode = (session && session.count_type) || (activeSession && activeSession.count_type) || 'BLIND_ALL';
+
+      // 1. STRICT BLIND (BLIND_ALL): System quantities & variances are STRICTLY HIDDEN from both Counters and Supervisors/Executives
+      if (countMode === 'BLIND_ALL') {
+        if (user.role === 'MANAGER') return true;
+        return false; // Counters & Executives/Supervisors are strictly blind
       }
-      return user.role !== 'COUNTER';
+
+      // 2. BLIND_COUNT: Floor Counters are strictly blind; Executives/Supervisors can view
+      if (countMode === 'BLIND_COUNT') {
+        if (isExecutive(user) || user.role === 'MANAGER') return true;
+        return false; // Counters are strictly blind
+      }
+
+      // 3. For any count session, Floor Counters must NEVER be shown Book System Qty in chatbot to prevent deduction
+      if (user.role === 'COUNTER') {
+        return false;
+      }
+
+      return true;
     }
 
     function updateChatbotAccessUI() {
@@ -10393,10 +10447,14 @@
       const drawerBtn = document.getElementById('mobileDrawerChatbotBtn');
       if (drawerBtn) drawerBtn.style.display = isAllowed ? 'flex' : 'none';
 
+      const rolesSummary = document.getElementById('cbGovRolesSummary');
+      const settings = getChatbotSettings();
+      if (rolesSummary) rolesSummary.textContent = (settings.enabled_roles || []).join(', ');
+
       if (!isAllowed) {
         toggleStockChatbot(false);
       } else if (chatbotConversationHistory.length === 0) {
-        initChatbotGreeting();
+        loadUserChatHistory();
       }
     }
 
@@ -10415,7 +10473,7 @@
         void widget.offsetWidth;
         widget.classList.add('active');
         if (chatbotConversationHistory.length === 0) {
-          initChatbotGreeting();
+          loadUserChatHistory();
         }
         setTimeout(() => {
           const inp = document.getElementById('chatbotSearchInput');
@@ -10433,62 +10491,27 @@
     }
 
     function initChatbotGreeting() {
+      const uName = currentUser ? (currentUser.full_name || currentUser.username) : 'Operator';
       chatbotConversationHistory = [
         {
           sender: 'bot',
           html: `
-            <div style="font-weight: 700; margin-bottom: 0.35rem;">Hello, ${escapeHtml(currentUser ? (currentUser.full_name || currentUser.username) : 'Operator')}! 👋</div>
-            <div>I am your offline <strong>Stock Data Assistant</strong>. I can query our local database directly with zero external API calls.</div>
-            <div style="margin-top: 0.45rem; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xs); font-size: 0.76rem;">
-              <strong>How it works:</strong>
-              <ol style="margin: 4px 0 0 1rem; padding: 0;">
-                <li>Select a predefined question from the top pills</li>
-                <li>Enter the Item Name or SKU / Barcode code below</li>
-              </ol>
+            <div style="font-weight: 700; margin-bottom: 0.35rem;">Hello, ${escapeHtml(uName)}! 👋</div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.4;">
+              Enter any <strong>Item Name</strong>, <strong>Item Code</strong>, or <strong>SKU / Barcode</strong> below to view complete count history across sessions.
             </div>
           `
         }
       ];
+      saveUserChatHistory();
       renderChatbotMessages();
-    }
-
-    function selectChatbotQuestion(qKey) {
-      if (!CHATBOT_QUESTIONS_DEF[qKey]) return;
-      selectedChatbotQuestion = qKey;
-
-      // Update pills UI
-      document.querySelectorAll('#chatbotQuestionPills .chatbot-q-pill').forEach(btn => {
-        if (btn.getAttribute('data-q') === qKey) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-
-      const qDef = CHATBOT_QUESTIONS_DEF[qKey];
-      const tag = document.getElementById('activeQuestionTag');
-      if (tag) tag.textContent = `${qDef.icon} ${qDef.title.split(' ')[0]}`;
-
-      chatbotConversationHistory.push({
-        sender: 'bot',
-        html: `
-          <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px;">
-            ${qDef.icon} Query Selected: ${escapeHtml(qDef.title)}
-          </div>
-          <div style="font-size: 0.78rem; color: var(--text-dim);">
-            ${escapeHtml(qDef.prompt)}
-          </div>
-          <div style="margin-top: 0.45rem; font-size: 0.76rem; font-weight: 600;">
-            👉 Please type an <strong>Item Name</strong>, <strong>Item Code</strong>, or <strong>SKU / Barcode</strong> below:
-          </div>
-        `
-      });
-      renderChatbotMessages();
-      const inp = document.getElementById('chatbotSearchInput');
-      if (inp) inp.focus();
     }
 
     function resetChatbotConversation() {
+      const key = getUserChatStorageKey();
+      if (key) {
+        try { sessionStorage.removeItem(key); } catch (_) {}
+      }
       initChatbotGreeting();
       const inp = document.getElementById('chatbotSearchInput');
       if (inp) inp.value = '';
@@ -10589,6 +10612,7 @@
         sender: 'user',
         html: `<span>${escapeHtml(query)}</span>`
       });
+      saveUserChatHistory();
       renderChatbotMessages();
 
       // Show typing indicator
@@ -10607,21 +10631,22 @@
       container.scrollTop = container.scrollHeight;
       if (window.lucide) lucide.createIcons();
 
-      // Resolve query with slight realistic delay (250ms)
+      // Resolve query with slight realistic delay (200ms)
       setTimeout(() => {
         const ind = document.getElementById('chatbotTypingIndicator');
         if (ind) ind.remove();
 
-        const botReplyHtml = resolveChatbotDatabaseQuery(selectedChatbotQuestion, query);
+        const botReplyHtml = resolveChatbotDatabaseQuery(query);
         chatbotConversationHistory.push({
           sender: 'bot',
           html: botReplyHtml
         });
+        saveUserChatHistory();
         renderChatbotMessages();
-      }, 250);
+      }, 200);
     }
 
-    function resolveChatbotDatabaseQuery(qKey, query) {
+    function resolveChatbotDatabaseQuery(query) {
       appDb = loadDatabase();
       const settings = getChatbotSettings();
       const allSessions = appDb.sessions || [];
@@ -10675,11 +10700,10 @@
       });
 
       const uniqueGroups = Object.values(groupedBySku);
-      const qDef = CHATBOT_QUESTIONS_DEF[qKey] || CHATBOT_QUESTIONS_DEF['Q_FULL_HISTORY'];
 
       let out = `
         <div style="font-weight: 800; font-size: 0.84rem; color: var(--text); margin-bottom: 0.25rem;">
-          ${qDef.icon} Found ${matchedItems.length} record(s) across ${uniqueGroups.length} item(s):
+          📦 Found ${matchedItems.length} record(s) across ${uniqueGroups.length} item(s):
         </div>
       `;
 
@@ -10706,11 +10730,22 @@
         `;
 
         group.occurrences.forEach(itm => {
-          const session = allSessions.find(s => s.id === itm.session_id) || {
-            title: 'Current Active Session',
-            session_code: 'SES-ACTIVE',
+          const session = allSessions.find(s => s.id === itm.session_id || s.session_code === itm.session_id) || activeSession || {
+            id: itm.session_id || 'SES-CURRENT',
+            title: 'Current Session',
+            session_code: 'SES-CURRENT',
+            count_type: (activeSession && activeSession.count_type) || 'BLIND_ALL',
             status: 'ACTIVE'
           };
+
+          const isStrictBlind = session.count_type === 'BLIND_ALL';
+          const isBlindCount = session.count_type === 'BLIND_COUNT';
+          let sessionBlindBadge = '';
+          if (isStrictBlind) {
+            sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">🔒 Strict Blind</span>`;
+          } else if (isBlindCount) {
+            sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25);">🔒 Blind Count</span>`;
+          }
 
           // Counted Date Resolution
           let countedDateStr = 'Not Counted Yet';
@@ -10725,14 +10760,22 @@
           const physQty = parseFloat(itm.total_counted_qty) || 0;
           const uom = escapeHtml(group.uom);
 
-          // System Quantity Visibility Check (Honors Session Blind Mode & Admin Chatbot Config)
+          // System Quantity Visibility Check (Strictly Honors Session Blind Mode & Role-Based Rules)
           const isSysAllowed = canChatbotViewSystemQty(currentUser, session, settings);
           let sysQtyDisplay = '';
           let varianceDisplay = '';
 
           if (isSysAllowed) {
             const sysQty = parseFloat(itm.system_qty) || 0;
-            sysQtyDisplay = `${sysQty.toLocaleString()} ${uom}`;
+            let adminBlindNotice = '';
+            if (currentUser && currentUser.role === 'ADMIN') {
+              if (isStrictBlind) {
+                adminBlindNotice = `<span style="font-size: 0.65rem; color: #ef4444; display: block; font-weight: 600;">🔒 Strict Blind in Session (Hidden from Operators)</span>`;
+              } else if (isBlindCount) {
+                adminBlindNotice = `<span style="font-size: 0.65rem; color: var(--accent-amber); display: block; font-weight: 600;">🔒 Blind to Counters in Session</span>`;
+              }
+            }
+            sysQtyDisplay = `${sysQty.toLocaleString()} ${uom}${adminBlindNotice}`;
 
             if (settings.allow_variance) {
               const diff = physQty - sysQty;
@@ -10744,26 +10787,34 @@
                 varianceDisplay = `<span style="color: var(--accent-rose); font-weight: 800;">🔻 ${diff.toLocaleString()} ${uom} (Shortage)</span>`;
               }
             } else {
-              varianceDisplay = '<span style="color: var(--text-dim);">Disabled by Admin</span>';
+              varianceDisplay = '<span style="color: var(--text-dim);">Disabled by Policy</span>';
             }
           } else {
-            sysQtyDisplay = '<span style="color: var(--accent-amber); font-weight: 700;">🔒 Hidden (Blind Mode)</span>';
-            varianceDisplay = '<span style="color: var(--text-dim);">🔒 Masked (Blind Count)</span>';
+            // STRICTLY MASKED!
+            if (isStrictBlind) {
+              sysQtyDisplay = '<span style="color: var(--accent-rose); font-weight: 700;">🔒 Hidden (Strict Blind Session)</span>';
+            } else {
+              sysQtyDisplay = '<span style="color: var(--accent-amber); font-weight: 700;">🔒 Hidden (Blind Count Policy)</span>';
+            }
+            // Variance is ALWAYS masked when System Qty is hidden to prevent calculation: Physical - Variance = System Qty
+            varianceDisplay = '<span style="color: var(--text-dim); font-weight: 600;">🔒 Masked (Blind Count Policy)</span>';
           }
 
           const zoneLocation = escapeHtml(itm.zone_location || itm.location || 'General Floor');
           const lastOperator = escapeHtml(itm.last_counted_by || 'Pending Operator');
-          const isVerified = itm.is_verified || (physQty > 0);
 
           out += `
             <div class="chat-session-row">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; gap: 0.5rem; flex-wrap: wrap;">
                 <span style="font-weight: 800; color: var(--text); font-size: 0.8rem;">
                   ${escapeHtml(session.title)}
                 </span>
-                <span class="badge" style="font-size: 0.65rem; padding: 1px 6px; font-family: var(--font-mono); background: ${session.status === 'LOCKED' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)'}; color: ${session.status === 'LOCKED' ? '#ef4444' : '#10b981'};">
-                  ${escapeHtml(session.session_code || session.id)} · ${escapeHtml(session.status || 'ACTIVE')}
-                </span>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                  ${sessionBlindBadge}
+                  <span class="badge" style="font-size: 0.65rem; padding: 1px 6px; font-family: var(--font-mono); background: ${session.status === 'LOCKED' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)'}; color: ${session.status === 'LOCKED' ? '#ef4444' : '#10b981'};">
+                    ${escapeHtml(session.session_code || session.id)} · ${escapeHtml(session.status || 'ACTIVE')}
+                  </span>
+                </div>
               </div>
 
               <div class="chat-metrics-grid">
@@ -10865,7 +10916,7 @@
     }
 
     window.toggleStockChatbot = toggleStockChatbot;
-    window.selectChatbotQuestion = selectChatbotQuestion;
+    window.loadUserChatHistory = loadUserChatHistory;
     window.resetChatbotConversation = resetChatbotConversation;
     window.handleChatbotSubmit = handleChatbotSubmit;
     window.handleChatbotLiveSearch = handleChatbotLiveSearch;
