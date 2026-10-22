@@ -1107,12 +1107,12 @@ module.exports = async function handler(req, res) {
   }
 
   // --------------------------------------------------------------------------
-  // API Route: Audit Trails (Protected + Restricted to Supervisors/Admins)
+  // API Route: Audit Trails (Protected + Restricted Strictly to Admin Only)
   // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/audit') && reqMethod === 'GET') {
     const authUser = getAuthenticatedUser(req);
-    if (!authUser || authUser.role === 'COUNTER') {
-      return sendJson(403, { error: 'Forbidden: Audit trail access restricted to Supervisors and Administrators' });
+    if (!authUser || authUser.role !== 'ADMIN') {
+      return sendJson(403, { error: 'Forbidden: Audit trail access restricted to Administrators only' });
     }
 
     const scrapeCheck = dataScrapingLimiter.isAllowed(authUser.id || clientIp);

@@ -1913,6 +1913,491 @@
       display: none !important;
     }
 
+
+    /* Strictly Admin Only Elements */
+    .admin-strict {
+      display: none;
+    }
+
+    /* ==========================================================================
+       LOGIN LOADING ANIMATION OVERLAY
+       ========================================================================== */
+    .login-loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .login-loading-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .login-loading-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2.5rem;
+      text-align: center;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65), 0 0 40px rgba(14, 165, 233, 0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .login-loading-spinner-wrapper {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.35rem;
+    }
+    .login-loading-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3.5px solid transparent;
+      border-top-color: var(--accent);
+      border-right-color: #38bdf8;
+      animation: spinRing 1s linear infinite;
+    }
+    .login-loading-ring-inner {
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 2px dashed rgba(14, 165, 233, 0.45);
+      animation: spinRingReverse 2.2s linear infinite;
+    }
+    .login-loading-logo-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.25);
+    }
+    @keyframes spinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinRingReverse {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .login-loading-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .login-loading-status {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin: 0;
+      min-height: 1.35rem;
+    }
+    .login-loading-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin: 0.35rem 0;
+      position: relative;
+    }
+    .login-loading-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent) 0%, #38bdf8 50%, #10b981 100%);
+      border-radius: var(--radius-full);
+      transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 12px var(--accent);
+    }
+    .login-loading-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      background: var(--bg-subtle);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+    }
+
+    /* ==========================================================================
+       OFFLINE DATABASE CHATBOT (ZERO API / FREE INTERNAL QUERY BOT)
+       ========================================================================== */
+    .chatbot-launcher-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--accent) 0%, #0369a1 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 92;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .chatbot-launcher-btn:hover {
+      transform: translateY(-3px) scale(1.06);
+      box-shadow: 0 15px 30px -5px rgba(14, 165, 233, 0.65);
+    }
+    .chatbot-launcher-btn:active {
+      transform: translateY(0) scale(0.95);
+    }
+    .chatbot-launcher-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid var(--bg-surface);
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    @media (max-width: 768px) {
+      .chatbot-launcher-btn {
+        bottom: max(4.75rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+        right: 1rem;
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    .stock-chatbot-widget {
+      position: fixed;
+      bottom: 5.25rem;
+      right: 1.5rem;
+      width: 430px;
+      max-width: calc(100vw - 2rem);
+      height: 620px;
+      max-height: calc(100vh - 7rem);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.55), 0 0 35px rgba(14, 165, 233, 0.15);
+      z-index: 95;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px) scale(0.96);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stock-chatbot-widget.active {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    @media (max-width: 768px) {
+      .stock-chatbot-widget {
+        bottom: max(4.75rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+        right: 0.5rem;
+        left: 0.5rem;
+        width: auto;
+        height: calc(100vh - 10.5rem);
+      }
+    }
+
+    .chatbot-header {
+      padding: 0.85rem 1rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .chatbot-header-info {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+    }
+    .chatbot-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .chatbot-header-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .chatbot-header-sub {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 1px;
+    }
+    .chatbot-offline-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-full);
+      padding: 1px 6px;
+    }
+
+    .chatbot-question-section {
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+    .chatbot-question-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.45rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chatbot-pills-row {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .chatbot-q-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .chatbot-q-pill:hover {
+      border-color: var(--accent);
+      background: rgba(14, 165, 233, 0.08);
+    }
+    .chatbot-q-pill.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+    }
+
+    .chatbot-messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background: var(--bg-card);
+      scrollbar-width: thin;
+    }
+    .chat-msg {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 92%;
+      animation: fadeIn 0.25s ease;
+    }
+    .chat-msg.bot {
+      align-self: flex-start;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .chat-msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.75rem;
+    }
+    .chat-msg-bubble {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.45;
+      box-shadow: var(--shadow-sm);
+      word-break: break-word;
+    }
+    .chat-msg.user .chat-msg-bubble {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      border-bottom-right-radius: 2px;
+    }
+    .chat-msg.bot .chat-msg-bubble {
+      border-bottom-left-radius: 2px;
+    }
+
+    .chat-result-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      margin-top: 0.45rem;
+      font-size: 0.8rem;
+    }
+    .chat-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.45rem;
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+    }
+    .chat-session-row {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem;
+      margin-bottom: 0.45rem;
+    }
+    .chat-session-row:last-child {
+      margin-bottom: 0;
+    }
+    .chat-metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-top: 0.45rem;
+    }
+    .chat-metric-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 4px 6px;
+    }
+    .chat-metric-label {
+      color: var(--text-dim);
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .chat-metric-val {
+      font-weight: 800;
+      font-size: 0.84rem;
+      color: var(--text);
+      margin-top: 1px;
+    }
+
+    .chatbot-input-bar {
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      position: relative;
+    }
+    .chatbot-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.55rem 0.75rem;
+      font-size: 0.82rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .chatbot-input:focus {
+      border-color: var(--accent);
+    }
+    .chatbot-suggestions-list {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 0.85rem;
+      right: 0.85rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      max-height: 160px;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      z-index: 100;
+      display: none;
+    }
+    .chatbot-suggestion-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s ease;
+    }
+    .chatbot-suggestion-item:last-child {
+      border-bottom: none;
+    }
+    .chatbot-suggestion-item:hover {
+      background: rgba(14, 165, 233, 0.08);
+      color: var(--accent);
+    }
+
   </style>
 </head>
 <body>
@@ -2043,7 +2528,7 @@
         <span class="mobile-link-text">User Management</span>
       </button>
 
-      <button class="mobile-drawer-link admin-only" data-view="audit" onclick="mobileNavigateTo('audit')">
+      <button class="mobile-drawer-link admin-strict" data-view="audit" onclick="mobileNavigateTo('audit')">
         <div class="mobile-link-icon-wrap"><i data-lucide="shield-check"></i></div>
         <span class="mobile-link-text">Audit Trail & Ledger</span>
       </button>
@@ -2107,7 +2592,7 @@
         <i data-lucide="users" style="width: 16px; height: 16px;"></i>
         <span>User Management</span>
       </button>
-      <button class="nav-tab-btn admin-only" data-view="audit" onclick="switchView('audit')">
+      <button class="nav-tab-btn admin-strict" data-view="audit" onclick="switchView('audit')">
         <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
         <span>Audit Trail & Backup</span>
       </button>
@@ -2121,6 +2606,28 @@
     <!-- VIEW 0: DEDICATED LOGIN VIEW -->
     <!-- ========================================== -->
     <div id="loginView" style="display: block;">
+    <!-- Login Authentication Loading Animation Overlay -->
+    <div id="loginLoadingOverlay" class="login-loading-overlay" style="display: none;">
+      <div class="login-loading-card">
+        <div class="login-loading-spinner-wrapper">
+          <div class="login-loading-ring"></div>
+          <div class="login-loading-ring-inner"></div>
+          <div class="login-loading-logo-box">
+            <i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--accent);"></i>
+          </div>
+        </div>
+        <h3 class="login-loading-title" id="loginLoadingTitle">Verifying Credentials</h3>
+        <p class="login-loading-status" id="loginLoadingStatus">Authenticating security tokens...</p>
+        <div class="login-loading-progress-bar">
+          <div class="login-loading-progress-fill" id="loginLoadingProgressFill"></div>
+        </div>
+        <div class="login-loading-badge">
+          <span class="pulse-dot"></span>
+          <span id="loginLoadingSubtext">Lina Manufacturing · Secure Session Initializer</span>
+        </div>
+      </div>
+    </div>
+
       <div class="login-container">
         <!-- Top Theme Toggle in Login Box -->
         <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
@@ -3016,7 +3523,7 @@
     <!-- ========================================== -->
     <!-- VIEW 7: AUDIT TRAIL & SYSTEM BACKUP (ADMIN & EXECUTIVE) -->
     <!-- ========================================== -->
-    <section class="view-section admin-only" id="view-audit">
+    <section class="view-section admin-strict" id="view-audit">
       <!-- Enterprise System Database Backup & Disaster Recovery Card (Admin Only) -->
       <div class="card admin-exclusive" style="margin-bottom: 1.5rem; border-color: var(--accent);">
         <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
@@ -3919,6 +4426,97 @@
     </div>
   </div>
 
+
+  <!-- Modal: Chatbot Access & Data Retrieval Administration (Admin Only) -->
+  <div id="chatbotAdminConfigModalBackdrop" class="modal-backdrop" style="display: none;" onclick="if(event.target === this) closeChatbotAdminConfigModal()">
+    <div class="custom-modal-dialog" style="max-width: 520px; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: rgba(14, 165, 233, 0.12); color: var(--accent); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="bot" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text);">Chatbot Access &amp; Data Governance</h3>
+            <p style="font-size: 0.75rem; color: var(--text-dim); margin: 2px 0 0 0;">Admin Control: Set role permissions &amp; data visibility for the offline query assistant</p>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="closeChatbotAdminConfigModal()" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim);">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+
+      <!-- Section 1: Role-Based Access Control -->
+      <div style="margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);">
+        <label class="form-label" style="font-weight: 800; font-size: 0.82rem; margin-bottom: 0.5rem; display: block; color: var(--text);">
+          1. Role-Based Chatbot Access (Who can use the bot)
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: not-allowed;">
+            <input type="checkbox" id="cbRoleAdmin" checked disabled />
+            <span><strong>Administrator (ADMIN)</strong> — Always Enabled</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbRoleManager" />
+            <span><strong>Manager (MANAGER)</strong> — Full Inventory Governance</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbRoleExecutive" />
+            <span><strong>Floor Executive (EXECUTIVE)</strong> — Floor Supervisor</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbRoleCounter" />
+            <span><strong>Floor Counter (COUNTER)</strong> — Scanning &amp; Counting Operators</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 2: Data Retrieval Permissions -->
+      <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);">
+        <label class="form-label" style="font-weight: 800; font-size: 0.82rem; margin-bottom: 0.5rem; display: block; color: var(--text);">
+          2. Database Retrieval &amp; Visibility Controls
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <label style="display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbAllowSystemQty" style="margin-top: 3px;" />
+            <div>
+              <strong>Allow System / Book Quantities in Bot Responses</strong>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">When unchecked, book stock is masked as <code>*** Hidden ***</code> for non-admin operators.</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbEnforceBlindRules" checked style="margin-top: 3px;" />
+            <div>
+              <strong>Strictly Enforce Session Blind Count Policies</strong>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">If a session is in Blind Mode, system qty is automatically hidden for floor counters regardless of general settings.</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbAllowVariance" style="margin-top: 3px;" />
+            <div>
+              <strong>Allow Variance Calculations (Physical - System)</strong>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">Show discrepancy and variance status when system stock is visible.</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer;">
+            <input type="checkbox" id="cbAllowHistorical" style="margin-top: 3px;" />
+            <div>
+              <strong>Multi-Session Historical Search</strong>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">Search across all sessions (active, locked &amp; past sessions) instead of only the active session.</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeChatbotAdminConfigModal()">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveChatbotAdminConfig()">
+          <i data-lucide="save" style="width: 14px; height: 14px;"></i>
+          <span>Save Permissions &amp; Policy</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -3929,6 +4527,15 @@
     // ==========================================
     const LINA_LOGO_DATA = "data:image/jpeg;base64,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";
     const DB_KEY = "LINA_STOCK_CENTRAL_DB_V2";
+
+    const DEFAULT_CHATBOT_SETTINGS = {
+      enabled_roles: ['ADMIN', 'MANAGER', 'EXECUTIVE', 'COUNTER'],
+      allow_system_qty: true,
+      enforce_blind_rules: true,
+      allow_variance: true,
+      allow_historical_sessions: true
+    };
+
 
     // Initial default database state (Cryptographically Salted Hashes)
     const DEFAULT_DB = {
@@ -4163,6 +4770,11 @@
         if (!Array.isArray(parsed.items)) parsed.items = [];
         if (!Array.isArray(parsed.logs)) parsed.logs = [];
         if (!Array.isArray(parsed.audit_trails)) parsed.audit_trails = [];
+        if (!parsed.chatbot_settings || typeof parsed.chatbot_settings !== 'object') {
+          parsed.chatbot_settings = Object.assign({}, DEFAULT_CHATBOT_SETTINGS);
+        } else {
+          parsed.chatbot_settings = Object.assign({}, DEFAULT_CHATBOT_SETTINGS, parsed.chatbot_settings);
+        }
 
         // Purge legacy mock seed data (ses-101 and item-seed-*) from user storage
         let needsSave = false;
@@ -4730,7 +5342,7 @@
         }
         try { renderUsersTable(); } catch (_) {}
         try { renderSessionsTable(); } catch (_) {}
-        try { renderAuditLogsTable(); } catch (_) {}
+        if (isAdmin) { try { renderAuditLogsTable(); } catch (_) {} }
         try { updateBackupDatabaseMetaStats(); } catch (_) {}
         try { checkBroadcastAlerts(); } catch (_) {}
         if (!window._broadcastAlertInterval) {
@@ -9542,6 +10154,589 @@
     window.switchView = switchView;
     window.handleLogout = handleLogout;
     window.handleLoginSubmit = handleLoginSubmit;
+
+    // ==========================================================================
+    // LOGIN LOADING ANIMATION HELPERS
+    // ==========================================================================
+    function showLoginLoading(status = 'Authenticating credentials...', progress = 20) {
+      const overlay = document.getElementById('loginLoadingOverlay');
+      if (!overlay) return;
+      overlay.style.display = 'flex';
+      void overlay.offsetWidth;
+      overlay.classList.add('active');
+      updateLoginLoading(status, progress);
+    }
+
+    function updateLoginLoading(status, progress) {
+      const statusEl = document.getElementById('loginLoadingStatus');
+      const fillEl = document.getElementById('loginLoadingProgressFill');
+      if (statusEl && status) statusEl.textContent = status;
+      if (fillEl && progress !== undefined) {
+        fillEl.style.width = Math.min(100, Math.max(0, progress)) + '%';
+      }
+    }
+
+    function hideLoginLoading() {
+      const overlay = document.getElementById('loginLoadingOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        if (!overlay.classList.contains('active')) {
+          overlay.style.display = 'none';
+          updateLoginLoading('Authenticating security tokens...', 0);
+        }
+      }, 350);
+    }
+
+    // ==========================================================================
+    // OFFLINE DATABASE CHATBOT LOGIC (ZERO LLM / 100% FREE & DETERMINISTIC)
+    // ==========================================================================
+    let selectedChatbotQuestion = 'Q_FULL_HISTORY';
+    let chatbotConversationHistory = [];
+
+    const CHATBOT_QUESTIONS_DEF = {
+      'Q_FULL_HISTORY': {
+        title: 'Complete Count History Across All Sessions',
+        icon: '📦',
+        prompt: 'Show all sessions, counted dates, physical quantity, and book stock for an item.'
+      },
+      'Q_PHYSICAL_VS_SYSTEM': {
+        title: 'Physical vs System Quantity Breakdown',
+        icon: '⚖️',
+        prompt: 'Compare physical counted quantity vs book system stock per session.'
+      },
+      'Q_SESSIONS_DATES': {
+        title: 'Sessions & Dates Where Item Was Counted',
+        icon: '📅',
+        prompt: 'List all sessions and dates where this item was registered or counted.'
+      },
+      'Q_ZONE_LOCATION': {
+        title: 'Storage Zone & Warehouse Location',
+        icon: '📍',
+        prompt: 'Show the warehouse zone, aisle, and location for an item across sessions.'
+      },
+      'Q_VARIANCE_AUDIT': {
+        title: 'Variance & Discrepancy Audit Report',
+        icon: '⚠️',
+        prompt: 'Audit discrepancies, shortage/surplus variances, and verification status.'
+      }
+    };
+
+    function getChatbotSettings() {
+      appDb = loadDatabase();
+      return Object.assign({}, DEFAULT_CHATBOT_SETTINGS, appDb.chatbot_settings || {});
+    }
+
+    function isUserAllowedChatbot(user = currentUser) {
+      if (!user) return false;
+      if (user.role === 'ADMIN') return true;
+      const settings = getChatbotSettings();
+      const roles = settings.enabled_roles || [];
+      return roles.includes(user.role) || (isExecutive(user) && roles.includes('EXECUTIVE'));
+    }
+
+    function canChatbotViewSystemQty(user = currentUser, session = activeSession, settings = getChatbotSettings()) {
+      if (!user) return false;
+      if (user.role === 'ADMIN') return true;
+      if (!settings.allow_system_qty) return false;
+      if (settings.enforce_blind_rules) {
+        return canUserViewSystemQtyAndVariances(user, session);
+      }
+      return user.role !== 'COUNTER';
+    }
+
+    function updateChatbotAccessUI() {
+      const launcher = document.getElementById('chatbotLauncherBtn');
+      if (!launcher) return;
+      if (currentUser && isUserAllowedChatbot(currentUser)) {
+        launcher.style.display = 'flex';
+        // Initialize greeting if conversation is empty
+        if (chatbotConversationHistory.length === 0) {
+          initChatbotGreeting();
+        }
+      } else {
+        launcher.style.display = 'none';
+        toggleStockChatbot(false);
+      }
+    }
+
+    function toggleStockChatbot(forceState) {
+      const widget = document.getElementById('stockChatbotWidget');
+      if (!widget) return;
+      const isCurrentlyActive = widget.classList.contains('active');
+      const shouldOpen = (forceState !== undefined) ? forceState : !isCurrentlyActive;
+
+      if (shouldOpen) {
+        if (!currentUser || !isUserAllowedChatbot(currentUser)) {
+          showToast('Chatbot access has been restricted for your role by the Administrator.', 'warning');
+          return;
+        }
+        widget.style.display = 'flex';
+        void widget.offsetWidth;
+        widget.classList.add('active');
+        if (chatbotConversationHistory.length === 0) {
+          initChatbotGreeting();
+        }
+        setTimeout(() => {
+          const inp = document.getElementById('chatbotSearchInput');
+          if (inp) inp.focus();
+        }, 150);
+      } else {
+        widget.classList.remove('active');
+        setTimeout(() => {
+          if (!widget.classList.contains('active')) {
+            widget.style.display = 'none';
+          }
+        }, 300);
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function initChatbotGreeting() {
+      chatbotConversationHistory = [
+        {
+          sender: 'bot',
+          html: `
+            <div style="font-weight: 700; margin-bottom: 0.35rem;">Hello, ${escapeHtml(currentUser ? (currentUser.full_name || currentUser.username) : 'Operator')}! 👋</div>
+            <div>I am your offline <strong>Stock Data Assistant</strong>. I can query our local database directly with zero external API calls.</div>
+            <div style="margin-top: 0.45rem; padding: 0.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xs); font-size: 0.76rem;">
+              <strong>How it works:</strong>
+              <ol style="margin: 4px 0 0 1rem; padding: 0;">
+                <li>Select a predefined question from the top pills</li>
+                <li>Enter the Item Name or SKU / Barcode code below</li>
+              </ol>
+            </div>
+          `
+        }
+      ];
+      renderChatbotMessages();
+    }
+
+    function selectChatbotQuestion(qKey) {
+      if (!CHATBOT_QUESTIONS_DEF[qKey]) return;
+      selectedChatbotQuestion = qKey;
+
+      // Update pills UI
+      document.querySelectorAll('#chatbotQuestionPills .chatbot-q-pill').forEach(btn => {
+        if (btn.getAttribute('data-q') === qKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const qDef = CHATBOT_QUESTIONS_DEF[qKey];
+      const tag = document.getElementById('activeQuestionTag');
+      if (tag) tag.textContent = `${qDef.icon} ${qDef.title.split(' ')[0]}`;
+
+      chatbotConversationHistory.push({
+        sender: 'bot',
+        html: `
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 2px;">
+            ${qDef.icon} Query Selected: ${escapeHtml(qDef.title)}
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-dim);">
+            ${escapeHtml(qDef.prompt)}
+          </div>
+          <div style="margin-top: 0.45rem; font-size: 0.76rem; font-weight: 600;">
+            👉 Please type an <strong>Item Name</strong>, <strong>Item Code</strong>, or <strong>SKU / Barcode</strong> below:
+          </div>
+        `
+      });
+      renderChatbotMessages();
+      const inp = document.getElementById('chatbotSearchInput');
+      if (inp) inp.focus();
+    }
+
+    function resetChatbotConversation() {
+      initChatbotGreeting();
+      const inp = document.getElementById('chatbotSearchInput');
+      if (inp) inp.value = '';
+      hideChatbotSuggestions();
+    }
+
+    function renderChatbotMessages() {
+      const container = document.getElementById('chatbotMessagesContainer');
+      if (!container) return;
+
+      container.innerHTML = chatbotConversationHistory.map(msg => {
+        const isBot = msg.sender === 'bot';
+        return `
+          <div class="chat-msg ${isBot ? 'bot' : 'user'}">
+            <div class="chat-msg-avatar">
+              <i data-lucide="${isBot ? 'bot' : 'user'}" style="width: 15px; height: 15px;"></i>
+            </div>
+            <div class="chat-msg-bubble">
+              ${msg.html}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.scrollTop = container.scrollHeight;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleChatbotLiveSearch(val) {
+      const list = document.getElementById('chatbotSuggestionsList');
+      if (!list) return;
+      const q = (val || '').trim().toLowerCase();
+      if (q.length < 2) {
+        list.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+
+      appDb = loadDatabase();
+      const items = appDb.items || [];
+      const seenSkus = new Set();
+      const matches = [];
+
+      for (const itm of items) {
+        const sku = String(itm.sku || itm.item_code || itm.barcode || '').trim();
+        const name = String(itm.name || itm.item_name || itm.description || '').trim();
+        if (!sku || seenSkus.has(sku.toLowerCase())) continue;
+
+        if (sku.toLowerCase().includes(q) || name.toLowerCase().includes(q)) {
+          seenSkus.add(sku.toLowerCase());
+          matches.push({ sku, name });
+          if (matches.length >= 5) break;
+        }
+      }
+
+      if (matches.length === 0) {
+        list.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = matches.map(m => `
+        <div class="chatbot-suggestion-item" onclick="selectChatbotSuggestion('${escapeHtml(m.sku)}')">
+          <span style="font-weight: 700;">${escapeHtml(m.sku)}</span>
+          <span style="font-size: 0.72rem; color: var(--text-dim); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(m.name)}</span>
+        </div>
+      `).join('');
+      list.style.display = 'block';
+    }
+
+    function selectChatbotSuggestion(sku) {
+      const inp = document.getElementById('chatbotSearchInput');
+      if (inp) inp.value = sku;
+      hideChatbotSuggestions();
+      handleChatbotSubmit();
+    }
+
+    function hideChatbotSuggestions() {
+      const list = document.getElementById('chatbotSuggestionsList');
+      if (list) {
+        list.style.display = 'none';
+        list.innerHTML = '';
+      }
+    }
+
+    function handleChatbotSubmit(e) {
+      if (e) e.preventDefault();
+      const inp = document.getElementById('chatbotSearchInput');
+      if (!inp) return;
+      const query = inp.value.trim();
+      if (!query) return;
+
+      hideChatbotSuggestions();
+      inp.value = '';
+
+      // User Message
+      chatbotConversationHistory.push({
+        sender: 'user',
+        html: `<span>${escapeHtml(query)}</span>`
+      });
+      renderChatbotMessages();
+
+      // Show typing indicator
+      const container = document.getElementById('chatbotMessagesContainer');
+      const typingEl = document.createElement('div');
+      typingEl.className = 'chat-msg bot';
+      typingEl.id = 'chatbotTypingIndicator';
+      typingEl.innerHTML = `
+        <div class="chat-msg-avatar"><i data-lucide="bot" style="width: 15px; height: 15px;"></i></div>
+        <div class="chat-msg-bubble" style="display: flex; align-items: center; gap: 0.45rem; color: var(--text-dim); font-size: 0.78rem;">
+          <span class="pulse-dot"></span>
+          <span>Querying database records...</span>
+        </div>
+      `;
+      container.appendChild(typingEl);
+      container.scrollTop = container.scrollHeight;
+      if (window.lucide) lucide.createIcons();
+
+      // Resolve query with slight realistic delay (250ms)
+      setTimeout(() => {
+        const ind = document.getElementById('chatbotTypingIndicator');
+        if (ind) ind.remove();
+
+        const botReplyHtml = resolveChatbotDatabaseQuery(selectedChatbotQuestion, query);
+        chatbotConversationHistory.push({
+          sender: 'bot',
+          html: botReplyHtml
+        });
+        renderChatbotMessages();
+      }, 250);
+    }
+
+    function resolveChatbotDatabaseQuery(qKey, query) {
+      appDb = loadDatabase();
+      const settings = getChatbotSettings();
+      const allSessions = appDb.sessions || [];
+      const allItems = appDb.items || [];
+      const qLower = query.toLowerCase();
+
+      // Session scope based on Admin config
+      const scopedSessions = settings.allow_historical_sessions ? allSessions : (activeSession ? [activeSession] : allSessions);
+      const scopedSessionIds = new Set(scopedSessions.map(s => s.id));
+
+      // Find matching items
+      const matchedItems = allItems.filter(i => {
+        if (!scopedSessionIds.has(i.session_id)) return false;
+        const sku = String(i.sku || i.item_code || i.barcode || '').toLowerCase();
+        const name = String(i.name || i.item_name || i.description || '').toLowerCase();
+        return sku.includes(qLower) || name.includes(qLower);
+      });
+
+      if (matchedItems.length === 0) {
+        return `
+          <div style="color: var(--accent-rose); font-weight: 700; margin-bottom: 0.35rem;">
+            <i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
+            No records found for "${escapeHtml(query)}"
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-dim); line-height: 1.4;">
+            We searched ${scopedSessions.length} session(s) across ${allItems.length} inventory records.
+            <ul style="margin: 4px 0 0 1rem; padding: 0;">
+              <li>Verify the exact item code or spelling.</li>
+              <li>Try searching with a partial code or barcode.</li>
+              ${!settings.allow_historical_sessions ? '<li><em>Historical search is disabled; only the active session was queried.</em></li>' : ''}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Group items by SKU / Barcode for clean synthesis
+      const groupedBySku = {};
+      matchedItems.forEach(itm => {
+        const key = String(itm.sku || itm.item_code || itm.barcode || itm.id);
+        if (!groupedBySku[key]) {
+          groupedBySku[key] = {
+            sku: key,
+            name: itm.name || itm.item_name || itm.description || 'Master Item',
+            barcode: itm.barcode || key,
+            category: itm.category || 'General',
+            uom: itm.uom || 'Units',
+            occurrences: []
+          };
+        }
+        groupedBySku[key].occurrences.push(itm);
+      });
+
+      const uniqueGroups = Object.values(groupedBySku);
+      const qDef = CHATBOT_QUESTIONS_DEF[qKey] || CHATBOT_QUESTIONS_DEF['Q_FULL_HISTORY'];
+
+      let out = `
+        <div style="font-weight: 800; font-size: 0.84rem; color: var(--text); margin-bottom: 0.25rem;">
+          ${qDef.icon} Found ${matchedItems.length} record(s) across ${uniqueGroups.length} item(s):
+        </div>
+      `;
+
+      uniqueGroups.forEach(group => {
+        out += `
+          <div class="chat-result-card">
+            <!-- Item Header -->
+            <div class="chat-item-header">
+              <div>
+                <div style="font-weight: 800; font-size: 0.86rem; color: var(--text);">${escapeHtml(group.name)}</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px;">
+                  CODE: <strong>${escapeHtml(group.sku)}</strong> · BARCODE: ${escapeHtml(group.barcode)}
+                </div>
+              </div>
+              <span class="badge" style="background: rgba(14, 165, 233, 0.12); color: var(--accent); font-size: 0.68rem; padding: 2px 7px; border: 1px solid rgba(14, 165, 233, 0.25);">
+                ${escapeHtml(group.category)}
+              </span>
+            </div>
+
+            <!-- Occurrences by Session -->
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.35rem;">
+              Session Records (${group.occurrences.length}):
+            </div>
+        `;
+
+        group.occurrences.forEach(itm => {
+          const session = allSessions.find(s => s.id === itm.session_id) || {
+            title: 'Current Active Session',
+            session_code: 'SES-ACTIVE',
+            status: 'ACTIVE'
+          };
+
+          // Counted Date Resolution
+          let countedDateStr = 'Not Counted Yet';
+          if (itm.last_counted_at) {
+            const d = new Date(itm.last_counted_at);
+            countedDateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } else if (session.created_at) {
+            countedDateStr = 'Uploaded on ' + new Date(session.created_at).toLocaleDateString();
+          }
+
+          // Quantities
+          const physQty = parseFloat(itm.total_counted_qty) || 0;
+          const uom = escapeHtml(group.uom);
+
+          // System Quantity Visibility Check (Honors Session Blind Mode & Admin Chatbot Config)
+          const isSysAllowed = canChatbotViewSystemQty(currentUser, session, settings);
+          let sysQtyDisplay = '';
+          let varianceDisplay = '';
+
+          if (isSysAllowed) {
+            const sysQty = parseFloat(itm.system_qty) || 0;
+            sysQtyDisplay = `${sysQty.toLocaleString()} ${uom}`;
+
+            if (settings.allow_variance) {
+              const diff = physQty - sysQty;
+              if (diff === 0) {
+                varianceDisplay = '<span style="color: var(--accent-emerald); font-weight: 800;">✅ 0 (Balanced)</span>';
+              } else if (diff > 0) {
+                varianceDisplay = `<span style="color: var(--accent); font-weight: 800;">🔺 +${diff.toLocaleString()} ${uom} (Surplus)</span>`;
+              } else {
+                varianceDisplay = `<span style="color: var(--accent-rose); font-weight: 800;">🔻 ${diff.toLocaleString()} ${uom} (Shortage)</span>`;
+              }
+            } else {
+              varianceDisplay = '<span style="color: var(--text-dim);">Disabled by Admin</span>';
+            }
+          } else {
+            sysQtyDisplay = '<span style="color: var(--accent-amber); font-weight: 700;">🔒 Hidden (Blind Mode)</span>';
+            varianceDisplay = '<span style="color: var(--text-dim);">🔒 Masked (Blind Count)</span>';
+          }
+
+          const zoneLocation = escapeHtml(itm.zone_location || itm.location || 'General Floor');
+          const lastOperator = escapeHtml(itm.last_counted_by || 'Pending Operator');
+          const isVerified = itm.is_verified || (physQty > 0);
+
+          out += `
+            <div class="chat-session-row">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <span style="font-weight: 800; color: var(--text); font-size: 0.8rem;">
+                  ${escapeHtml(session.title)}
+                </span>
+                <span class="badge" style="font-size: 0.65rem; padding: 1px 6px; font-family: var(--font-mono); background: ${session.status === 'LOCKED' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)'}; color: ${session.status === 'LOCKED' ? '#ef4444' : '#10b981'};">
+                  ${escapeHtml(session.session_code || session.id)} · ${escapeHtml(session.status || 'ACTIVE')}
+                </span>
+              </div>
+
+              <div class="chat-metrics-grid">
+                <div class="chat-metric-box">
+                  <div class="chat-metric-label">Physical Qty Counted</div>
+                  <div class="chat-metric-val" style="color: var(--accent);">${physQty.toLocaleString()} ${uom}</div>
+                </div>
+                <div class="chat-metric-box">
+                  <div class="chat-metric-label">System Book Qty</div>
+                  <div class="chat-metric-val">${sysQtyDisplay}</div>
+                </div>
+                <div class="chat-metric-box">
+                  <div class="chat-metric-label">Count Variance</div>
+                  <div class="chat-metric-val">${varianceDisplay}</div>
+                </div>
+                <div class="chat-metric-box">
+                  <div class="chat-metric-label">Zone / Location</div>
+                  <div class="chat-metric-val" style="font-size: 0.76rem;">${zoneLocation}</div>
+                </div>
+              </div>
+
+              <div style="margin-top: 0.4rem; padding-top: 0.35rem; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-dim);">
+                <span>📅 <strong>Counted:</strong> ${countedDateStr}</span>
+                <span>👤 ${lastOperator}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        out += `</div>`;
+      });
+
+      return out;
+    }
+
+    // ==========================================================================
+    // CHATBOT ADMIN CONFIGURATION MODAL CONTROLS (ADMIN ONLY)
+    // ==========================================================================
+    function openChatbotAdminConfigModal() {
+      if (!currentUser || currentUser.role !== 'ADMIN') {
+        showToast('Access Denied: Chatbot configuration requires Administrator privileges.', 'error');
+        return;
+      }
+      const settings = getChatbotSettings();
+
+      // Checkboxes
+      const cbManager = document.getElementById('cbRoleManager');
+      const cbExec = document.getElementById('cbRoleExecutive');
+      const cbCounter = document.getElementById('cbRoleCounter');
+      const cbSysQty = document.getElementById('cbAllowSystemQty');
+      const cbBlind = document.getElementById('cbEnforceBlindRules');
+      const cbVar = document.getElementById('cbAllowVariance');
+      const cbHist = document.getElementById('cbAllowHistorical');
+
+      if (cbManager) cbManager.checked = (settings.enabled_roles || []).includes('MANAGER');
+      if (cbExec) cbExec.checked = (settings.enabled_roles || []).includes('EXECUTIVE');
+      if (cbCounter) cbCounter.checked = (settings.enabled_roles || []).includes('COUNTER');
+
+      if (cbSysQty) cbSysQty.checked = !!settings.allow_system_qty;
+      if (cbBlind) cbBlind.checked = !!settings.enforce_blind_rules;
+      if (cbVar) cbVar.checked = !!settings.allow_variance;
+      if (cbHist) cbHist.checked = !!settings.allow_historical_sessions;
+
+      const modal = document.getElementById('chatbotAdminConfigModalBackdrop');
+      if (modal) modal.style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeChatbotAdminConfigModal() {
+      const modal = document.getElementById('chatbotAdminConfigModalBackdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function saveChatbotAdminConfig() {
+      if (!currentUser || currentUser.role !== 'ADMIN') return;
+      appDb = loadDatabase();
+
+      const roles = ['ADMIN'];
+      if (document.getElementById('cbRoleManager')?.checked) roles.push('MANAGER');
+      if (document.getElementById('cbRoleExecutive')?.checked) roles.push('EXECUTIVE');
+      if (document.getElementById('cbRoleCounter')?.checked) roles.push('COUNTER');
+
+      const newSettings = {
+        enabled_roles: roles,
+        allow_system_qty: !!document.getElementById('cbAllowSystemQty')?.checked,
+        enforce_blind_rules: !!document.getElementById('cbEnforceBlindRules')?.checked,
+        allow_variance: !!document.getElementById('cbAllowVariance')?.checked,
+        allow_historical_sessions: !!document.getElementById('cbAllowHistorical')?.checked
+      };
+
+      appDb.chatbot_settings = newSettings;
+      saveDatabase(appDb);
+
+      logAuditEvent('CHATBOT_CONFIG_UPDATED', `Admin ${currentUser.username} updated chatbot permissions: Roles [${roles.join(', ')}], SystemQty=${newSettings.allow_system_qty}`, 'SYSTEM_CONFIG', 'AUDIT');
+
+      closeChatbotAdminConfigModal();
+      showToast('Chatbot access control and data retrieval policies saved!', 'success');
+      updateChatbotAccessUI();
+    }
+
+    window.toggleStockChatbot = toggleStockChatbot;
+    window.selectChatbotQuestion = selectChatbotQuestion;
+    window.resetChatbotConversation = resetChatbotConversation;
+    window.handleChatbotSubmit = handleChatbotSubmit;
+    window.handleChatbotLiveSearch = handleChatbotLiveSearch;
+    window.selectChatbotSuggestion = selectChatbotSuggestion;
+    window.openChatbotAdminConfigModal = openChatbotAdminConfigModal;
+    window.closeChatbotAdminConfigModal = closeChatbotAdminConfigModal;
+    window.saveChatbotAdminConfig = saveChatbotAdminConfig;
+    window.showLoginLoading = showLoginLoading;
+    window.updateLoginLoading = updateLoginLoading;
+    window.hideLoginLoading = hideLoginLoading;
+
     window.handleScanSubmit = handleScanSubmit;
     window.quickAddQty = quickAddQty;
     window.submitCountEntry = submitCountEntry;

@@ -80,6 +80,10 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
   before((_, done) => {
     resetAllRateLimits();
     if (server && !server.listening) {
+      server.once('error', (err) => {
+        if (err.code === 'EADDRINUSE') done();
+        else done(err);
+      });
       server.listen(5173, '127.0.0.1', () => done());
     } else {
       done();
