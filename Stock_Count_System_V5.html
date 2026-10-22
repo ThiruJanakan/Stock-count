@@ -2023,7 +2023,7 @@
         <span class="tab-badge" id="mobileScanCountBadge" style="margin-left: auto;">0</span>
       </button>
 
-      <button class="mobile-drawer-link" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')">
+      <button class="mobile-drawer-link admin-only" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')">
         <div class="mobile-link-icon-wrap"><i data-lucide="scale"></i></div>
         <span class="mobile-link-text">Reconciliation & Variances</span>
       </button>
@@ -2033,7 +2033,7 @@
         <span class="mobile-link-text">Upload Data Sheet</span>
       </button>
 
-      <button class="mobile-drawer-link" data-view="sessions" onclick="mobileNavigateTo('sessions')">
+      <button class="mobile-drawer-link admin-only" data-view="sessions" onclick="mobileNavigateTo('sessions')">
         <div class="mobile-link-icon-wrap"><i data-lucide="calendar"></i></div>
         <span class="mobile-link-text">Count Sessions</span>
       </button>
@@ -2091,7 +2091,7 @@
         <span>Counter Scanning</span>
         <span class="tab-badge" id="myScanCountBadge">0</span>
       </button>
-      <button class="nav-tab-btn" data-view="reconciliation" onclick="switchView('reconciliation')">
+      <button class="nav-tab-btn admin-only" data-view="reconciliation" onclick="switchView('reconciliation')">
         <i data-lucide="scale" style="width: 16px; height: 16px;"></i>
         <span>Reconciliation & Variances</span>
       </button>
@@ -2099,7 +2099,7 @@
         <i data-lucide="file-spreadsheet" style="width: 16px; height: 16px;"></i>
         <span>Upload Data Sheet</span>
       </button>
-      <button class="nav-tab-btn" data-view="sessions" onclick="switchView('sessions')">
+      <button class="nav-tab-btn admin-only" data-view="sessions" onclick="switchView('sessions')">
         <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
         <span>Count Sessions</span>
       </button>
@@ -2519,8 +2519,13 @@
       </div>
 
       <!-- Scanned Item Card -->
-      <div id="scannedItemCard" class="card" style="display: none; border-color: var(--accent); box-shadow: var(--shadow-md); margin-bottom: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem;">
+      <div id="scannedItemCard" class="card" style="display: none; border-color: var(--accent); box-shadow: var(--shadow-md); margin-bottom: 1.5rem; position: relative;">
+        <!-- Close (X) button to deselect card -->
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeScannedItemCard()" title="Close and deselect item" style="position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-dim); background: var(--bg-surface); border: 1px solid var(--border); cursor: pointer; z-index: 10;">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem; padding-right: 2.8rem;">
           <div>
             <span class="badge badge-uncounted" id="itemZoneBadge">ZONE: UNASSIGNED</span>
             <span class="badge badge-unlisted" id="itemUnlistedBadge" style="display: none; margin-left: 0.4rem;">FOUND ON FLOOR</span>
@@ -2531,29 +2536,34 @@
             <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Total Counted So Far</div>
             <div style="font-size: 2.3rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent);" id="itemCurrentTotalCounted">0</div>
             <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 600;" id="itemCountedBySubtext">Not Counted Yet</div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="quickFillCurrentTotal()" title="Load current count into input box" style="font-size: 0.72rem; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; margin-top: 5px; border-radius: 4px; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.2); cursor: pointer;">
+              <i data-lucide="edit-2" style="width: 12px; height: 12px;"></i>
+              <span>Edit Total</span>
+            </button>
           </div>
         </div>
 
-        <!-- Count Entry Mode Switcher (Add Qty vs Edit / Overwrite Total) -->
-        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.85rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-sm btn-primary" id="btnCountModeAdd" onclick="setCountEntryMode('ADD')">
-            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-            <span>Add Quantity (+Qty)</span>
-          </button>
-          <button type="button" class="btn btn-sm btn-secondary" id="btnCountModeReplace" onclick="setCountEntryMode('REPLACE')">
-            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
-            <span>Edit / Replace Total Count</span>
-          </button>
-        </div>
+        <!-- Direct Count Entry Area -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.85rem; margin-top: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
+            <label for="manualCountQtyInput" style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted);" id="countQtyInputLabel">Count Quantity:</label>
+            <input type="number" id="manualCountQtyInput" class="form-input" style="width: 220px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700; padding: 0.5rem 0.75rem;" placeholder="Enter qty" min="0" step="any" value="" />
+          </div>
 
-        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-          <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted);" id="countQtyInputLabel">Add Quantity:</span>
-          <input type="number" id="manualCountQtyInput" class="form-input" style="width: 180px; font-size: 1.4rem; font-family: var(--font-mono); text-align: center; font-weight: 700;" placeholder="Enter qty (e.g. 0)" min="0" step="any" value="" />
-          
-          <button class="btn btn-success btn-lg" id="submitCountBtn" onclick="submitCountEntry()">
-            <i data-lucide="check" style="width: 20px; height: 20px;"></i>
-            <span id="submitCountBtnText">Log Verified Count</span>
-          </button>
+          <!-- Direct Action Buttons: Add or Set/Replace -->
+          <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-success btn-lg" id="submitAddCountBtn" onclick="submitCountDirect('ADD')" title="Add entered quantity to existing total count">
+              <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+              <span>Add Quantity (+Qty)</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-lg" id="submitReplaceCountBtn" onclick="submitCountDirect('REPLACE')" title="Set / Replace total count with this exact quantity">
+              <i data-lucide="edit-3" style="width: 18px; height: 18px;"></i>
+              <span id="submitReplaceBtnText">Set as Total Count</span>
+            </button>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-dim); text-align: center;">
+            Type count and click <strong>Add Quantity</strong> to add, or <strong>Set as Total Count</strong> to replace.
+          </div>
         </div>
       </div>
 
@@ -2890,11 +2900,11 @@
         <div class="card-title">
           <span>Stock Count Sessions</span>
           <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-secondary btn-sm admin-only" onclick="openReplaceSheetForActiveSession()" title="Upload new or replacement spreadsheet for the active session">
+            <button class="btn btn-secondary btn-sm admin-exclusive" onclick="openReplaceSheetForActiveSession()" title="Upload new or replacement spreadsheet for the active session">
               <i data-lucide="file-up" style="width: 14px; height: 14px; color: var(--accent);"></i>
               <span>Replace Sheet</span>
             </button>
-            <button class="btn btn-primary btn-sm" onclick="openNewSessionDrawer()">
+            <button class="btn btn-primary btn-sm admin-only" onclick="openNewSessionDrawer()">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
               <span>Create Session</span>
             </button>
@@ -3350,8 +3360,8 @@
           <i data-lucide="scan-barcode" style="width: 20px; height: 20px;"></i>
         </div>
         <div>
-          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text);">Barcode & QR Tool</h3>
-          <p style="font-size: 0.75rem; color: var(--text-dim);">Optional scanner & camera lookup utility</p>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text);" id="barcodeDrawerTitle">Barcode & QR Tool</h3>
+          <p style="font-size: 0.75rem; color: var(--text-dim);" id="barcodeDrawerSubtitle">Optional scanner & camera lookup utility</p>
         </div>
       </div>
       <button class="btn btn-secondary btn-sm" onclick="closeBarcodeDrawer()">
@@ -3359,7 +3369,7 @@
       </button>
     </div>
     <div class="drawer-body">
-      <div class="form-group">
+      <div class="form-group" id="barcodeManualLookupSection">
         <label class="form-label">Lookup by Barcode / SKU</label>
         <div style="display: flex; gap: 0.5rem;">
           <input type="text" id="barcodeScanInput" class="form-input" placeholder="Scan or type barcode / SKU..." />
@@ -3367,14 +3377,14 @@
         </div>
       </div>
 
-      <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
-        <label class="form-label" style="margin-bottom: 0.75rem; display: block;">Device Camera Scanner</label>
-        <button class="btn btn-secondary" style="width: 100%;" onclick="toggleCameraScanner()">
+      <div id="barcodeCameraSection" style="margin-top: 1rem;">
+        <label class="form-label" id="cameraSectionLabel" style="margin-bottom: 0.5rem; display: block;">Device Camera Scanner</label>
+        <button class="btn btn-secondary" id="toggleCameraBtn" style="width: 100%;" onclick="toggleCameraScanner()">
           <i data-lucide="camera" style="width: 16px; height: 16px;"></i>
           <span id="cameraBtnText">Open Device Camera</span>
         </button>
 
-        <div id="cameraScannerWrapper" style="display: none; margin-top: 1rem; border: 2px solid var(--accent); border-radius: var(--radius-md); overflow: hidden;">
+        <div id="cameraScannerWrapper" style="display: none; margin-top: 0.75rem; border: 2px solid var(--accent); border-radius: var(--radius-md); overflow: hidden;">
           <div id="cameraReader" style="width: 100%;"></div>
         </div>
       </div>
@@ -3385,7 +3395,7 @@
   </div>
 
   <!-- Floating Corner Scanner Trigger Button (Visible only when authenticated) -->
-  <button class="floating-corner-scanner-btn" id="floatingBarcodeBtn" onclick="openBarcodeDrawer()" title="Open Barcode & Camera Scanner Tool" style="display: none;">
+  <button class="floating-corner-scanner-btn" id="floatingBarcodeBtn" onclick="openQuickCameraScanner()" title="Quick Camera Barcode & QR Scanner" style="display: none;">
     <i data-lucide="scan-barcode" style="width: 22px; height: 22px;"></i>
   </button>
 
@@ -4934,7 +4944,7 @@
         showToast('Access Denied: Audit Ledger requires Executive or Administrator permissions.', 'error');
         return;
       }
-      if ((viewName === 'upload' || viewName === 'reconciliation') && !isManager && !isSuper) {
+      if ((viewName === 'sessions' || viewName === 'upload' || viewName === 'reconciliation') && !isManager && !isSuper) {
         showToast('Access Denied: This portal requires Executive or Administrator permissions.', 'error');
         return;
       }
@@ -5169,19 +5179,15 @@
             dlBtn.title = "Download Full Excel Audit Sheet";
             dlBtn.innerHTML = `<i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i><span>Download Excel</span>`;
           } else if (isExecutive(currentUser)) {
-            dlBtn.style.display = '';
             if (activeSession && activeSession.executive_report_approved) {
+              dlBtn.style.display = '';
               dlBtn.disabled = false;
               dlBtn.style.opacity = '1';
               dlBtn.style.cursor = 'pointer';
               dlBtn.title = "Download Excel Audit Sheet (Approved by Central Admin)";
               dlBtn.innerHTML = `<i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i><span>Download Excel</span>`;
             } else {
-              dlBtn.disabled = true;
-              dlBtn.style.opacity = '0.6';
-              dlBtn.style.cursor = 'not-allowed';
-              dlBtn.title = "Download Locked: Requires Central Admin Approval";
-              dlBtn.innerHTML = `<i data-lucide="lock" style="width: 14px; height: 14px; color: #f59e0b;"></i><span>Excel (Locked by Admin)</span>`;
+              dlBtn.style.display = 'none';
             }
           } else {
             dlBtn.style.display = 'none';
@@ -5925,6 +5931,103 @@
       document.getElementById('myRecentScansCount').textContent = `${myScansCount} entries`;
     }
 
+    // Close Scanned Item Card (Deselect item)
+    function closeScannedItemCard() {
+      const card = document.getElementById('scannedItemCard');
+      if (card) card.style.display = 'none';
+      activeScannedItem = null;
+      const inp = document.getElementById('manualCountQtyInput');
+      if (inp) inp.value = '';
+    }
+    window.closeScannedItemCard = closeScannedItemCard;
+
+    // Quick Fill Current Total into input
+    function quickFillCurrentTotal() {
+      if (!activeScannedItem) return;
+      const input = document.getElementById('manualCountQtyInput');
+      if (input) {
+        input.value = activeScannedItem.total_counted_qty !== undefined ? activeScannedItem.total_counted_qty : 0;
+        input.focus();
+        input.select();
+      }
+      showToast(`Loaded current count (${activeScannedItem.total_counted_qty || 0}) into input.`, 'info', 2500);
+    }
+    window.quickFillCurrentTotal = quickFillCurrentTotal;
+
+    // Submit count directly with mode ('ADD' or 'REPLACE')
+    function submitCountDirect(mode) {
+      activeCountEntryMode = mode || 'ADD';
+      submitCountEntry();
+    }
+    window.submitCountDirect = submitCountDirect;
+
+    // Quick Camera Scanner (Direct camera interface without search bar)
+    function openQuickCameraScanner() {
+      document.getElementById('barcodeDrawerBackdrop').classList.add('open');
+      document.getElementById('barcodeDrawer').classList.add('open');
+
+      // Hide the search bar section per user specification
+      const manualSec = document.getElementById('barcodeManualLookupSection');
+      if (manualSec) manualSec.style.display = 'none';
+      const camLabel = document.getElementById('cameraSectionLabel');
+      if (camLabel) camLabel.style.display = 'none';
+      const toggleCamBtn = document.getElementById('toggleCameraBtn');
+      if (toggleCamBtn) toggleCamBtn.style.display = 'none';
+
+      const titleEl = document.getElementById('barcodeDrawerTitle');
+      if (titleEl) titleEl.textContent = 'Camera Barcode & QR Scanner';
+      const subEl = document.getElementById('barcodeDrawerSubtitle');
+      if (subEl) subEl.textContent = 'Point camera at item barcode or QR code to scan';
+
+      const wrapper = document.getElementById('cameraScannerWrapper');
+      if (wrapper) wrapper.style.display = 'block';
+
+      startCameraScanner();
+      lucide.createIcons();
+    }
+    window.openQuickCameraScanner = openQuickCameraScanner;
+
+    function openBarcodeDrawer() {
+      document.getElementById('barcodeDrawerBackdrop').classList.add('open');
+      document.getElementById('barcodeDrawer').classList.add('open');
+      const manualSec = document.getElementById('barcodeManualLookupSection');
+      if (manualSec) manualSec.style.display = 'block';
+      const camLabel = document.getElementById('cameraSectionLabel');
+      if (camLabel) camLabel.style.display = 'block';
+      const toggleCamBtn = document.getElementById('toggleCameraBtn');
+      if (toggleCamBtn) toggleCamBtn.style.display = 'block';
+      setTimeout(() => {
+        const inp = document.getElementById('barcodeScanInput');
+        if (inp) inp.focus();
+      }, 150);
+      lucide.createIcons();
+    }
+    window.openBarcodeDrawer = openBarcodeDrawer;
+
+    function closeBarcodeDrawer() {
+      document.getElementById('barcodeDrawerBackdrop').classList.remove('open');
+      document.getElementById('barcodeDrawer').classList.remove('open');
+      stopCameraScanner();
+
+      // Reset drawer layout for next opening
+      const manualSec = document.getElementById('barcodeManualLookupSection');
+      if (manualSec) manualSec.style.display = 'block';
+      const camLabel = document.getElementById('cameraSectionLabel');
+      if (camLabel) camLabel.style.display = 'block';
+      const toggleCamBtn = document.getElementById('toggleCameraBtn');
+      if (toggleCamBtn) toggleCamBtn.style.display = 'block';
+      const wrapper = document.getElementById('cameraScannerWrapper');
+      if (wrapper) wrapper.style.display = 'none';
+
+      const titleEl = document.getElementById('barcodeDrawerTitle');
+      if (titleEl) titleEl.textContent = 'Barcode & QR Tool';
+      const subEl = document.getElementById('barcodeDrawerSubtitle');
+      if (subEl) subEl.textContent = 'Optional scanner & camera lookup utility';
+      const btnText = document.getElementById('cameraBtnText');
+      if (btnText) btnText.textContent = 'Open Device Camera';
+    }
+    window.closeBarcodeDrawer = closeBarcodeDrawer;
+
     // Camera Barcode Scanner
     function toggleCameraScanner() {
       const wrapper = document.getElementById('cameraScannerWrapper');
@@ -5932,33 +6035,44 @@
 
       if (wrapper.style.display === 'none') {
         wrapper.style.display = 'block';
-        btnText.textContent = 'Close Camera Scanner';
+        if (btnText) btnText.textContent = 'Close Camera Scanner';
         startCameraScanner();
       } else {
         wrapper.style.display = 'none';
-        btnText.textContent = 'Open Camera Scanner';
+        if (btnText) btnText.textContent = 'Open Device Camera';
         stopCameraScanner();
       }
     }
 
     function startCameraScanner() {
       if (typeof Html5Qrcode === 'undefined') {
-        showToast('Barcode scanner module is loading, please try again in a moment.', 'info');
+        showToast('Camera scanner module is loading, please try again in a moment.', 'info');
         return;
       }
-      html5QrScanner = new Html5Qrcode("cameraReader");
-      html5QrScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          document.getElementById('barcodeScanInput').value = decodedText;
-          toggleCameraScanner();
-          handleScanSubmit();
-        },
-        (errorMessage) => {}
-      ).catch(err => {
-        showToast("Camera error: " + err, 'error');
-      });
+      if (html5QrScanner) {
+        try { html5QrScanner.stop().catch(() => {}); } catch (_) {}
+        html5QrScanner = null;
+      }
+      try {
+        html5QrScanner = new Html5Qrcode("cameraReader");
+        html5QrScanner.start(
+          { facingMode: "environment" },
+          { fps: 15, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            const scanInp = document.getElementById('barcodeScanInput');
+            if (scanInp) scanInp.value = decodedText;
+            closeBarcodeDrawer();
+            handleScanSubmit();
+          },
+          (errorMessage) => {}
+        ).catch(err => {
+          showToast("Camera error: " + err, 'error');
+          const manualSec = document.getElementById('barcodeManualLookupSection');
+          if (manualSec) manualSec.style.display = 'block';
+        });
+      } catch (e) {
+        showToast("Camera initialization error: " + e.message, 'error');
+      }
     }
 
     function stopCameraScanner() {
@@ -5969,6 +6083,12 @@
         }).catch(err => console.error(err));
       }
     }
+
+    // Safety fallback for updateActiveSessionUI
+    function updateActiveSessionUI() {
+      refreshActiveSession();
+    }
+    window.updateActiveSessionUI = updateActiveSessionUI;
 
     // ==========================================
     // MASTER INVENTORY & FLOOR CHECKLIST (COUNTER PAGE)
@@ -6559,6 +6679,15 @@
           </tr>
         `;
       }).join('');
+      // Enforce role visibility on dynamically rendered session rows
+      const isManagerSes = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
+      const isExecSes = currentUser && isExecutive(currentUser);
+      document.querySelectorAll('#sessionsTable .admin-only').forEach(el => {
+        el.style.display = (isManagerSes || isExecSes) ? '' : 'none';
+      });
+      document.querySelectorAll('#sessionsTable .admin-exclusive').forEach(el => {
+        el.style.display = isManagerSes ? '' : 'none';
+      });
       lucide.createIcons();
     }
 
@@ -7671,7 +7800,7 @@
       // Switch active session
       activeSession = s;
       localStorage.setItem('LINA_ACTIVE_SESSION_ID', s.id);
-      updateActiveSessionUI();
+      refreshActiveSession();
 
       // Switch to upload view
       switchView('upload');
@@ -8900,11 +9029,6 @@
                     <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #34d399;"></i>
                     <span>Excel</span>
                   </button>
-                ` : (currentUser && isExecutive(currentUser)) ? `
-                  <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.55; cursor: not-allowed;" title="Central Admin authorization required to export report for this session">
-                    <i data-lucide="lock" style="width: 14px; height: 14px; color: #f59e0b;"></i>
-                    <span>Excel (Locked)</span>
-                  </button>
                 ` : ''}
                 <button class="btn btn-secondary btn-sm admin-only" onclick="toggleSessionLock('${s.id}')" title="${isClosed ? 'Reopen and unlock counting session' : 'Close and lock session for counters'}">
                   <i data-lucide="${isClosed ? 'unlock' : 'lock'}" style="width: 14px; height: 14px; color: ${isClosed ? '#34d399' : '#f87171'};"></i>
@@ -9626,7 +9750,7 @@
       <span>Scan</span>
       <span class="tab-badge" id="bottomScanBadge" style="display: none;">0</span>
     </button>
-    <button class="mobile-bottom-tab" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')" aria-label="Discrepancies">
+    <button class="mobile-bottom-tab admin-only" data-view="reconciliation" onclick="mobileNavigateTo('reconciliation')" aria-label="Discrepancies">
       <i data-lucide="scale"></i>
       <span>Variances</span>
     </button>
