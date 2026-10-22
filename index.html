@@ -3302,16 +3302,33 @@
         </div>
 
         <!-- Filter Bar -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-          <input type="text" id="reconSearchInput" class="form-input" style="max-width: 280px;" placeholder="Search SKU, Barcode, Name..." oninput="filterReconciliationTable()" />
-          
-          <select id="reconFilterStatus" class="form-select" style="max-width: 220px;" onchange="filterReconciliationTable()">
-            <option value="ALL">All Master Items</option>
-            <option value="DISCREPANCY">Discrepancies Only (!)</option>
-            <option value="MATCHED">Matched Exactly</option>
-            <option value="UNCOUNTED">Uncounted Items</option>
-            <option value="UNLISTED">Unlisted Floor Items</option>
-          </select>
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; flex: 1;">
+            <!-- Session Scope Dropdown (Includes All Sessions) -->
+            <div style="display: flex; align-items: center; gap: 0.45rem; min-width: 280px; max-width: 440px; flex: 1;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; display: inline-flex; align-items: center;">
+                <i data-lucide="layers" style="width: 14px; height: 14px; margin-right: 4px; color: var(--accent);"></i>Session:
+              </span>
+              <select id="reconSessionFilter" class="form-select" style="font-weight: 600; font-size: 0.84rem; height: 38px; width: 100%; text-overflow: ellipsis;" onchange="onReconSessionChange()" title="Select a count session or choose 'All Sessions' to reconcile all items across all sessions">
+                <option value="ALL">🌐 All Sessions (Global Consolidated Reconciliation)</option>
+              </select>
+            </div>
+
+            <input type="text" id="reconSearchInput" class="form-input" style="max-width: 240px; height: 38px;" placeholder="Search SKU, Barcode, Name, Batch..." oninput="filterReconciliationTable()" />
+            
+            <select id="reconFilterStatus" class="form-select" style="max-width: 200px; height: 38px;" onchange="filterReconciliationTable()">
+              <option value="ALL">All Master Items</option>
+              <option value="DISCREPANCY">Discrepancies Only (!)</option>
+              <option value="MATCHED">Matched Exactly</option>
+              <option value="UNCOUNTED">Uncounted Items</option>
+              <option value="UNLISTED">Unlisted Floor Items</option>
+            </select>
+          </div>
+
+          <!-- Quick Scope & Item Count Summary Badge -->
+          <div id="reconScopeSummaryBadge" style="font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-dim); background: var(--bg-subtle); padding: 7px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); white-space: nowrap;">
+            Scope: All Sessions
+          </div>
         </div>
 
         <div class="table-container" style="max-height: 550px; overflow-y: auto;">
@@ -3320,6 +3337,7 @@
               <tr>
                 <th>SKU</th>
                 <th>Barcode</th>
+                <th>Session</th>
                 <th>Description</th>
                 <th>Batch Code</th>
                 <th>Zone</th>
@@ -3331,7 +3349,7 @@
               </tr>
             </thead>
             <tbody id="reconTableBody">
-              <tr><td colspan="10" style="text-align: center; padding: 2rem;">Loading reconciliation data...</td></tr>
+              <tr><td colspan="11" style="text-align: center; padding: 2rem;">Loading reconciliation data...</td></tr>
             </tbody>
           </table>
         </div>
@@ -5901,6 +5919,7 @@
       }
 
       if (viewName === 'reconciliation') {
+        populateReconSessionDropdown();
         filterReconciliationTable();
       }
 
@@ -6014,6 +6033,7 @@
         if (select) select.innerHTML = optionsHtml;
         const dashSelect = document.getElementById('dashSessionSelect');
         if (dashSelect) dashSelect.innerHTML = optionsHtml;
+        try { populateReconSessionDropdown(); } catch (_) {}
       }
 
       const activeViewSec = document.querySelector('.view-section.active');
@@ -7844,28 +7864,67 @@
     // ==========================================
     // RECONCILIATION & RECORD EDITING (ADMIN)
     // ==========================================
+    function onReconSessionChange() {
+      filterReconciliationTable();
+    }
+    window.onReconSessionChange = onReconSessionChange;
+
+    function populateReconSessionDropdown() {
+      const reconSelect = document.getElementById('reconSessionFilter');
+      if (!reconSelect) return;
+      appDb = loadDatabase();
+      const currentVal = reconSelect.value;
+      const sessions = appDb.sessions || [];
+
+      let optionsHtml = `<option value="ALL">🌐 All Sessions (Reconcile All ${sessions.length} Sessions Consolidated)</option>`;
+      optionsHtml += sessions.map(s => {
+        const titleStr = s.title || s.session_name || s.session_code;
+        return `<option value="${s.id}">${escapeHtml(s.session_code)} - ${escapeHtml(titleStr)} (${escapeHtml(s.status)})</option>`;
+      }).join('');
+
+      reconSelect.innerHTML = optionsHtml;
+      if (currentVal && (currentVal === 'ALL' || sessions.some(s => s.id === currentVal))) {
+        reconSelect.value = currentVal;
+      } else if (activeSession && sessions.some(s => s.id === activeSession.id)) {
+        reconSelect.value = activeSession.id;
+      } else {
+        reconSelect.value = 'ALL';
+      }
+    }
+    window.populateReconSessionDropdown = populateReconSessionDropdown;
+
     function filterReconciliationTable() {
       const tbody = document.getElementById('reconTableBody');
       const search = (document.getElementById('reconSearchInput')?.value || '').trim().toLowerCase();
       const statusFilter = document.getElementById('reconFilterStatus')?.value || 'ALL';
+      const reconSessionId = document.getElementById('reconSessionFilter')?.value || (activeSession ? activeSession.id : 'ALL');
+      const isAllSessions = reconSessionId === 'ALL';
 
       if (!tbody) return;
-      if (!activeSession) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-dim);">No active count session found.</td></tr>`;
-        return;
-      }
       appDb = loadDatabase();
 
-      const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
+      let sessionItems = [];
+      if (isAllSessions) {
+        sessionItems = appDb.items || [];
+      } else {
+        sessionItems = (appDb.items || []).filter(i => i.session_id === reconSessionId);
+      }
 
       if (sessionItems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem;">No master items in active session. Upload a sheet in "Upload Data Sheet".</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem; color: var(--text-dim);">${isAllSessions ? 'No inventory items found across any sessions.' : 'No master items in selected session. Upload a sheet in "Upload Data Sheet".'}</td></tr>`;
+        const summaryBadge = document.getElementById('reconScopeSummaryBadge');
+        if (summaryBadge) {
+          summaryBadge.innerHTML = `<span style="color: var(--text-dim);">0 items</span>`;
+        }
         return;
       }
 
       const filtered = sessionItems.filter(item => {
-        // Omni search in reconciliation: SKU, barcode, name, batch, zone/location, system_qty, total_counted_qty, uom
+        // Omni search in reconciliation: SKU, barcode, name, batch, session code, zone/location, system_qty, total_counted_qty, uom
         if (search) {
+          const itemSes = (appDb.sessions || []).find(s => s.id === item.session_id);
+          const sesCode = itemSes ? itemSes.session_code : '';
+          const matchSes = sesCode && sesCode.toLowerCase().includes(search);
           const matchSku = item.sku && item.sku.toLowerCase().includes(search);
           const matchBarcode = item.barcode && item.barcode.toLowerCase().includes(search);
           const matchName = item.item_name && item.item_name.toLowerCase().includes(search);
@@ -7875,7 +7934,7 @@
           const matchCountQty = String(item.total_counted_qty).toLowerCase().includes(search);
           const matchUom = item.uom && item.uom.toLowerCase().includes(search);
 
-          if (!matchSku && !matchBarcode && !matchName && !matchBatch && !matchLocation && !matchSysQty && !matchCountQty && !matchUom) {
+          if (!matchSku && !matchBarcode && !matchName && !matchBatch && !matchLocation && !matchSysQty && !matchCountQty && !matchUom && !matchSes) {
             return false;
           }
         }
@@ -7891,17 +7950,32 @@
         return true;
       });
 
+      const summaryBadge = document.getElementById('reconScopeSummaryBadge');
+      if (summaryBadge) {
+        if (isAllSessions) {
+          const totalSessionsCount = (appDb.sessions || []).length;
+          summaryBadge.innerHTML = `<span style="color: var(--accent); font-weight: 700;">🌐 All Sessions (${totalSessionsCount})</span> · <strong>${filtered.length}</strong> items`;
+        } else {
+          const curSes = (appDb.sessions || []).find(s => s.id === reconSessionId);
+          const sesCode = curSes ? curSes.session_code : reconSessionId;
+          summaryBadge.innerHTML = `<span style="color: #818cf8; font-weight: 700;">${escapeHtml(sesCode)}</span> · <strong>${filtered.length}</strong> items`;
+        }
+      }
+
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 2rem;">No items match the selected filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem;">No items match the selected filter.</td></tr>`;
         return;
       }
 
-      const countMode = activeSession ? (activeSession.count_type || 'BLIND_COUNT') : 'BLIND_COUNT';
       const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
       const isExec = currentUser && isExecutive(currentUser);
-      const hideReconValues = !canUserViewSystemQtyAndVariances(currentUser, activeSession);
 
       tbody.innerHTML = filtered.map(item => {
+        const itemSession = (appDb.sessions || []).find(s => s.id === item.session_id) || activeSession;
+        const hideReconValues = !canUserViewSystemQtyAndVariances(currentUser, itemSession);
+        const sessionCode = itemSession ? itemSession.session_code : (item.session_id || 'DEFAULT');
+        const sessionTitle = itemSession ? (itemSession.title || itemSession.session_name || itemSession.session_code) : sessionCode;
+
         const counted = parseFloat(item.total_counted_qty) || 0;
         const system = parseFloat(item.system_qty) || 0;
         const variance = counted - system;
@@ -7943,6 +8017,11 @@
           <tr>
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);">${escapeHtml(item.sku)}</td>
             <td style="font-family: var(--font-mono); color: var(--text-dim);">${escapeHtml(item.barcode || '—')}</td>
+            <td>
+              <span class="badge" style="background: rgba(99, 102, 241, 0.12); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.25); font-family: var(--font-mono); font-size: 0.72rem; padding: 2px 7px; font-weight: 700;" title="Session: ${escapeHtml(sessionTitle)}">
+                <i data-lucide="tag" style="width: 10px; height: 10px; margin-right: 3px; vertical-align: middle;"></i>${escapeHtml(sessionCode)}
+              </span>
+            </td>
             <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
             <td>
               ${item.batch_no ? `
@@ -8450,33 +8529,122 @@
         playBeep(false);
         return;
       }
-      if (isExecutive(currentUser) && activeSession && !activeSession.executive_report_approved) {
-        showToast(`Executive report download requires Administrator approval for session "${activeSession.session_code}".`, 'error');
-        playBeep(false);
+
+      appDb = loadDatabase();
+      const reconSessionId = document.getElementById('reconSessionFilter')?.value || (activeSession ? activeSession.id : 'ALL');
+      const isAllSessions = reconSessionId === 'ALL';
+
+      if (!isAllSessions) {
+        const session = (appDb.sessions || []).find(s => s.id === reconSessionId) || activeSession;
+        if (isExecutive(currentUser) && session && !session.executive_report_approved) {
+          showToast(`Executive report download requires Administrator approval for session "${session.session_code}".`, 'error');
+          playBeep(false);
+          return;
+        }
+      }
+
+      let sessionItems = [];
+      if (isAllSessions) {
+        sessionItems = appDb.items || [];
+      } else {
+        sessionItems = (appDb.items || []).filter(i => i.session_id === reconSessionId);
+      }
+
+      if (sessionItems.length === 0) {
+        showToast('No items to export for the selected session scope.', 'error');
         return;
       }
 
       if (format === 'excel') {
-        exportSessionAuditExcel(activeSession ? activeSession.id : null);
+        if (!isAllSessions && reconSessionId) {
+          exportSessionAuditExcel(reconSessionId);
+          return;
+        }
+
+        // Export Multi-Session Consolidated Excel Workbook
+        const workbook = XLSX.utils.book_new();
+
+        // Sheet 1: Consolidated Reconciliation
+        const reconRows = sessionItems.map(item => {
+          const itemSes = (appDb.sessions || []).find(s => s.id === item.session_id);
+          const sCode = itemSes ? itemSes.session_code : (item.session_id || 'DEFAULT');
+          const sTitle = itemSes ? (itemSes.title || itemSes.session_name || sCode) : sCode;
+          const counted = parseFloat(item.total_counted_qty) || 0;
+          const system = parseFloat(item.system_qty) || 0;
+          const variance = counted - system;
+
+          return {
+            "Session Code": escapeCsvFormula(sCode),
+            "Session Title": escapeCsvFormula(sTitle),
+            "SKU / Item Code": escapeCsvFormula(item.sku),
+            "Barcode": escapeCsvFormula(item.barcode || ""),
+            "Description": escapeCsvFormula(item.item_name),
+            "Batch Code": escapeCsvFormula(item.batch_no || ""),
+            "Zone / Location": escapeCsvFormula(item.zone_location || ""),
+            "UOM": escapeCsvFormula(item.uom || "PCS"),
+            "Book Stock (Expected)": system,
+            "Physical Counted": counted,
+            "Variance Qty": variance,
+            "Variance Status": item.is_unlisted ? "UNLISTED FOUND" : (counted === 0 ? "UNCOUNTED" : (variance === 0 ? "MATCHED" : (variance > 0 ? "SURPLUS" : "SHORTAGE"))),
+            "Last Counter": escapeCsvFormula(item.last_counted_by || "—"),
+            "Entered Time": escapeCsvFormula(item.last_counted_at || "—"),
+            "Notes": escapeCsvFormula(item.notes || "")
+          };
+        });
+
+        const reconWs = XLSX.utils.json_to_sheet(reconRows);
+        XLSX.utils.book_append_sheet(workbook, reconWs, "All Sessions Recon");
+
+        // Sheet 2: Session Breakdown Summary
+        const sessionSummaryRows = (appDb.sessions || []).map(s => {
+          const sItems = (appDb.items || []).filter(i => i.session_id === s.id);
+          const totalBook = sItems.reduce((acc, i) => acc + (parseFloat(i.system_qty) || 0), 0);
+          const totalCounted = sItems.reduce((acc, i) => acc + (parseFloat(i.total_counted_qty) || 0), 0);
+          const matched = sItems.filter(i => (parseFloat(i.total_counted_qty) || 0) === (parseFloat(i.system_qty) || 0) && !i.is_unlisted).length;
+          const discrepancies = sItems.filter(i => i.is_unlisted || (parseFloat(i.total_counted_qty) || 0) !== (parseFloat(i.system_qty) || 0)).length;
+
+          return {
+            "Session Code": escapeCsvFormula(s.session_code),
+            "Session Title": escapeCsvFormula(s.title || s.session_name || ''),
+            "Status": s.status,
+            "Count Mode": s.count_type || 'BLIND_COUNT',
+            "Total Master Items": sItems.length,
+            "Total Book Stock": totalBook,
+            "Total Physical Counted": totalCounted,
+            "Net Variance": totalCounted - totalBook,
+            "Matched Items": matched,
+            "Discrepant Items": discrepancies,
+            "Created Date": s.created_at || '—'
+          };
+        });
+
+        const sumWs = XLSX.utils.json_to_sheet(sessionSummaryRows);
+        XLSX.utils.book_append_sheet(workbook, sumWs, "Sessions Summary");
+
+        const filename = `Lina_Stock_Reconciliation_ALL_SESSIONS_${Date.now()}.xlsx`;
+        XLSX.writeFile(workbook, filename);
+        logAuditEvent('REPORT_DOWNLOADED', `Consolidated All-Sessions Excel Report downloaded (${sessionItems.length} items) by ${currentUser.username}`, 'ALL_SESSIONS', 'AUDIT');
+        showToast(`Exported all-sessions reconciliation (${sessionItems.length} items)!`, 'success');
+        playBeep(true);
         return;
       }
 
-      appDb = loadDatabase();
-      const sessionItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
-      if (sessionItems.length === 0) {
-        showToast('No items to export.', 'error');
-        return;
-      }
-
+      // Format CSV
       const rows = sessionItems.map(item => {
+        const itemSes = (appDb.sessions || []).find(s => s.id === item.session_id);
+        const sCode = itemSes ? itemSes.session_code : (item.session_id || 'DEFAULT');
+        const sTitle = itemSes ? (itemSes.title || itemSes.session_name || sCode) : sCode;
         const counted = parseFloat(item.total_counted_qty) || 0;
         const system = parseFloat(item.system_qty) || 0;
         const variance = counted - system;
+
         return {
-          "Session Code": escapeCsvFormula(activeSession.session_code),
+          "Session Code": escapeCsvFormula(sCode),
+          "Session Title": escapeCsvFormula(sTitle),
           "SKU / Item Code": escapeCsvFormula(item.sku),
           "Barcode": escapeCsvFormula(item.barcode || ""),
           "Description": escapeCsvFormula(item.item_name),
+          "Batch Code": escapeCsvFormula(item.batch_no || ""),
           "Zone / Location": escapeCsvFormula(item.zone_location || ""),
           "UOM": escapeCsvFormula(item.uom || "PCS"),
           "Book Stock (Expected)": system,
@@ -8493,9 +8661,10 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Reconciliation");
 
-      const filename = `Lina_Stock_Reconciliation_${activeSession.session_code}_${Date.now()}.csv`;
+      const sessionLabel = isAllSessions ? 'ALL_SESSIONS' : (reconSessionId || 'SESSION');
+      const filename = `Lina_Stock_Reconciliation_${sessionLabel}_${Date.now()}.csv`;
       XLSX.writeFile(workbook, filename);
-      logAuditEvent('REPORT_DOWNLOADED', `Reconciliation CSV downloaded for session ${activeSession.session_code} by ${currentUser.username}`, activeSession.session_code, 'AUDIT');
+      logAuditEvent('REPORT_DOWNLOADED', `Reconciliation CSV downloaded for ${sessionLabel} (${rows.length} rows) by ${currentUser.username}`, sessionLabel, 'AUDIT');
       showToast(`Exported ${rows.length} rows to ${filename}`, 'success');
       playBeep(true);
     }
@@ -11778,6 +11947,8 @@
     window.exportReconciliationReport = exportReconciliationReport;
     window.exportSessionAuditExcel = exportSessionAuditExcel;
     window.filterReconciliationTable = filterReconciliationTable;
+    window.onReconSessionChange = onReconSessionChange;
+    window.populateReconSessionDropdown = populateReconSessionDropdown;
     window.openNewUserDrawer = openNewUserDrawer;
     window.closeUserDrawer = closeUserDrawer;
     window.handleCreateUser = handleCreateUser;

@@ -332,6 +332,27 @@ describe('Lina Manufacturing · Chatbot RBAC, History Isolation & Blind Count Te
       assert.match(code, /conflict: true/, '409 Conflict must be returned when held by another user');
     });
   });
+
+  test('TC-RECON-MULTI-SESSION-01: Session Scope Dropdown & All Sessions Option in Reconciliation View', () => {
+    // Assert session selector dropdown exists in reconciliation filter bar
+    assert.match(indexHtml, /id="reconSessionFilter"/, 'Reconciliation view must contain a session filter dropdown');
+    assert.match(indexHtml, /<option value="ALL"[^>]*>[\s\S]*?All Sessions/, 'Session dropdown must include an "All Sessions" option');
+    assert.match(indexHtml, /id="reconScopeSummaryBadge"/, 'Reconciliation scope summary badge must exist');
+    assert.match(indexHtml, /<th>Session<\/th>/, 'Reconciliation table header must have a Session column');
+    assert.match(indexHtml, /function onReconSessionChange\(\)/, 'onReconSessionChange function must exist');
+    assert.match(indexHtml, /function populateReconSessionDropdown\(\)/, 'populateReconSessionDropdown function must exist');
+  });
+
+  test('TC-RECON-MULTI-SESSION-02: Consolidated Multi-Session Reconciliation Filtering & Export', () => {
+    // Assert filterReconciliationTable handles isAllSessions and consolidates items
+    assert.match(indexHtml, /const isAllSessions = reconSessionId === 'ALL';/, 'filterReconciliationTable must detect ALL sessions mode');
+    assert.match(indexHtml, /sessionItems = appDb\.items \|\| \[\];/, 'ALL sessions mode must retrieve items across all sessions');
+    assert.match(indexHtml, /title="Session: \${escapeHtml\(sessionTitle\)}"/, 'Reconciliation rows must display session badge and title');
+
+    // Assert exportReconciliationReport handles consolidated multi-session export
+    assert.match(indexHtml, /Consolidated Reconciliation/, 'Excel report must include Consolidated Reconciliation sheet in multi-session mode');
+    assert.match(indexHtml, /Lina_Stock_Reconciliation_ALL_SESSIONS_/, 'Multi-session exports must use ALL_SESSIONS filename');
+  });
 });
 
 
