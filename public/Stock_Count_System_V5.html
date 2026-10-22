@@ -2868,49 +2868,34 @@
               <i data-lucide="map-pin-off" style="width: 14px; height: 14px;"></i>
               <span>Remove Zone from Preview</span>
             </button>
-            <button class="btn btn-secondary btn-sm" id="commitSheetBtn" onclick="commitSheetToSession()" title="Append or merge these items into the current active session">
-              <i data-lucide="file-plus" style="width: 14px; height: 14px;"></i>
-              <span>Append to Active Session</span>
+            <!-- SMALL BUTTON: ACTIVATE AS ACTIVE SESSION -->
+            <button class="btn btn-secondary btn-sm" id="activateUploadedSessionBtn" onclick="activateUploadedDatasheetSession()" title="Activate this uploaded sheet as a new count session">
+              <i data-lucide="play-circle" style="width: 14px; height: 14px; color: var(--accent);"></i>
+              <span>Activate as Active Session</span>
             </button>
           </div>
         </div>
 
-        <!-- REPLACE SESSION COMMIT ACTION PANEL -->
-        <div id="replaceSessionActionPanel" style="display: none; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(14, 165, 233, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div style="flex: 1; min-width: 260px;">
-              <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-emerald); font-weight: 800; font-size: 1.05rem;">
-                <i data-lucide="file-check-2" style="width: 22px; height: 22px;"></i>
-                <span id="replaceSessionPanelHeader">Ready to Replace Datasheet for Session SES-XXXXX</span>
-              </div>
-              <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0.35rem 0 0 0; line-height: 1.5;">
-                Click below to launch <strong>Smart Reconciliation</strong>. Master book quantities will update for <strong id="replaceSessionTargetName" style="color: var(--text);">this session</strong>, and any items already counted on the floor will be <strong>preserved</strong>.
-              </p>
+        <!-- MAIN ACTION PANEL: APPEND / REPLACE TO ACTIVE SESSION (BIG BUTTON) -->
+        <div id="mainSessionCommitPanel" style="background: rgba(14, 165, 233, 0.06); border: 1.5px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent); font-weight: 700; font-size: 0.95rem;">
+              <i data-lucide="file-check-2" style="width: 18px; height: 18px;" id="uploadPanelSessionIcon"></i>
+              <span id="uploadPanelSessionTitle">Target: Active Count Session</span>
             </div>
-            <div>
-              <button class="btn btn-primary" id="confirmReplaceSheetBtn" onclick="commitSheetToSession()" style="background: var(--accent-emerald); border-color: var(--accent-emerald); font-weight: 800; font-size: 0.95rem; height: 44px; padding: 0 1.5rem; box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);">
-                <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
-                <span id="confirmReplaceSheetBtnText">Review & Replace Sheet Now</span>
-              </button>
+            <div style="font-size: 0.75rem; color: var(--text-dim);" id="uploadPanelSessionSub">
+              Floor counts already recorded will be preserved via Smart Reconciliation.
             </div>
-          </div>
-        </div>
-
-        <!-- NEW SESSION ACTIVATION PANEL -->
-        <div id="newSessionActivationPanel" style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; color: var(--accent); font-weight: 700; font-size: 0.95rem;">
-            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
-            <span>Activate Uploaded Sheet as a New Count Session</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; align-items: end;">
             <div>
-              <label class="form-label" style="font-weight: 700; color: var(--text);">Session Name / Title <span style="color: var(--accent-rose);">*</span></label>
-              <input type="text" id="uploadSessionTitleInput" class="form-input" placeholder="e.g. Raw Materials Stock Count - October 2026" />
-              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Visible to all operators in the session selector.</div>
+              <label class="form-label" style="font-weight: 700; color: var(--text); font-size: 0.82rem;">Session Name / Title (If Activating New)</label>
+              <input type="text" id="uploadSessionTitleInput" class="form-input" style="height: 44px;" placeholder="e.g. Raw Materials Stock Count - October 2026" />
+              <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Only used if activating a new session via the small button.</div>
             </div>
             <div>
-              <label class="form-label" style="font-weight: 700; color: var(--text);">Count Mode (Blind vs Open)</label>
-              <select id="uploadSessionCountTypeSelect" class="form-select">
+              <label class="form-label" style="font-weight: 700; color: var(--text); font-size: 0.82rem;">Count Mode (Blind vs Open)</label>
+              <select id="uploadSessionCountTypeSelect" class="form-select" style="height: 44px;">
                 <option value="BLIND_COUNT" selected>Blind Count (System Qty hidden from counters)</option>
                 <option value="BLIND_ALL">Strict Blind (Hidden from counters & executives)</option>
                 <option value="OPEN_COUNT">Open Count (System Qty visible to all)</option>
@@ -2918,9 +2903,10 @@
               <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">Determines whether book quantities are hidden while scanning.</div>
             </div>
             <div>
-              <button class="btn btn-success" id="activateUploadedSessionBtn" onclick="activateUploadedDatasheetSession()" style="width: 100%; justify-content: center; height: 42px; font-weight: 700; font-size: 0.92rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
-                <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i>
-                <span>Activate as Active Session</span>
+              <!-- BIG BUTTON: APPEND TO ACTIVE SESSION -->
+              <button class="btn btn-success" id="commitSheetBtn" onclick="commitSheetToSession()" style="width: 100%; justify-content: center; height: 44px; font-weight: 800; font-size: 0.96rem; box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35); border-radius: var(--radius-md);">
+                <i data-lucide="file-plus" style="width: 18px; height: 18px;" id="commitSheetBtnIcon"></i>
+                <span id="commitSheetBtnText">Append to Active Session</span>
               </button>
             </div>
           </div>
@@ -7874,11 +7860,10 @@
     function updateUploadViewModeUI() {
       const banner = document.getElementById('replaceSheetModeBanner');
       const bannerTitle = document.getElementById('replaceSheetTargetTitle');
-      const replacePanel = document.getElementById('replaceSessionActionPanel');
-      const replacePanelHeader = document.getElementById('replaceSessionPanelHeader');
-      const replaceTargetName = document.getElementById('replaceSessionTargetName');
-      const confirmBtnText = document.getElementById('confirmReplaceSheetBtnText');
-      const newSessionPanel = document.getElementById('newSessionActivationPanel');
+      const panelTitle = document.getElementById('uploadPanelSessionTitle');
+      const panelSub = document.getElementById('uploadPanelSessionSub');
+      const commitBtnText = document.getElementById('commitSheetBtnText');
+      const commitBtnIcon = document.getElementById('commitSheetBtnIcon');
       const commitSheetBtn = document.getElementById('commitSheetBtn');
       const newBtn = document.getElementById('uploadModeNewBtn');
       const replaceBtn = document.getElementById('uploadModeReplaceBtn');
@@ -7899,18 +7884,22 @@
           banner.style.display = 'flex';
           if (bannerTitle) bannerTitle.textContent = `Replacing Datasheet for Session: ${target.session_code} - ${target.title}`;
         }
-        if (replacePanel) {
-          replacePanel.style.display = 'block';
-          if (replacePanelHeader) replacePanelHeader.textContent = `Apply Replacement Sheet to ${target.session_code}`;
-          if (replaceTargetName) replaceTargetName.textContent = `"${target.session_code} - ${target.title}"`;
-          if (confirmBtnText) confirmBtnText.textContent = `Review & Replace Sheet for ${target.session_code}`;
+        if (panelTitle) {
+          panelTitle.innerHTML = `Target: Replacing Sheet for <strong style="color: var(--text);">${escapeHtml(target.session_code)} - ${escapeHtml(target.title)}</strong>`;
         }
-        if (newSessionPanel) {
-          newSessionPanel.style.display = 'none';
+        if (panelSub) {
+          panelSub.textContent = 'Physical counts already recorded on floor will be preserved via Smart Reconciliation.';
+        }
+        if (commitBtnText) {
+          commitBtnText.textContent = `Review & Replace Sheet for ${target.session_code}`;
+        }
+        if (commitBtnIcon) {
+          commitBtnIcon.setAttribute('data-lucide', 'refresh-cw');
         }
         if (commitSheetBtn) {
-          commitSheetBtn.className = 'btn btn-primary btn-sm';
-          commitSheetBtn.innerHTML = `<i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> <span>Replace Sheet for ${target.session_code}</span>`;
+          commitSheetBtn.className = 'btn btn-success';
+          commitSheetBtn.style.background = 'var(--accent-emerald)';
+          commitSheetBtn.style.borderColor = 'var(--accent-emerald)';
         }
         if (newBtn) {
           newBtn.className = 'btn btn-sm btn-secondary';
@@ -7924,11 +7913,24 @@
         }
       } else {
         if (banner) banner.style.display = 'none';
-        if (replacePanel) replacePanel.style.display = 'none';
-        if (newSessionPanel) newSessionPanel.style.display = 'block';
+        if (panelTitle) {
+          panelTitle.innerHTML = activeSession 
+            ? `Target: Active Session <strong style="color: var(--text);">${escapeHtml(activeSession.session_code)} - ${escapeHtml(activeSession.title)}</strong>`
+            : 'Target: Active Count Session';
+        }
+        if (panelSub) {
+          panelSub.textContent = 'Appends or reconciles sheet items into the active count session.';
+        }
+        if (commitBtnText) {
+          commitBtnText.textContent = activeSession ? `Append to Active Session (${activeSession.session_code})` : 'Append to Active Session';
+        }
+        if (commitBtnIcon) {
+          commitBtnIcon.setAttribute('data-lucide', 'file-plus');
+        }
         if (commitSheetBtn) {
-          commitSheetBtn.className = 'btn btn-secondary btn-sm';
-          commitSheetBtn.innerHTML = `<i data-lucide="file-plus" style="width: 14px; height: 14px;"></i> <span>Append to Active Session</span>`;
+          commitSheetBtn.className = 'btn btn-success';
+          commitSheetBtn.style.background = 'var(--accent-emerald)';
+          commitSheetBtn.style.borderColor = 'var(--accent-emerald)';
         }
         if (newBtn) {
           newBtn.className = 'btn btn-sm btn-primary';
