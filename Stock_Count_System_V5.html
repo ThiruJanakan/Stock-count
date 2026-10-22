@@ -2731,7 +2731,7 @@
         <form id="loginForm" onsubmit="handleLoginSubmit(event)">
           <div class="form-group" style="text-align: left;">
             <label class="form-label">Username</label>
-            <input type="text" id="loginUsername" class="form-input" placeholder="Enter username" required oninput="const m=document.getElementById('loginErrorMessage'); if(m) m.style.display='none';" />
+            <input type="text" id="loginUsername" class="form-input" placeholder="Enter username" required oninput="dismissLoginError()" />
           </div>
 
           <div class="form-group" style="text-align: left;">
@@ -2742,7 +2742,7 @@
               </button>
             </div>
             <div class="password-wrapper">
-              <input type="password" id="loginPassword" class="form-input" placeholder="Enter password" required style="padding-right: 2.75rem;" oninput="const m=document.getElementById('loginErrorMessage'); if(m) m.style.display='none'; this.classList.remove('login-input-error');" />
+              <input type="password" id="loginPassword" class="form-input" placeholder="Enter password" required style="padding-right: 2.75rem;" oninput="dismissLoginError(); this.classList.remove('login-input-error');" />
               <button type="button" class="password-toggle-btn" id="toggleLoginPasswordBtn" onclick="togglePasswordVisibility('loginPassword', 'toggleLoginPasswordIcon')" title="Show or hide password" aria-label="Show or hide password">
                 <i data-lucide="eye" id="toggleLoginPasswordIcon" style="width: 18px; height: 18px;"></i>
               </button>
@@ -11291,6 +11291,12 @@
       playBeep(false);
     }
     window.triggerLoginErrorFeedback = triggerLoginErrorFeedback;
+
+    function dismissLoginError() {
+      const msgBox = document.getElementById('loginErrorMessage');
+      if (msgBox) msgBox.style.display = 'none';
+    }
+    window.dismissLoginError = dismissLoginError;
 
     // ==========================================================================
     // STOCK DATABASE CHATBOT LOGIC (DETERMINISTIC / ZERO-API / ISOLATED)
