@@ -1106,7 +1106,9 @@ module.exports = async function handler(req, res) {
       batch_no: item.batch_no || '',
       location: item.zone_location || '',
       qty_counted: qty,
-      counted_by: authUser.username, // Bound directly to authenticated user
+      counted_by: authUser.username // Bound directly to authenticated user
+    });
+
     // Automatically release any soft hold on this item
     if (item && item.id) activeItemHolds.delete(item.id);
     if (body.item_id) activeItemHolds.delete(body.item_id);
