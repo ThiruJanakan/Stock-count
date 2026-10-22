@@ -1,0 +1,25 @@
+# Docker & Compose
+docker/
+docker-compose.yml
+
+# Android native project files & builds
+app/
+gradle/
+.gradle/
+*.apk
+*.bat
+gradlew
+gradlew.bat
+local.properties
+settings.gradle.kts
+build.gradle.kts
+gradle.properties
+
+# IDE & Editor metadata
+.idea/
+.vscode/
+.kotlin/
+
+# Test & Docs
+test/
+docs/
