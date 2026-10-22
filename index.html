@@ -2402,6 +2402,29 @@
 </head>
 <body>
 
+  <!-- Fullscreen Login Authentication Loading Animation Overlay -->
+  <div id="loginLoadingOverlay" class="login-loading-overlay" style="display: none;">
+    <div class="login-loading-card">
+      <div class="login-loading-spinner-wrapper">
+        <div class="login-loading-ring"></div>
+        <div class="login-loading-ring-inner"></div>
+        <div class="login-loading-logo-box">
+          <i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--accent);"></i>
+        </div>
+      </div>
+      <h3 class="login-loading-title" id="loginLoadingTitle">Verifying Credentials</h3>
+      <p class="login-loading-status" id="loginLoadingStatus">Authenticating security tokens...</p>
+      <div class="login-loading-progress-bar">
+        <div class="login-loading-progress-fill" id="loginLoadingProgressFill"></div>
+      </div>
+      <div class="login-loading-badge">
+        <span class="pulse-dot"></span>
+        <span id="loginLoadingSubtext">Lina Manufacturing · Secure Session Initializer</span>
+      </div>
+    </div>
+  </div>
+
+
   <!-- Top Navigation Bar -->
   <header class="top-nav" id="appHeader" style="display: none;">
     <div class="brand-section">
@@ -2421,6 +2444,13 @@
       </div>
 
       <!-- Quick Full Backup Button (Admin Exclusive) -->
+      
+      <!-- Stock Database Chatbot Header Toggle Button -->
+      <button class="btn btn-secondary btn-sm chatbot-toggle-btn" id="headerChatbotBtn" onclick="toggleStockChatbot()" title="Stock Database Query Bot (100% Free &amp; Offline)" style="display: none;">
+        <i data-lucide="bot" style="width: 15px; height: 15px; color: var(--accent);"></i>
+        <span class="theme-btn-label">Stock Bot</span>
+      </button>
+
       <button class="btn btn-secondary btn-sm admin-exclusive" onclick="exportFullSystemBackup()" title="Download Full System Backup (.json)">
         <i data-lucide="hard-drive-download" style="width: 14px; height: 14px; color: var(--accent);"></i>
         <span class="theme-btn-label">Backup System</span>
@@ -2533,6 +2563,13 @@
         <span class="mobile-link-text">Audit Trail & Ledger</span>
       </button>
 
+      
+      <!-- Stock Database Chatbot Mobile Drawer Link -->
+      <button class="mobile-drawer-link chatbot-toggle-btn" id="mobileDrawerChatbotBtn" onclick="toggleStockChatbot(); toggleMobileNavDrawer(false);" style="display: none;">
+        <div class="mobile-link-icon-wrap"><i data-lucide="bot"></i></div>
+        <span class="mobile-link-text">Stock Database Bot</span>
+      </button>
+
       <div class="mobile-drawer-section-title" style="margin-top: 1rem;">System &amp; Preferences</div>
 
       <!-- Theme Switcher in Drawer -->
@@ -2606,27 +2643,7 @@
     <!-- VIEW 0: DEDICATED LOGIN VIEW -->
     <!-- ========================================== -->
     <div id="loginView" style="display: block;">
-    <!-- Login Authentication Loading Animation Overlay -->
-    <div id="loginLoadingOverlay" class="login-loading-overlay" style="display: none;">
-      <div class="login-loading-card">
-        <div class="login-loading-spinner-wrapper">
-          <div class="login-loading-ring"></div>
-          <div class="login-loading-ring-inner"></div>
-          <div class="login-loading-logo-box">
-            <i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--accent);"></i>
-          </div>
-        </div>
-        <h3 class="login-loading-title" id="loginLoadingTitle">Verifying Credentials</h3>
-        <p class="login-loading-status" id="loginLoadingStatus">Authenticating security tokens...</p>
-        <div class="login-loading-progress-bar">
-          <div class="login-loading-progress-fill" id="loginLoadingProgressFill"></div>
-        </div>
-        <div class="login-loading-badge">
-          <span class="pulse-dot"></span>
-          <span id="loginLoadingSubtext">Lina Manufacturing · Secure Session Initializer</span>
-        </div>
-      </div>
-    </div>
+    
 
       <div class="login-container">
         <!-- Top Theme Toggle in Login Box -->
@@ -4517,6 +4534,91 @@
     </div>
   </div>
 
+  
+  <!-- Floating Chatbot Launcher Button (Bottom-Right, always visible when authenticated & permitted) -->
+  <button class="chatbot-launcher-btn" id="chatbotLauncherBtn" onclick="toggleStockChatbot()" title="Stock Database Query Bot (100% Free &amp; Offline)" style="display: none;">
+    <i data-lucide="bot" style="width: 26px; height: 26px;"></i>
+    <span class="chatbot-launcher-badge"></span>
+  </button>
+
+  <!-- Stock Database Chatbot Window -->
+  <div class="stock-chatbot-widget" id="stockChatbotWidget" style="display: none;">
+    <!-- Header -->
+    <div class="chatbot-header">
+      <div class="chatbot-header-info">
+        <div class="chatbot-avatar">
+          <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+        </div>
+        <div>
+          <div class="chatbot-header-title">
+            <span>Stock Data Bot</span>
+            <span class="chatbot-offline-pill">
+              <span class="pulse-dot" style="width: 5px; height: 5px;"></span> DB Live
+            </span>
+          </div>
+          <div class="chatbot-header-sub">
+            <span>Free Offline Data Retrieval · Zero API</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.35rem;">
+        <!-- Admin Settings Gear -->
+        <button type="button" class="btn-icon admin-strict" onclick="openChatbotAdminConfigModal()" title="Admin Control: Configure Chatbot Access &amp; Data Retrieval" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: var(--radius-xs);">
+          <i data-lucide="settings" style="width: 17px; height: 17px;"></i>
+        </button>
+        <!-- Clear chat -->
+        <button type="button" class="btn-icon" onclick="resetChatbotConversation()" title="Clear Chat History" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: var(--radius-xs);">
+          <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+        </button>
+        <!-- Close button -->
+        <button type="button" class="btn-icon" onclick="toggleStockChatbot(false)" title="Close Chat" style="background: transparent; border: none; cursor: pointer; color: var(--text-dim); padding: 4px; border-radius: var(--radius-xs);">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Predefined Question Chips Selector -->
+    <div class="chatbot-question-section">
+      <div class="chatbot-question-label">
+        <span>Predefined Database Questions:</span>
+        <span style="font-weight: 700; font-size: 0.68rem; color: var(--accent);" id="activeQuestionTag">📦 Complete History</span>
+      </div>
+      <div class="chatbot-pills-row" id="chatbotQuestionPills">
+        <button type="button" class="chatbot-q-pill active" data-q="Q_FULL_HISTORY" onclick="selectChatbotQuestion('Q_FULL_HISTORY')">
+          <span>📦 Complete History</span>
+        </button>
+        <button type="button" class="chatbot-q-pill" data-q="Q_PHYSICAL_VS_SYSTEM" onclick="selectChatbotQuestion('Q_PHYSICAL_VS_SYSTEM')">
+          <span>⚖️ Physical vs System</span>
+        </button>
+        <button type="button" class="chatbot-q-pill" data-q="Q_SESSIONS_DATES" onclick="selectChatbotQuestion('Q_SESSIONS_DATES')">
+          <span>📅 Dates &amp; Sessions</span>
+        </button>
+        <button type="button" class="chatbot-q-pill" data-q="Q_ZONE_LOCATION" onclick="selectChatbotQuestion('Q_ZONE_LOCATION')">
+          <span>📍 Storage Zone</span>
+        </button>
+        <button type="button" class="chatbot-q-pill" data-q="Q_VARIANCE_AUDIT" onclick="selectChatbotQuestion('Q_VARIANCE_AUDIT')">
+          <span>⚠️ Variance &amp; Discrepancy</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="chatbot-messages-container" id="chatbotMessagesContainer">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <!-- Suggestions Popup -->
+    <div class="chatbot-suggestions-list" id="chatbotSuggestionsList"></div>
+
+    <!-- Input Form -->
+    <form class="chatbot-input-bar" id="chatbotInputForm" onsubmit="handleChatbotSubmit(event)">
+      <input type="text" class="chatbot-input" id="chatbotSearchInput" placeholder="Enter item name or SKU / code..." autocomplete="off" oninput="handleChatbotLiveSearch(this.value)" />
+      <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.55rem 0.85rem; border-radius: var(--radius-md);">
+        <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+      </button>
+    </form>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -5311,6 +5413,7 @@
         const isManager = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER');
         const isExec = currentUser && isExecutive(currentUser);
         const isSuper = isExec;
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
         
         // Admin, Manager & Executive shared
         document.querySelectorAll('.admin-only').forEach(el => {
@@ -5321,6 +5424,14 @@
         document.querySelectorAll('.admin-exclusive').forEach(el => {
           el.style.display = isManager ? '' : 'none';
         });
+
+        // Strictly Administrator Only
+        document.querySelectorAll('.admin-strict').forEach(el => {
+          el.style.display = isAdmin ? '' : 'none';
+        });
+
+        // Update Chatbot visibility across Top Header, Mobile Drawer & Floating Launcher
+        try { updateChatbotAccessUI(); } catch (_) {}
 
         const sub = document.getElementById('userManagementSubtitle');
         if (sub) {
@@ -5349,6 +5460,11 @@
           window._broadcastAlertInterval = setInterval(checkBroadcastAlerts, 15000);
         }
         if (window.lucide) lucide.createIcons();
+        try {
+          updateLoginLoading('Ready! Welcome to dashboard.', 100);
+          setTimeout(() => hideLoginLoading(), 600);
+        } catch (_) {}
+      
       } catch (err) {
         console.error('Error in onUserAuthenticated:', err);
         // Fail-safe view switch so screen is never blank
@@ -5421,6 +5537,9 @@
         return;
       }
 
+      // SHOW LOADING ANIMATION IMMEDIATELY
+      showLoginLoading('Authenticating credentials...', 20);
+
       // 1. Attempt authoritative backend server login first (/api/auth/login)
       let serverLoginAttempted = false;
       try {
@@ -5432,6 +5551,7 @@
         serverLoginAttempted = true;
 
         if (res.status === 429) {
+          hideLoginLoading();
           const errData = await res.json();
           const retrySec = errData.retryAfter || 300;
           localStorage.setItem('LINA_LOGIN_LOCKOUT', Date.now() + retrySec * 1000);
@@ -5441,6 +5561,7 @@
         }
 
         if (res.ok) {
+          updateLoginLoading('Verifying authoritative security tokens...', 55);
           const data = await res.json();
           clearClientFailedAttempts();
           currentUser = data.user;
@@ -5460,14 +5581,18 @@
               credentials: 'same-origin'
             });
             if (dbRes.ok) {
+              updateLoginLoading('Synchronizing inventory database...', 75);
               const serverDb = await dbRes.json();
               safeMergeServerDatabase(serverDb);
             }
           } catch (_) {}
 
+          updateLoginLoading('Preparing dashboard & inventory views...', 90);
           showToast(`Welcome back, ${escapeHtml(currentUser.full_name || currentUser.username)}! (Authoritative Cloud Session)`, 'success');
           resetIdleTimer();
-          onUserAuthenticated();
+          setTimeout(() => {
+            onUserAuthenticated();
+          }, 350);
           return;
         } else {
           const lockRemaining = recordClientFailedAttempt();
@@ -5532,6 +5657,7 @@
       }
 
       if (isValid) {
+        updateLoginLoading('Preparing local dashboard & inventory views...', 90);
         clearClientFailedAttempts();
         currentUser = found;
         const signedToken = await generateSessionToken(found);
@@ -5539,8 +5665,11 @@
         await logAuditEvent('LOGIN_SUCCESS', `User ${found.full_name || found.username} (${found.role}) authenticated locally`, found.username, 'AUTH');
         showToast(`Welcome back, ${escapeHtml(found.full_name || found.username)}!`, 'success');
         resetIdleTimer();
-        onUserAuthenticated();
+        setTimeout(() => {
+          onUserAuthenticated();
+        }, 350);
       } else {
+        hideLoginLoading();
         await logAuditEvent('LOGIN_FAILED', `Invalid password entered for user: "${uName}"`, uName, 'AUTH');
         const lockRemaining = recordClientFailedAttempt();
         if (lockRemaining > 0) {
@@ -5562,6 +5691,13 @@
       }
       localStorage.removeItem("LINA_AUTH_USER");
       currentUser = null;
+      try { toggleStockChatbot(false); } catch (_) {}
+      const cbLauncher = document.getElementById('chatbotLauncherBtn');
+      if (cbLauncher) cbLauncher.style.display = 'none';
+      const cbHeader = document.getElementById('headerChatbotBtn');
+      if (cbHeader) cbHeader.style.display = 'none';
+      const cbDrawer = document.getElementById('mobileDrawerChatbotBtn');
+      if (cbDrawer) cbDrawer.style.display = 'none';
       showToast('Signed out successfully.', 'info');
       showLoginScreen();
     }
@@ -10246,17 +10382,21 @@
     }
 
     function updateChatbotAccessUI() {
+      const isAllowed = currentUser && isUserAllowedChatbot(currentUser);
+      
       const launcher = document.getElementById('chatbotLauncherBtn');
-      if (!launcher) return;
-      if (currentUser && isUserAllowedChatbot(currentUser)) {
-        launcher.style.display = 'flex';
-        // Initialize greeting if conversation is empty
-        if (chatbotConversationHistory.length === 0) {
-          initChatbotGreeting();
-        }
-      } else {
-        launcher.style.display = 'none';
+      if (launcher) launcher.style.display = isAllowed ? 'flex' : 'none';
+
+      const headerBtn = document.getElementById('headerChatbotBtn');
+      if (headerBtn) headerBtn.style.display = isAllowed ? 'inline-flex' : 'none';
+
+      const drawerBtn = document.getElementById('mobileDrawerChatbotBtn');
+      if (drawerBtn) drawerBtn.style.display = isAllowed ? 'flex' : 'none';
+
+      if (!isAllowed) {
         toggleStockChatbot(false);
+      } else if (chatbotConversationHistory.length === 0) {
+        initChatbotGreeting();
       }
     }
 
