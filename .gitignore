@@ -1,19 +1,39 @@
+# Local environment & secrets
 local.properties
-.gradle/
-build/
-app/build/
-*.apk
-!lina-stock-count.apk
-*.log
-.DS_Store
-Thumbs.db
-data/
-*.tmp.*
-*.db
 .env
 .env.*
 *.env
-scratch/
-.vscode/
+
+# Android & Gradle build outputs
+.gradle/
+build/
+app/build/
 bin/
+app/bin/
+out/
+*.apk
+!lina-stock-count.apk
+!public/lina-stock-count.apk
+
+# IDE & Editor configuration
+.idea/
+.vscode/
+*.iml
+.navigation/
+captures/
+
+# Temporary, cache, and system files
+~$*
+*.log
+*.tmp
+*.tmp.*
+*.bak
+.DS_Store
+Thumbs.db
+scratch/
+
+# Local databases & dependencies
+data/
+*.db
 node_modules/
+

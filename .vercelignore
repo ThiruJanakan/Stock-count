@@ -7,6 +7,7 @@ app/
 gradle/
 .gradle/
 *.apk
+!public/lina-stock-count.apk
 *.bat
 gradlew
 gradlew.bat

@@ -1,37 +1,178 @@
-# Lina Stock Count for Android
+# Lina Manufacturing · Enterprise Stock Verification System
 
-This Android Studio project packages the existing stock-count interface as an offline WebView app. Stock data stays in the app's private SQLite database. The app has a shared, offline username/password login; there is no cloud sync or network permission.
+[![Production Status](https://img.shields.io/badge/Status-Production%20Active-emerald)](https://stock-count-gamma.vercel.app/)
+[![Node.js Engine](https://img.shields.io/badge/Node.js-18%2B%20%7C%2020%2B-blue)](https://nodejs.org)
+[![Database](https://img.shields.io/badge/Database-Supabase%20Cloud%20%2B%20SQLite%20Hybrid-teal)](https://supabase.com)
+[![Android](https://img.shields.io/badge/Android-SDK%2035%20%7C%20Kotlin-brightgreen)](https://developer.android.com)
+[![Security Hardened](https://img.shields.io/badge/Security-PBKDF2%20%7C%20RBAC%20%7C%20Audit%20Ledger-indigo)](docs/LINA_STOCK_COUNT_SYSTEM_SDP_REPORT.md)
 
-## Open and run
+An enterprise-grade, dual-mode stock verification platform designed for Lina Manufacturing. The system enables real-time warehouse inventory reconciliation, high-speed barcode scanning, blind-count enforcement, automated audit ledgers, and seamless offline-to-cloud synchronization.
 
-1. Install Android Studio with Android SDK 35 and a Java 17 runtime.
-2. In the project root `local.properties`, add the shared login properties below. Keep this file private and do not send or commit it.
+🌐 **Live Production Cloud**: [https://stock-count-gamma.vercel.app/](https://stock-count-gamma.vercel.app/)
+
+---
+
+## Architecture Overview
+
+```
+                                      ┌─────────────────────────────────────┐
+                                      │    Production Cloud (Vercel)        │
+                                      │   - Serverless API (/api/index.js)  │
+                                      │   - Web PWA Static Distribution     │
+                                      └──────────────────┬──────────────────┘
+                                                         │
+                        ┌────────────────────────────────┼────────────────────────────────┐
+                        ▼                                ▼                                ▼
+         ┌─────────────────────────────┐  ┌─────────────────────────────┐  ┌─────────────────────────────┐
+         │     Modern Web / PWA        │  │   Android Native App        │  │   Local Standalone Server   │
+         │  - Offline Service Worker   │  │  - Encrypted SQLite Storage │  │  - Authoritative Engine     │
+         │  - Real-time Barcode Scan   │  │  - Android Keystore AES-GCM │  │  - dev-server.js (:5173)    │
+         │  - Smart Sheet Import/Export│  │  - Zero Network Required    │  │  - Hybrid Failover Syncer   │
+         └──────────────┬──────────────┘  └──────────────┬──────────────┘  └──────────────┬──────────────┘
+                        │                                │                                │
+                        └────────────────────────────────┼────────────────────────────────┘
+                                                         │
+                                                         ▼
+                                      ┌─────────────────────────────────────┐
+                                      │       Authoritative Database        │
+                                      │  - Supabase Cloud (PostgreSQL)      │
+                                      │  - Local ACID SQLite Engine         │
+                                      │  - Cryptographic Audit Trail        │
+                                      └─────────────────────────────────────┘
+```
+
+---
+
+## Core Capabilities
+
+- **High-Speed Warehouse Physical Counting**: Instant barcode lookup, SKU matching, location grouping, and real-time quantity validation.
+- **Server-Side Blind Count Enforcement**: Prevents count bias by strictly omitting system stock quantities and variances for operational `COUNTER` accounts.
+- **Authoritative Security & RBAC**:
+  - Cryptographic **PBKDF2-HMAC-SHA256** password hashing with cryptographically secure per-user salts.
+  - Multi-tier role permissions: `COUNTER`, `SUPERVISOR`, `ADMIN`, and `EXECUTIVE`.
+  - Insecure Direct Object Reference (**IDOR**) ownership validation on all sessions and counts.
+  - Multi-tier sliding-window rate limiters protecting authentication endpoints from brute-force attacks.
+- **Tamper-Evident Audit Ledger**: SHA-256 cryptographic hash-chained audit entries tracking all session modifications, inventory edits, and administrative actions.
+- **Offline First & Multi-Platform**:
+  - Full **Progressive Web App (PWA)** with cache-first Service Worker fallback.
+  - Native **Android APK** with hardware-backed Keystore encryption.
+  - Excel (`.xlsx`), CSV, and encrypted JSON export/import workflows.
+
+---
+
+## Repository Structure
+
+```
+.
+├── api/                  # Production Vercel Serverless Function entry points & security layers
+├── app/                  # Android Native Studio Project (Kotlin, Jetpack, Android Keystore)
+├── assets/               # Brand logos and graphic resources
+├── database/             # Relational SQL schemas (SQLite & PostgreSQL / Supabase)
+├── docs/                 # Engineering reports, UML diagrams, and FR/NFR specifications
+│   ├── architecture_diagrams.html       # Interactive Mermaid UML architecture dashboard
+│   ├── LINA_FR_NFR_SPECIFICATION.xlsx  # Formal Functional & Non-Functional Specifications
+│   ├── LINA_STOCK_COUNT_SYSTEM_SDP_REPORT.md # Full Software Development Project (SDP) report
+│   └── usecase_diagram.png             # Visual Use-Case Workflow Diagram
+├── lib/                  # Authoritative security, cryptographic, and validation libraries
+├── public/               # Static assets served at production root (Vercel & static distribution)
+├── scripts/              # Build, synchronization, and specification generator utilities
+├── test/                 # Automated test suites (Security, RBAC, API, and Route coverage)
+├── dev-server.js         # Production-ready authoritative Node.js HTTP/API server
+├── index.html            # Single-Page Application (SPA) responsive frontend interface
+├── lina-stock-count.apk  # Standalone installable Android APK package
+├── package.json          # Node.js project manifest and test runner configuration
+├── vercel.json           # Cloud deployment, header security, and routing configuration
+└── README.md             # Project documentation
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **Android Studio** *(optional, for native Android development)*: Android SDK 35, JDK 17
+
+### 1. Web & Backend Server Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/ThiruJanakan/Stock-count.git
+cd Stock-count
+
+# Start the local development & authoritative API server
+npm run dev
+```
+
+The application will be accessible at:
+- **Local Application UI**: [http://localhost:5173/](http://localhost:5173/)
+- **Health Verification API**: [http://localhost:5173/api/health](http://localhost:5173/api/health)
+- **Authoritative Stock API**: [http://localhost:5173/api/stock/db](http://localhost:5173/api/stock/db)
+
+### 2. Environment Configuration (Optional)
+
+Create a `.env` file in the project root to connect to Supabase Cloud or customize secrets:
+
+```env
+PORT=5173
+HOST=0.0.0.0
+SESSION_SECRET=your-random-high-entropy-session-secret-at-least-32-chars
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
+
+*Note: If no Supabase environment variables are provided, the system seamlessly operates on its high-performance local SQLite database engine.*
+
+---
+
+## Automated Testing & Quality Assurance
+
+The project includes 41 comprehensive automated tests covering security controls, IDOR defenses, SQL injection prevention, rate limiting, and route integrity:
+
+```bash
+# Execute the full automated test suite
+npm test
+
+# Verify all HTTP endpoints and client-side view switches
+node test/test_all_routes.js
+```
+
+---
+
+## Android Native Application
+
+The `app/` folder contains a standalone native Android application that bundles the stock count interface inside an isolated, high-performance WebView backed by encrypted SQLite.
+
+### Android Build & Run:
+1. Open the repository root in **Android Studio**.
+2. In `local.properties`, configure the shared offline credentials:
    ```properties
    lina.auth.username=your-shared-username
    lina.auth.password=use-a-private-password-of-at-least-12-characters
    ```
-   The username must be 3-64 letters, numbers, `.`, `_`, `@`, or `-`. The password must be at least 12 characters.
-3. Open this folder in Android Studio and let Gradle sync.
-4. Connect an Android 10+ device or start an emulator, then run the `app` configuration.
+3. Sync Gradle and build the APK:
+   - Navigate to **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
+   - The compiled installable package is output to `app/build/outputs/apk/debug/app-debug.apk`.
+   - Transfer to any Android 10+ device to install.
 
-The Gradle wrapper uses Gradle 8.9 with Android Gradle Plugin 8.7.3. To build an APK from Android Studio, choose **Build → Build Bundle(s) / APK(s) → Build APK(s)**. The installable debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Transfer it to an Android 10+ phone, open it, and approve **Install unknown apps** if Android asks. This debug build is suitable for testing; for ongoing distribution, generate a signed release APK and keep its signing key safe.
+### Native Security Protections:
+- SQLite rows are encrypted with **AES-256-GCM** using keys managed directly by **Android Keystore**.
+- Non-bundled network navigation and external WebView file access are disabled (`mixedContentMode = NEVER_ALLOW`).
+- Encrypted session backups utilize **PBKDF2-HMAC-SHA-256** with 310,000 key derivation iterations.
 
-The app's bundled interface is `app/src/main/assets/Stock_Count_System_V5.html`. `android-storage.js` redirects the existing app's local-storage API to SQLite, `session-tools.js` provides backup handling, and `auth-sessions.js` provides login and the session dashboard.
+---
 
-Build the APK after setting the shared credentials and install that same APK on each device to use the same login. The app derives a password verifier during the build; it does not store the plaintext password in the APK. Because login is entirely offline, however, a determined person with access to the APK can reverse-engineer or patch the client. This login is intended to control ordinary app access, not to provide server-grade identity verification.
+## Documentation & Engineering References
 
-## Session backups
+Detailed engineering specifications and architecture models are available in the [`docs/`](docs/) directory:
 
-Use **Download session JSON** to export the active stock list and count session to `Downloads/Lina Stock Count`. The app offers password encryption (AES-256-GCM with a password-derived key) or plain JSON. Encrypted backups use PBKDF2-HMAC-SHA-256 with a random salt and 310,000 iterations. Keep the password separate from the backup; it cannot be recovered. Other downloadable reports from the existing interface are saved in the same folder.
+- [**Full SDP Engineering Report**](docs/LINA_STOCK_COUNT_SYSTEM_SDP_REPORT.md)
+- [**Interactive Architecture & UML Diagrams**](docs/architecture_diagrams.html)
+- [**Production Hosting & Hardening Guide**](HOSTING_GUIDE.md)
+- [**Functional & Non-Functional Specifications (Excel)**](docs/LINA_FR_NFR_SPECIFICATION.xlsx)
 
-From the dashboard, choose **Import session backup** to continue a colleague's exported session. Both password-encrypted and plain JSON backups are supported; the existing session is saved in History before the imported session replaces the active one. This import preserves the device's other saved history. The older **Restore JSON** action in the stock-count interface replaces all stock data and saved history on that device, after confirmation. The restore/import flows reject files larger than 40 MB and validate the session structure.
+---
 
-## Security and storage
+## License & Credits
 
-- SQLite rows are encrypted using AES-256-GCM with a key held in Android Keystore; row keys are authenticated as additional data.
-- The database and app assets are private to the app. Android cloud/device backup is disabled; transfers are by explicit JSON export/import only.
-- The app requests no Internet permission, blocks non-bundled WebView resources and navigation, and applies a restrictive Content Security Policy.
-- WebView file/content access and mixed content are disabled. The JavaScript storage bridge accepts only the app's known storage-key shapes.
-- Spreadsheet and backup files are selected through Android's document picker and read locally.
-
-The app depends on Android's device lock and Keystore protections. A compromised or rooted device can bypass app-level protections. Password-encrypted JSON backups are recommended when transferring session data.
+Developed for **Lina Manufacturing**. All rights reserved.
