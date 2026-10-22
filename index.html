@@ -3070,6 +3070,28 @@
           <i data-lucide="x" style="width: 18px; height: 18px;"></i>
         </button>
 
+        <!-- Soft Hold Alert Banner (shown when another operator is currently counting this item) -->
+        <div id="itemSoftHoldNotice" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1rem; margin-right: 2.8rem; align-items: center; justify-content: space-between; gap: 0.75rem; color: #fbbf24;">
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #f59e0b;">
+              <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.88rem; color: #fef3c7; display: flex; align-items: center; gap: 6px;">
+                <span>Soft Hold Active · Counting in Progress</span>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; font-size: 0.65rem; padding: 1px 6px;">IN PROCESS</span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;" id="itemSoftHoldNoticeText">
+                Another operator is currently performing a count on this item.
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="takeOverCurrentItemHold()" style="white-space: nowrap; font-size: 0.76rem; padding: 4px 10px;" title="Take over count entry from current operator">
+            <i data-lucide="arrow-right-left" style="width: 13px; height: 13px;"></i>
+            <span>Take Over Count</span>
+          </button>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem; padding-right: 2.8rem;">
           <div>
             <span class="badge badge-uncounted" id="itemZoneBadge">ZONE: UNASSIGNED</span>
@@ -5002,6 +5024,10 @@
     let isFilteredSelectedOnly = false;
     let activeCountEntryMode = 'ADD'; // 'ADD' or 'REPLACE'
     let previewSelectedItemIndices = new Set();
+    let activeItemHoldsMap = new Map(); // itemId -> { itemId, sku, userId, username, operatorName, heldAt, expiresAt }
+    let activeHoldHeartbeatTimer = null;
+    let holdsBroadcastChannel = null;
+    let holdsFetchIntervalTimer = null;
 
     // Central Security & Logical Blind Count Visibility Helper
     function canUserViewSystemQtyAndVariances(user = currentUser, session = activeSession) {
@@ -5538,6 +5564,7 @@
         if (!window._broadcastAlertInterval) {
           window._broadcastAlertInterval = setInterval(checkBroadcastAlerts, 15000);
         }
+        try { initItemHoldsSync(); } catch (_) {}
         if (window.lucide) lucide.createIcons();
         try {
           updateLoginLoading('Ready! Welcome to dashboard.', 100);
@@ -5761,6 +5788,18 @@
       fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
       if (idleTimeoutHandle) clearTimeout(idleTimeoutHandle);
 
+      if (activeScannedItem && activeScannedItem.id) {
+        try { releaseItemHold(activeScannedItem.id); } catch (_) {}
+      }
+      if (activeHoldHeartbeatTimer) {
+        clearInterval(activeHoldHeartbeatTimer);
+        activeHoldHeartbeatTimer = null;
+      }
+      if (holdsFetchIntervalTimer) {
+        clearInterval(holdsFetchIntervalTimer);
+        holdsFetchIntervalTimer = null;
+      }
+
       if (currentUser) {
         logAuditEvent('LOGOUT', `User ${currentUser.username} (${currentUser.role}) logged out`, currentUser.username, 'AUTH');
       }
@@ -5853,6 +5892,7 @@
 
       if (viewName === 'counting') {
         updateLocationDropdowns();
+        try { fetchServerHolds(); } catch (_) {}
         filterCounterFloorTable();
         setTimeout(() => {
           const input = document.getElementById('barcodeScanInput');
@@ -6615,9 +6655,319 @@
       }
     }
 
+    // ==========================================
+    // CONCURRENT SOFT HOLD ENGINE
+    // ==========================================
+    function formatHoldTimeAgo(timestamp) {
+      if (!timestamp) return 'just now';
+      const sec = Math.max(0, Math.floor((Date.now() - Number(timestamp)) / 1000));
+      if (sec < 60) return `${sec}s ago`;
+      const min = Math.floor(sec / 60);
+      return `${min}m ago`;
+    }
+
+    function cleanExpiredLocalHolds() {
+      const now = Date.now();
+      for (const [id, hold] of activeItemHoldsMap.entries()) {
+        if (!hold || hold.expiresAt <= now) {
+          activeItemHoldsMap.delete(id);
+        }
+      }
+    }
+
+    function getActiveHoldForItem(itemId) {
+      if (!itemId) return null;
+      cleanExpiredLocalHolds();
+      const hold = activeItemHoldsMap.get(String(itemId));
+      if (hold && hold.expiresAt > Date.now()) {
+        return hold;
+      }
+      return null;
+    }
+
+    function saveLocalHolds() {
+      cleanExpiredLocalHolds();
+      try {
+        localStorage.setItem('stock_count_active_holds', JSON.stringify(Array.from(activeItemHoldsMap.values())));
+      } catch (_) {}
+    }
+
+    function loadLocalHolds() {
+      try {
+        const raw = localStorage.getItem('stock_count_active_holds');
+        if (raw) {
+          const list = JSON.parse(raw);
+          const now = Date.now();
+          if (Array.isArray(list)) {
+            list.forEach(h => {
+              if (h && h.itemId && h.expiresAt > now) {
+                activeItemHoldsMap.set(String(h.itemId), h);
+              }
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    function broadcastHoldUpdate(hold, action) {
+      try {
+        if (holdsBroadcastChannel) {
+          holdsBroadcastChannel.postMessage({ type: 'HOLD_UPDATE', hold, action });
+        }
+      } catch (_) {}
+    }
+
+    function initItemHoldsSync() {
+      loadLocalHolds();
+
+      try {
+        if (typeof BroadcastChannel !== 'undefined' && !holdsBroadcastChannel) {
+          holdsBroadcastChannel = new BroadcastChannel('lina_stock_holds');
+          holdsBroadcastChannel.onmessage = (e) => {
+            if (e.data && e.data.type === 'HOLD_UPDATE') {
+              const { hold, action } = e.data;
+              if (action === 'RELEASE' && hold && hold.itemId) {
+                activeItemHoldsMap.delete(String(hold.itemId));
+              } else if (hold && hold.itemId && hold.expiresAt > Date.now()) {
+                activeItemHoldsMap.set(String(hold.itemId), hold);
+              }
+              saveLocalHolds();
+              if (activeScannedItem && hold && String(hold.itemId) === String(activeScannedItem.id)) {
+                if (action === 'RELEASE') {
+                  const hn = document.getElementById('itemSoftHoldNotice');
+                  if (hn) hn.style.display = 'none';
+                } else if (currentUser && hold.userId !== currentUser.id) {
+                  const hn = document.getElementById('itemSoftHoldNotice');
+                  const ht = document.getElementById('itemSoftHoldNoticeText');
+                  if (hn) hn.style.display = 'flex';
+                  if (ht) {
+                    const agoStr = formatHoldTimeAgo(hold.heldAt);
+                    ht.innerHTML = `Operator <strong style="color: #fef3c7;">${escapeHtml(hold.operatorName || 'Another user')}</strong> is currently counting this item (${agoStr}). You may still count, or take over below.`;
+                  }
+                  if (window.lucide) lucide.createIcons();
+                }
+              }
+              filterCounterFloorTable();
+            }
+          };
+        }
+      } catch (_) {}
+
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'stock_count_active_holds') {
+          loadLocalHolds();
+          filterCounterFloorTable();
+        }
+      });
+
+      fetchServerHolds();
+      if (!holdsFetchIntervalTimer) {
+        holdsFetchIntervalTimer = setInterval(fetchServerHolds, 12000);
+      }
+    }
+
+    async function fetchServerHolds() {
+      try {
+        const res = await fetch('/api/stock/holds');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.holds)) {
+            const now = Date.now();
+            cleanExpiredLocalHolds();
+            data.holds.forEach(h => {
+              if (h && h.itemId && h.expiresAt > now) {
+                activeItemHoldsMap.set(String(h.itemId), h);
+              }
+            });
+            saveLocalHolds();
+            if (activeScannedItem) {
+              const hold = getActiveHoldForItem(activeScannedItem.id);
+              const holdNotice = document.getElementById('itemSoftHoldNotice');
+              const holdNoticeText = document.getElementById('itemSoftHoldNoticeText');
+              if (hold && currentUser && hold.userId !== currentUser.id) {
+                if (holdNotice) holdNotice.style.display = 'flex';
+                if (holdNoticeText) {
+                  const agoStr = formatHoldTimeAgo(hold.heldAt);
+                  holdNoticeText.innerHTML = `Operator <strong style="color: #fef3c7;">${escapeHtml(hold.operatorName || 'Another user')}</strong> is currently counting this item (${agoStr}). You may still count, or take over below.`;
+                }
+                if (window.lucide) lucide.createIcons();
+              }
+            }
+            filterCounterFloorTable();
+          }
+        }
+      } catch (_) {}
+    }
+
+    async function acquireItemHold(item, forceTakeOver = false) {
+      if (!currentUser || !item || !item.id) return false;
+      if (activeSession && activeSession.status === 'CLOSED') return false;
+
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/stock/holds', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            action: 'ACQUIRE',
+            itemId: item.id,
+            sku: item.sku || '',
+            forceTakeOver: !!forceTakeOver
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409 && data.hold) {
+          activeItemHoldsMap.set(String(item.id), data.hold);
+          saveLocalHolds();
+          broadcastHoldUpdate(data.hold, 'ACQUIRE');
+          if (activeScannedItem && activeScannedItem.id === item.id) {
+            const holdNotice = document.getElementById('itemSoftHoldNotice');
+            const holdNoticeText = document.getElementById('itemSoftHoldNoticeText');
+            if (holdNotice) holdNotice.style.display = 'flex';
+            if (holdNoticeText) {
+              const agoStr = formatHoldTimeAgo(data.hold.heldAt);
+              holdNoticeText.innerHTML = `Operator <strong style="color: #fef3c7;">${escapeHtml(data.hold.operatorName || 'Another user')}</strong> is currently counting this item (${agoStr}). You may still count, or take over below.`;
+            }
+            if (window.lucide) lucide.createIcons();
+          }
+          filterCounterFloorTable();
+          return false;
+        }
+
+        if (res.ok && data.success && data.hold) {
+          activeItemHoldsMap.set(String(item.id), data.hold);
+          saveLocalHolds();
+          broadcastHoldUpdate(data.hold, 'ACQUIRE');
+          const holdNotice = document.getElementById('itemSoftHoldNotice');
+          if (holdNotice) holdNotice.style.display = 'none';
+          startHoldHeartbeat(item.id);
+          filterCounterFloorTable();
+          return true;
+        }
+      } catch (err) {
+        // Fallback offline hold lease
+        const now = Date.now();
+        const localHold = {
+          itemId: String(item.id),
+          sku: item.sku || '',
+          userId: currentUser.id,
+          username: currentUser.username,
+          operatorName: currentUser.full_name || currentUser.username,
+          heldAt: now,
+          expiresAt: now + 90000
+        };
+        activeItemHoldsMap.set(String(item.id), localHold);
+        saveLocalHolds();
+        broadcastHoldUpdate(localHold, 'ACQUIRE');
+        startHoldHeartbeat(item.id);
+        filterCounterFloorTable();
+        return true;
+      }
+      return false;
+    }
+
+    function startHoldHeartbeat(itemId) {
+      if (activeHoldHeartbeatTimer) clearInterval(activeHoldHeartbeatTimer);
+      activeHoldHeartbeatTimer = setInterval(async () => {
+        if (!activeScannedItem || activeScannedItem.id !== itemId || !currentUser) {
+          clearInterval(activeHoldHeartbeatTimer);
+          activeHoldHeartbeatTimer = null;
+          return;
+        }
+        try {
+          const token = getAuthToken();
+          await fetch('/api/stock/holds', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ action: 'HEARTBEAT', itemId })
+          });
+          const hold = activeItemHoldsMap.get(String(itemId));
+          if (hold) {
+            hold.expiresAt = Date.now() + 90000;
+            saveLocalHolds();
+          }
+        } catch (_) {}
+      }, 25000);
+    }
+
+    async function releaseItemHold(itemId, force = false) {
+      if (activeHoldHeartbeatTimer) {
+        clearInterval(activeHoldHeartbeatTimer);
+        activeHoldHeartbeatTimer = null;
+      }
+      if (!itemId) return;
+
+      const holdNotice = document.getElementById('itemSoftHoldNotice');
+      if (holdNotice) holdNotice.style.display = 'none';
+
+      activeItemHoldsMap.delete(String(itemId));
+      saveLocalHolds();
+      broadcastHoldUpdate({ itemId: String(itemId) }, 'RELEASE');
+
+      try {
+        const token = getAuthToken();
+        await fetch('/api/stock/holds', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ action: 'RELEASE', itemId, force })
+        });
+      } catch (_) {}
+
+      filterCounterFloorTable();
+    }
+
+    async function takeOverCurrentItemHold() {
+      if (!activeScannedItem) return;
+      const success = await acquireItemHold(activeScannedItem, true);
+      if (success) {
+        const holdNotice = document.getElementById('itemSoftHoldNotice');
+        if (holdNotice) holdNotice.style.display = 'none';
+        showToast(`Count entry taken over for "${activeScannedItem.sku}". You now have active hold.`, 'success');
+        playBeep(true);
+      }
+    }
+    window.takeOverCurrentItemHold = takeOverCurrentItemHold;
+
+    function checkAndApplyItemHoldUI(item) {
+      if (!item) return;
+      const holdNotice = document.getElementById('itemSoftHoldNotice');
+      const holdNoticeText = document.getElementById('itemSoftHoldNoticeText');
+
+      const localHold = getActiveHoldForItem(item.id);
+      const isOtherUser = localHold && currentUser && localHold.userId !== currentUser.id;
+
+      if (isOtherUser) {
+        if (holdNotice) holdNotice.style.display = 'flex';
+        if (holdNoticeText) {
+          const agoStr = formatHoldTimeAgo(localHold.heldAt);
+          holdNoticeText.innerHTML = `Operator <strong style="color: #fef3c7;">${escapeHtml(localHold.operatorName || 'Another user')}</strong> is currently counting this item (${agoStr}). You may still count, or take over below.`;
+        }
+        if (window.lucide) lucide.createIcons();
+      } else {
+        if (holdNotice) holdNotice.style.display = 'none';
+        if (currentUser && (!activeSession || activeSession.status !== 'CLOSED')) {
+          acquireItemHold(item, false);
+        }
+      }
+    }
+
     function displayScannedItem(item, initialMode = 'ADD') {
       const card = document.getElementById('scannedItemCard');
       card.style.display = 'block';
+      checkAndApplyItemHoldUI(item);
       document.getElementById('itemZoneBadge').textContent = `ZONE: ${item.zone_location || 'General'}`;
       document.getElementById('itemUnlistedBadge').style.display = item.is_unlisted ? 'inline-flex' : 'none';
       document.getElementById('itemScannedName').textContent = item.item_name;
@@ -6777,6 +7127,9 @@
         const scanInput = document.getElementById('barcodeScanInput');
         if (scanInput) scanInput.value = '';
         document.getElementById('scannedItemCard').style.display = 'none';
+        if (activeScannedItem && activeScannedItem.id) {
+          releaseItemHold(activeScannedItem.id);
+        }
         activeScannedItem = null;
 
         updateMetricsAndFeeds();
@@ -6807,6 +7160,9 @@
 
     // Close Scanned Item Card (Deselect item)
     function closeScannedItemCard() {
+      if (activeScannedItem && activeScannedItem.id) {
+        releaseItemHold(activeScannedItem.id);
+      }
       const card = document.getElementById('scannedItemCard');
       if (card) card.style.display = 'none';
       activeScannedItem = null;
@@ -7353,12 +7709,42 @@
         }
 
         const isSessionClosed = activeSession && activeSession.status === 'CLOSED';
+        const activeHold = getActiveHoldForItem(item.id);
+        const isHeldByOther = activeHold && currentUser && activeHold.userId !== currentUser.id;
+        const isHeldByMe = activeHold && currentUser && activeHold.userId === currentUser.id;
+
+        let holdStatusBadge = '';
+        if (isHeldByOther) {
+          holdStatusBadge = `
+            <div style="margin-top: 4px;">
+              <span class="badge" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.38); color: #fbbf24; font-size: 0.68rem; padding: 2px 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Currently being counted by ${escapeHtml(activeHold.operatorName)}">
+                <i data-lucide="user-check" style="width: 11px; height: 11px;"></i> In Progress (${escapeHtml(activeHold.operatorName)})
+              </span>
+            </div>
+          `;
+        } else if (isHeldByMe) {
+          holdStatusBadge = `
+            <div style="margin-top: 4px;">
+              <span class="badge" style="background: rgba(14, 165, 233, 0.16); border: 1px solid rgba(14, 165, 233, 0.38); color: var(--accent); font-size: 0.68rem; padding: 2px 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i> Counting by You
+              </span>
+            </div>
+          `;
+        }
+
         let actionBtn = '';
         if (isSessionClosed) {
           actionBtn = `
             <button class="btn btn-secondary btn-sm" onclick="selectItemToCount('${item.id}')" title="View count details (Read Only)">
               <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
               <span>View</span>
+            </button>
+          `;
+        } else if (isHeldByOther) {
+          actionBtn = `
+            <button class="btn btn-warning btn-sm" onclick="selectItemToCount('${item.id}')" style="background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24;" title="Operator ${escapeHtml(activeHold.operatorName)} is currently counting this item">
+              <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+              <span>Counting (${escapeHtml(activeHold.operatorName)})</span>
             </button>
           `;
         } else if (counted > 0) {
@@ -7418,7 +7804,7 @@
             <td style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">
               ${item.uom || 'PCS'}
             </td>
-            <td>${statusBadge}</td>
+            <td>${statusBadge}${holdStatusBadge}</td>
             <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation()">
               ${actionBtn}
             </td>
@@ -7435,6 +7821,10 @@
       const item = (appDb.items || []).find(i => i.id === itemId);
       if (!item) return;
 
+      if (activeScannedItem && activeScannedItem.id && activeScannedItem.id !== item.id) {
+        releaseItemHold(activeScannedItem.id);
+      }
+
       activeScannedItem = item;
       const isAlreadyCounted = (parseFloat(item.total_counted_qty) || 0) > 0;
       displayScannedItem(item, isAlreadyCounted ? 'REPLACE' : 'ADD');
@@ -7442,7 +7832,13 @@
       if (scanInput) scanInput.value = item.sku;
       playBeep(true);
       const isLocked = activeSession && activeSession.status === 'CLOSED';
-      showToast(`Selected "${item.sku} - ${item.item_name}" ${isLocked ? '(Session Locked · Read Only)' : (isAlreadyCounted ? 'to edit or adjust count.' : 'for counting.')}`, 'info');
+
+      const activeHold = getActiveHoldForItem(item.id);
+      if (activeHold && currentUser && activeHold.userId !== currentUser.id) {
+        showToast(`⚠️ Soft Hold Active: ${escapeHtml(activeHold.operatorName)} is currently counting "${item.sku}".`, 'warning', 4500);
+      } else {
+        showToast(`Selected "${item.sku} - ${item.item_name}" ${isLocked ? '(Session Locked · Read Only)' : (isAlreadyCounted ? 'to edit or adjust count.' : 'for counting.')}`, 'info');
+      }
     }
 
     // ==========================================
@@ -11400,6 +11796,12 @@
     window.updateLocationDropdowns = updateLocationDropdowns;
     window.filterCounterFloorTable = filterCounterFloorTable;
     window.selectItemToCount = selectItemToCount;
+    window.getActiveHoldForItem = getActiveHoldForItem;
+    window.acquireItemHold = acquireItemHold;
+    window.releaseItemHold = releaseItemHold;
+    window.takeOverCurrentItemHold = takeOverCurrentItemHold;
+    window.fetchServerHolds = fetchServerHolds;
+    window.initItemHoldsSync = initItemHoldsSync;
     window.toggleFloorItemSelection = toggleFloorItemSelection;
     window.toggleMasterSelectAll = toggleMasterSelectAll;
     window.selectAllFilteredFloorItems = selectAllFilteredFloorItems;

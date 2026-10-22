@@ -88,6 +88,18 @@ const DB_SQLITE_FILE = path.join(DATA_DIR, 'stock_count.db');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || '';
+
+// In-Memory Soft Hold Registry for Concurrent Item Counting (auto-expires in 90 seconds)
+const activeItemHolds = new Map();
+
+function cleanExpiredHolds() {
+  const now = Date.now();
+  for (const [itemId, hold] of activeItemHolds.entries()) {
+    if (hold.expiresAt <= now) {
+      activeItemHolds.delete(itemId);
+    }
+  }
+}
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || '';
 
 // Parse hostname from SUPABASE_URL
@@ -1044,6 +1056,81 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ------------------------------------------------------------------------
+    // API: Soft Holds for Item Entry (Concurrent Counting Coordination)
+    // ------------------------------------------------------------------------
+    if (reqUrl === '/api/stock/holds' && reqMethod === 'GET') {
+      cleanExpiredHolds();
+      return sendJson(200, {
+        success: true,
+        holds: Array.from(activeItemHolds.values()).filter(h => h.expiresAt > Date.now())
+      });
+    }
+
+    if (reqUrl === '/api/stock/holds' && reqMethod === 'POST') {
+      const authUser = getAuthenticatedUser(req);
+      if (!authUser) return sendJson(401, { error: 'Authentication required' });
+
+      try {
+        const body = await parseJsonBody(req);
+        cleanExpiredHolds();
+
+        const action = body.action || 'ACQUIRE';
+        const itemId = String(body.itemId || body.item_id || '').trim();
+
+        if (!itemId) {
+          return sendJson(400, { error: 'Missing required itemId' });
+        }
+
+        if (action === 'RELEASE') {
+          const existing = activeItemHolds.get(itemId);
+          if (existing) {
+            if (existing.userId === authUser.id || authUser.role === 'ADMIN' || body.force) {
+              activeItemHolds.delete(itemId);
+            }
+          }
+          return sendJson(200, { success: true, itemId, released: true });
+        }
+
+        if (action === 'HEARTBEAT') {
+          const existing = activeItemHolds.get(itemId);
+          if (existing && existing.userId === authUser.id) {
+            existing.expiresAt = Date.now() + 90000;
+            return sendJson(200, { success: true, hold: existing });
+          }
+        }
+
+        // ACQUIRE
+        const now = Date.now();
+        const existing = activeItemHolds.get(itemId);
+        const isConflict = existing && existing.userId !== authUser.id && existing.expiresAt > now;
+
+        if (isConflict && !body.forceTakeOver) {
+          return sendJson(409, {
+            success: false,
+            conflict: true,
+            message: `${existing.operatorName} is currently performing a count on this item`,
+            hold: existing
+          });
+        }
+
+        const hold = {
+          itemId,
+          sku: body.sku || '',
+          userId: authUser.id,
+          username: authUser.username,
+          operatorName: authUser.full_name || authUser.username,
+          heldAt: now,
+          expiresAt: now + 90000
+        };
+
+        activeItemHolds.set(itemId, hold);
+        return sendJson(200, { success: true, hold });
+      } catch (err) {
+        return sendJson(400, { error: 'Invalid JSON request' });
+      }
+    }
+
+    // ------------------------------------------------------------------------
     // API: Record Stock Count (Protected + Session Status Verification)
     // ------------------------------------------------------------------------
     if (reqUrl === '/api/stock/count' && reqMethod === 'POST') {
@@ -1096,6 +1183,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         const result = await dbInsertCountRecord(authUser, sku, qty, batchNo, location, itemName, uom, mode, sessionId);
+        if (result && result.item && result.item.id) activeItemHolds.delete(result.item.id);
+        if (body.itemId || body.item_id) activeItemHolds.delete(body.itemId || body.item_id);
         return sendJson(200, { success: true, ...result });
       } catch (err) {
         logSecurityEvent('API_ERROR', err.message, req);

@@ -294,6 +294,45 @@ describe('Lina Manufacturing · Chatbot RBAC, History Isolation & Blind Count Te
     assert.match(indexHtml, /id="sessionSelector"[^>]*style="[^"]*min-width:\s*280px/, 'Active session select must have min-width 280px');
     assert.match(indexHtml, /id="dashSessionSelect"[^>]*style="[^"]*min-width:\s*280px/, 'Dashboard session select must have min-width 280px');
   });
+
+  test('TC-SOFT-HOLD-01: Soft Hold Concurrency UI Banner & Take Over Action', () => {
+    // Assert soft hold warning banner in scanned item card
+    assert.match(indexHtml, /id="itemSoftHoldNotice"/, 'Soft hold notice element must exist in scanned item card');
+    assert.match(indexHtml, /id="itemSoftHoldNoticeText"/, 'Soft hold text element must exist');
+    assert.match(indexHtml, /takeOverCurrentItemHold\(\)/, 'Take Over Count button handler must be bound in soft hold notice');
+    assert.match(indexHtml, /function takeOverCurrentItemHold\(\)/, 'takeOverCurrentItemHold function must exist');
+    assert.match(indexHtml, /function checkAndApplyItemHoldUI\(/, 'checkAndApplyItemHoldUI function must exist');
+  });
+
+  test('TC-SOFT-HOLD-02: Soft Hold State Management & Multi-Operator Synchronization', () => {
+    // Assert client-side hold management functions
+    assert.match(indexHtml, /let activeItemHoldsMap = new Map\(\);/, 'activeItemHoldsMap state must be declared');
+    assert.match(indexHtml, /function acquireItemHold\(/, 'acquireItemHold function must exist');
+    assert.match(indexHtml, /function releaseItemHold\(/, 'releaseItemHold function must exist');
+    assert.match(indexHtml, /function fetchServerHolds\(/, 'fetchServerHolds function must exist');
+    assert.match(indexHtml, /function initItemHoldsSync\(\)/, 'initItemHoldsSync function must exist');
+    assert.match(indexHtml, /new BroadcastChannel\('lina_stock_holds'\)/, 'BroadcastChannel must be used for instant cross-tab sync');
+  });
+
+  test('TC-SOFT-HOLD-03: Floor Checklist Table Soft Hold Badges & Warning Buttons', () => {
+    // Assert floor table renders in-process operator badge and dynamic counting button
+    assert.match(indexHtml, /In Progress \(\${escapeHtml\(activeHold\.operatorName\)\}\)/, 'Floor table must render in-process badge with operator name');
+    assert.match(indexHtml, /Counting \(\${escapeHtml\(activeHold\.operatorName\)\}\)/, 'Floor table must render Counting (Operator) button');
+    assert.match(indexHtml, /Counting by You/, 'Floor table must render Counting by You badge for current user');
+  });
+
+  test('TC-SOFT-HOLD-04: Backend API Endpoints for /api/stock/holds', () => {
+    const apiCode = fs.readFileSync(path.join(__dirname, '..', 'api', 'index.js'), 'utf8');
+    const devServerCode = fs.readFileSync(path.join(__dirname, '..', 'dev-server.js'), 'utf8');
+
+    [apiCode, devServerCode].forEach(code => {
+      assert.match(code, /\/api\/stock\/holds/, 'Endpoint /api/stock/holds must be handled');
+      assert.match(code, /action === 'RELEASE'/, 'Action RELEASE must be handled');
+      assert.match(code, /action === 'HEARTBEAT'/, 'Action HEARTBEAT must be handled');
+      assert.match(code, /conflict: true/, '409 Conflict must be returned when held by another user');
+    });
+  });
 });
+
 
 

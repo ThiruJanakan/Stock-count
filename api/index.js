@@ -75,6 +75,18 @@ try {
   SUPABASE_HOST = new URL(SUPABASE_URL).hostname;
 } catch (_) {}
 
+// Active Soft Holds Registry for Concurrent Item Counting (auto-expires in 90 seconds)
+const activeItemHolds = new Map();
+
+function cleanExpiredHolds() {
+  const now = Date.now();
+  for (const [itemId, hold] of activeItemHolds.entries()) {
+    if (hold.expiresAt <= now) {
+      activeItemHolds.delete(itemId);
+    }
+  }
+}
+
 function supabaseRequest(endpointPath, method = 'GET', data = null) {
   if (!SUPABASE_HOST || !SUPABASE_SECRET_KEY) return Promise.resolve(null);
 
@@ -921,6 +933,79 @@ module.exports = async function handler(req, res) {
   }
 
   // --------------------------------------------------------------------------
+  // API Route: Soft Holds for Item Entry (Concurrent Counting Coordination)
+  // --------------------------------------------------------------------------
+  if (reqUrl.endsWith('/api/stock/holds') && reqMethod === 'GET') {
+    cleanExpiredHolds();
+    return sendJson(200, {
+      success: true,
+      holds: Array.from(activeItemHolds.values()).filter(h => h.expiresAt > Date.now())
+    });
+  }
+
+  if (reqUrl.endsWith('/api/stock/holds') && reqMethod === 'POST') {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser) {
+      return sendJson(401, { error: 'Unauthorized: Authentication required for item hold management' });
+    }
+
+    const body = await parseBody(req);
+    cleanExpiredHolds();
+
+    const action = body.action || 'ACQUIRE';
+    const itemId = String(body.itemId || body.item_id || '').trim();
+
+    if (!itemId) {
+      return sendJson(400, { error: 'Missing required itemId' });
+    }
+
+    if (action === 'RELEASE') {
+      const existing = activeItemHolds.get(itemId);
+      if (existing) {
+        if (existing.userId === authUser.id || authUser.role === 'ADMIN' || body.force) {
+          activeItemHolds.delete(itemId);
+        }
+      }
+      return sendJson(200, { success: true, itemId, released: true });
+    }
+
+    if (action === 'HEARTBEAT') {
+      const existing = activeItemHolds.get(itemId);
+      if (existing && existing.userId === authUser.id) {
+        existing.expiresAt = Date.now() + 90000;
+        return sendJson(200, { success: true, hold: existing });
+      }
+    }
+
+    // ACQUIRE
+    const now = Date.now();
+    const existing = activeItemHolds.get(itemId);
+    const isConflict = existing && existing.userId !== authUser.id && existing.expiresAt > now;
+
+    if (isConflict && !body.forceTakeOver) {
+      return sendJson(409, {
+        success: false,
+        conflict: true,
+        message: `${existing.operatorName} is currently performing a count on this item`,
+        hold: existing
+      });
+    }
+
+    const hold = {
+      itemId,
+      sku: body.sku || '',
+      userId: authUser.id,
+      username: authUser.username,
+      operatorName: authUser.full_name || authUser.username,
+      heldAt: now,
+      expiresAt: now + 90000
+    };
+
+    activeItemHolds.set(itemId, hold);
+    return sendJson(200, { success: true, hold });
+  }
+
+  // --------------------------------------------------------------------------
   // API Route: Record Stock Count (Protected + Session Verification)
   // --------------------------------------------------------------------------
   if (reqUrl.endsWith('/api/stock/count') && reqMethod === 'POST') {
@@ -1022,8 +1107,9 @@ module.exports = async function handler(req, res) {
       location: item.zone_location || '',
       qty_counted: qty,
       counted_by: authUser.username, // Bound directly to authenticated user
-      timestamp: now
-    });
+    // Automatically release any soft hold on this item
+    if (item && item.id) activeItemHolds.delete(item.id);
+    if (body.item_id) activeItemHolds.delete(body.item_id);
 
     return sendJson(200, { success: true, item });
   }
