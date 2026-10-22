@@ -2794,6 +2794,41 @@
           Upload your ERP or warehouse spreadsheet (.xlsx, .xls, .csv). Spreadsheets must be properly formatted with mandatory columns: <strong>SKU / Item Code</strong>, <strong>Item Name / Description</strong>, and <strong>System / Book Quantity</strong> (optional: Barcode, Zone / Location, UOM). Use the "Download Excel Template" button above to get the standardized template.
         </p>
 
+        <!-- Replace Sheet Mode Active Banner -->
+        <div id="replaceSheetModeBanner" style="display: none; background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.1)); border: 1.5px solid var(--accent); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);">
+              <i data-lucide="refresh-cw" style="width: 22px; height: 22px;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="badge badge-matched" style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.04em;">Replace Sheet Mode Active</span>
+                <span style="font-weight: 800; font-size: 1.05rem; color: var(--text);" id="replaceSheetTargetTitle">Replacing Datasheet for Session: SES-XXXXX</span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px;">
+                Upload your updated spreadsheet below. Master book stock will be updated, and all verified physical floor counts will be protected via Smart Reconciliation.
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="cancelReplaceSheetMode()" style="font-weight: 700; white-space: nowrap;">
+            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+            <span>Exit Replace Mode</span>
+          </button>
+        </div>
+
+        <!-- Upload Mode Purpose Selector -->
+        <div id="uploadPurposeSelector" style="display: flex; gap: 0.65rem; margin-bottom: 1.25rem; align-items: center; justify-content: flex-start; flex-wrap: wrap; background: var(--bg-surface); padding: 0.5rem 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+          <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.25rem;">Upload Target:</span>
+          <button type="button" class="btn btn-sm" id="uploadModeReplaceBtn" onclick="setUploadIntent('REPLACE')" style="border-radius: var(--radius-full); font-weight: 700; padding: 0.4rem 0.95rem; font-size: 0.82rem;">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+            <span id="uploadModeReplaceBtnLabel">Replace / Update Sheet for Active Session</span>
+          </button>
+          <button type="button" class="btn btn-sm" id="uploadModeNewBtn" onclick="setUploadIntent('NEW')" style="border-radius: var(--radius-full); font-weight: 700; padding: 0.4rem 0.95rem; font-size: 0.82rem;">
+            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+            <span>Create New Count Session from Sheet</span>
+          </button>
+        </div>
+
         <!-- Dropzone -->
         <div class="dropzone" id="sheetDropzone" onclick="document.getElementById('sheetFileInput').click()" style="border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 2.5rem 1.5rem; text-align: center; background: var(--bg-card); cursor: pointer;">
           <input type="file" id="sheetFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileSelect(event)" />
@@ -2840,8 +2875,29 @@
           </div>
         </div>
 
+        <!-- REPLACE SESSION COMMIT ACTION PANEL -->
+        <div id="replaceSessionActionPanel" style="display: none; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(14, 165, 233, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-emerald); font-weight: 800; font-size: 1.05rem;">
+                <i data-lucide="file-check-2" style="width: 22px; height: 22px;"></i>
+                <span id="replaceSessionPanelHeader">Ready to Replace Datasheet for Session SES-XXXXX</span>
+              </div>
+              <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0.35rem 0 0 0; line-height: 1.5;">
+                Click below to launch <strong>Smart Reconciliation</strong>. Master book quantities will update for <strong id="replaceSessionTargetName" style="color: var(--text);">this session</strong>, and any items already counted on the floor will be <strong>preserved</strong>.
+              </p>
+            </div>
+            <div>
+              <button class="btn btn-primary" id="confirmReplaceSheetBtn" onclick="commitSheetToSession()" style="background: var(--accent-emerald); border-color: var(--accent-emerald); font-weight: 800; font-size: 0.95rem; height: 44px; padding: 0 1.5rem; box-shadow: 0 3px 12px rgba(16, 185, 129, 0.35);">
+                <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+                <span id="confirmReplaceSheetBtnText">Review & Replace Sheet Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- NEW SESSION ACTIVATION PANEL -->
-        <div style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div id="newSessionActivationPanel" style="background: rgba(14, 165, 233, 0.06); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; color: var(--accent); font-weight: 700; font-size: 0.95rem;">
             <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
             <span>Activate Uploaded Sheet as a New Count Session</span>
@@ -5001,6 +5057,10 @@
       if (viewName === 'audit') {
         renderAuditLogsTable();
         updateBackupDatabaseMetaStats();
+      }
+
+      if (viewName === 'upload') {
+        if (typeof updateUploadViewModeUI === 'function') updateUploadViewModeUI();
       }
 
       lucide.createIcons();
@@ -7775,13 +7835,117 @@
       }).join('');
 
       updatePreviewSelectionUI();
+      if (typeof updateUploadViewModeUI === 'function') updateUploadViewModeUI();
       card.scrollIntoView({ behavior: 'smooth' });
       lucide.createIcons();
     }
 
     let smartReconcileAnalysis = null;
+    window.sheetReplacementTargetSession = null;
+    window._uploadModeIntent = 'NEW';
 
-        function openReplaceSheetForSession(sessionId) {
+    function setUploadIntent(mode) {
+      window._uploadModeIntent = mode;
+      if (mode === 'REPLACE') {
+        if (!activeSession) {
+          showToast('No active session selected. Please select a session first.', 'warning');
+          window._uploadModeIntent = 'NEW';
+          updateUploadViewModeUI();
+          return;
+        }
+        window.sheetReplacementTargetSession = activeSession;
+        showToast(`Targeting active session "${activeSession.session_code} - ${activeSession.title}" for sheet replacement.`, 'info');
+      } else {
+        window.sheetReplacementTargetSession = null;
+        showToast('Switched to Create New Session mode.', 'info');
+      }
+      updateUploadViewModeUI();
+    }
+    window.setUploadIntent = setUploadIntent;
+
+    function cancelReplaceSheetMode() {
+      window.sheetReplacementTargetSession = null;
+      window._uploadModeIntent = 'NEW';
+      updateUploadViewModeUI();
+      showToast('Exited Replace Sheet mode. Switched to normal session creation.', 'info');
+    }
+    window.cancelReplaceSheetMode = cancelReplaceSheetMode;
+
+    function updateUploadViewModeUI() {
+      const banner = document.getElementById('replaceSheetModeBanner');
+      const bannerTitle = document.getElementById('replaceSheetTargetTitle');
+      const replacePanel = document.getElementById('replaceSessionActionPanel');
+      const replacePanelHeader = document.getElementById('replaceSessionPanelHeader');
+      const replaceTargetName = document.getElementById('replaceSessionTargetName');
+      const confirmBtnText = document.getElementById('confirmReplaceSheetBtnText');
+      const newSessionPanel = document.getElementById('newSessionActivationPanel');
+      const commitSheetBtn = document.getElementById('commitSheetBtn');
+      const newBtn = document.getElementById('uploadModeNewBtn');
+      const replaceBtn = document.getElementById('uploadModeReplaceBtn');
+      const replaceBtnLabel = document.getElementById('uploadModeReplaceBtnLabel');
+
+      const target = window.sheetReplacementTargetSession || (window._uploadModeIntent === 'REPLACE' ? activeSession : null);
+
+      if (replaceBtnLabel) {
+        if (activeSession) {
+          replaceBtnLabel.textContent = `Replace Sheet for ${activeSession.session_code}`;
+        } else {
+          replaceBtnLabel.textContent = 'Replace Sheet for Active Session';
+        }
+      }
+
+      if (target) {
+        if (banner) {
+          banner.style.display = 'flex';
+          if (bannerTitle) bannerTitle.textContent = `Replacing Datasheet for Session: ${target.session_code} - ${target.title}`;
+        }
+        if (replacePanel) {
+          replacePanel.style.display = 'block';
+          if (replacePanelHeader) replacePanelHeader.textContent = `Apply Replacement Sheet to ${target.session_code}`;
+          if (replaceTargetName) replaceTargetName.textContent = `"${target.session_code} - ${target.title}"`;
+          if (confirmBtnText) confirmBtnText.textContent = `Review & Replace Sheet for ${target.session_code}`;
+        }
+        if (newSessionPanel) {
+          newSessionPanel.style.display = 'none';
+        }
+        if (commitSheetBtn) {
+          commitSheetBtn.className = 'btn btn-primary btn-sm';
+          commitSheetBtn.innerHTML = `<i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> <span>Replace Sheet for ${target.session_code}</span>`;
+        }
+        if (newBtn) {
+          newBtn.className = 'btn btn-sm btn-secondary';
+          newBtn.style.background = 'transparent';
+          newBtn.style.color = 'var(--text-dim)';
+        }
+        if (replaceBtn) {
+          replaceBtn.className = 'btn btn-sm btn-primary';
+          replaceBtn.style.background = 'var(--accent)';
+          replaceBtn.style.color = '#fff';
+        }
+      } else {
+        if (banner) banner.style.display = 'none';
+        if (replacePanel) replacePanel.style.display = 'none';
+        if (newSessionPanel) newSessionPanel.style.display = 'block';
+        if (commitSheetBtn) {
+          commitSheetBtn.className = 'btn btn-secondary btn-sm';
+          commitSheetBtn.innerHTML = `<i data-lucide="file-plus" style="width: 14px; height: 14px;"></i> <span>Append to Active Session</span>`;
+        }
+        if (newBtn) {
+          newBtn.className = 'btn btn-sm btn-primary';
+          newBtn.style.background = 'var(--accent)';
+          newBtn.style.color = '#fff';
+        }
+        if (replaceBtn) {
+          replaceBtn.className = 'btn btn-sm btn-secondary';
+          replaceBtn.style.background = 'transparent';
+          replaceBtn.style.color = 'var(--text-dim)';
+        }
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+    window.updateUploadViewModeUI = updateUploadViewModeUI;
+
+    function openReplaceSheetForSession(sessionId) {
       if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER' && !isExecutive(currentUser))) {
         showToast('Unauthorized: Only Administrators can replace session datasheets.', 'error');
         return;
@@ -7797,14 +7961,23 @@
         return;
       }
 
-      // Switch active session
+      // Switch active session and configure Replace Sheet mode
       activeSession = s;
+      window.sheetReplacementTargetSession = s;
+      window._uploadModeIntent = 'REPLACE';
       localStorage.setItem('LINA_ACTIVE_SESSION_ID', s.id);
       refreshActiveSession();
 
-      // Switch to upload view
+      // Clear any prior preview to ensure clean state
+      parsedSheetData = [];
+      previewSelectedItemIndices.clear();
+      const previewCard = document.getElementById('sheetPreviewCard');
+      if (previewCard) previewCard.style.display = 'none';
+
+      // Switch to upload view and activate replace mode UI
       switchView('upload');
-      showToast(`Ready to replace datasheet for session "${s.session_code} - ${s.title}". Choose your replacement spreadsheet now.`, 'info', 6000);
+      updateUploadViewModeUI();
+      showToast(`Replace Sheet Mode active for session "${s.session_code} - ${s.title}". Choose your replacement spreadsheet now.`, 'info', 6000);
 
       // Open file dialog automatically
       setTimeout(() => {
@@ -7828,11 +8001,12 @@
         showToast('Only Manager, Administrator, or Executive can upload sheets.', 'error');
         return;
       }
-      if (!activeSession) {
+      const target = window.sheetReplacementTargetSession || activeSession;
+      if (!target) {
         showToast('Please create or select an active session first.', 'error');
         return;
       }
-      if (activeSession.status === 'CLOSED') {
+      if (target.status === 'CLOSED') {
         showToast('This session is CLOSED and LOCKED. Reopen session before committing sheets.', 'error');
         return;
       }
@@ -7841,6 +8015,7 @@
         return;
       }
 
+      activeSession = target;
       appDb = loadDatabase();
       const existingItems = (appDb.items || []).filter(i => i.session_id === activeSession.id);
 
@@ -8065,11 +8240,28 @@
       const logSummary = `Reconciled sheet replacement in session ${activeSession.session_code}: ${allMatching.length} matching (${keepCounts ? 'counts kept' : 'counts reset'}), ${addNewItems ? newOnly.length : 0} new added, ${removeMissing ? missingOld.length + ' removed' : missingOld.length + ' retained as unlisted'}`;
       logAuditEvent('SHEET_RECONCILE', logSummary, activeSession.session_code, currentUser.role);
 
-      showToast(`Sheet reconciled successfully! Total checklist: ${finalSessionItems.length} items.`, 'success', 5000);
+      // Clear upload preview & replacement state
+      parsedSheetData = [];
+      previewSelectedItemIndices.clear();
+      const previewCard = document.getElementById('sheetPreviewCard');
+      if (previewCard) previewCard.style.display = 'none';
+      const progressBox = document.getElementById('uploadProgressBox');
+      if (progressBox) progressBox.style.display = 'none';
+      const fileInput = document.getElementById('sheetFileInput');
+      if (fileInput) fileInput.value = '';
+      window.sheetReplacementTargetSession = null;
+      window._uploadModeIntent = 'NEW';
+      if (typeof updateUploadViewModeUI === 'function') updateUploadViewModeUI();
 
+      showToast(`Sheet reconciled successfully for "${activeSession.session_code}"! Total checklist: ${finalSessionItems.length} items.`, 'success', 5000);
+
+      refreshActiveSession();
+      renderSessionsTable();
+      updateMetricsAndFeeds();
+      updateLocationDropdowns();
+      filterCounterFloorTable();
+      filterReconciliationTable();
       switchView('counting');
-      if (window.renderSessionsTable) renderSessionsTable();
-      if (window.updateMetricsAndFeeds) updateMetricsAndFeeds();
     }
 
     function resolveDuplicateSku(action) {
