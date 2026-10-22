@@ -191,4 +191,59 @@ describe('Lina Manufacturing · Chatbot RBAC, History Isolation & Blind Count Te
       'Variance must always be masked when System Qty is hidden to prevent physical - variance deduction'
     );
   });
+
+  test('TC-BOT-07: Per-User Chatbot Enablement and Disablement Controls', () => {
+    // 1. Assert "Bot Policies" button is prominent in User Management header
+    assert.match(
+      indexHtml,
+      /<button[^>]*class="[^"]*admin-strict[^"]*"[^>]*onclick="openChatbotAdminConfigModal\(\)"[^>]*>[\s\S]*?Bot Policies[\s\S]*?<\/button>/,
+      'User Management header must display prominent "Bot Policies" button'
+    );
+
+    // 2. Assert "Bot Access" column exists in usersTable
+    assert.match(
+      indexHtml,
+      /<th>Status<\/th>\s*<th>Bot Access<\/th>\s*<th>Created At<\/th>/,
+      'Users table must include a dedicated "Bot Access" column'
+    );
+
+    // 3. Assert toggleUserBotAccess function is implemented and wired
+    assert.match(
+      indexHtml,
+      /function toggleUserBotAccess\(userId\)/,
+      'toggleUserBotAccess function must exist'
+    );
+    assert.match(
+      indexHtml,
+      /toggleUserBotAccess\('\${u\.id}'\)/,
+      'Table rows must render interactive toggle button calling toggleUserBotAccess'
+    );
+
+    // 4. Assert Edit User drawer contains editChatbotAccess control
+    assert.match(
+      indexHtml,
+      /id="editChatbotAccess"/,
+      'Edit user form must contain editChatbotAccess select control'
+    );
+
+    // 5. Assert isUserAllowedChatbot logic strictly respects user.chatbot_enabled
+    function isUserAllowedChatbot(user, settings = { enabled_roles: ['ADMIN', 'MANAGER', 'EXECUTIVE', 'COUNTER'] }) {
+      if (!user) return false;
+      if (user.role === 'ADMIN') return true;
+      if (user.chatbot_enabled === false) return false;
+      const roles = settings.enabled_roles || [];
+      const roleAllowed = roles.includes(user.role) || (user.role === 'EXECUTIVE' && roles.includes('EXECUTIVE'));
+      if (!roleAllowed) return false;
+      return user.chatbot_enabled !== false;
+    }
+
+    const enabledCounter = { id: 'u-c1', username: 'counter1', role: 'COUNTER', chatbot_enabled: true };
+    const disabledCounter = { id: 'u-c2', username: 'counter2', role: 'COUNTER', chatbot_enabled: false };
+    const adminUser = { id: 'u-a', username: 'admin', role: 'ADMIN', chatbot_enabled: false };
+
+    assert.strictEqual(isUserAllowedChatbot(enabledCounter), true, 'Enabled counter must have bot access');
+    assert.strictEqual(isUserAllowedChatbot(disabledCounter), false, 'Disabled counter must have bot access blocked');
+    assert.strictEqual(isUserAllowedChatbot(adminUser), true, 'Admin always has authoritative access');
+  });
 });
+

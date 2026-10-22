@@ -3511,10 +3511,16 @@
               Manage system access and provision operator credentials
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openNewUserDrawer()">
-            <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
-            <span>Create New User</span>
-          </button>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm admin-strict" onclick="openChatbotAdminConfigModal()" title="Configure Chatbot Access Policies & Blind Count Rules">
+              <i data-lucide="bot" style="width: 14px; height: 14px; color: var(--accent);"></i>
+              <span>Bot Policies</span>
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openNewUserDrawer()">
+              <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
+              <span>Create New User</span>
+            </button>
+          </div>
         </div>
 
         <div class="table-container">
@@ -3526,12 +3532,13 @@
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
+                <th>Bot Access</th>
                 <th>Created At</th>
                 <th style="text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="usersTableBody">
-              <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading users...</td></tr>
+              <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading users...</td></tr>
             </tbody>
           </table>
         </div>
@@ -3728,6 +3735,12 @@
           </select>
           <p id="newRoleHelpText" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.25rem;"></p>
         </div>
+        <div class="form-group" style="padding: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+          <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.82rem; color: var(--text); cursor: pointer; margin: 0;">
+            <input type="checkbox" id="newChatbotAccess" checked style="width: 16px; height: 16px;" />
+            <span><strong>Enable Stock Bot Access</strong> (Offline Inventory Query Bot)</span>
+          </label>
+        </div>
       </form>
     </div>
     <div class="drawer-footer">
@@ -3781,6 +3794,14 @@
             <option value="INACTIVE">DEACTIVATED (Soft-Removed) · Login revoked, all count logs preserved</option>
           </select>
           <p style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.25rem;">Soft-removing revokes system access while safely preserving all historical count data.</p>
+        </div>
+        <div class="form-group" id="editChatbotAccessGroup">
+          <label class="form-label">Stock Bot Access Permission</label>
+          <select id="editChatbotAccess" class="form-select">
+            <option value="ENABLED">ENABLED · Allow this user to access Stock Bot</option>
+            <option value="DISABLED">DISABLED · Block this user from accessing Stock Bot</option>
+          </select>
+          <p style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.25rem;">Admin Control: Enable or disable chatbot access for this specific user account.</p>
         </div>
       </form>
     </div>
@@ -4196,8 +4217,10 @@
         </button>
       </div>
     </div>
-  </div>
-
+  </div>
+
+
+
   <!-- Dedicated Admin Session Control & Visibility Modal -->
   <div class="modal-backdrop" id="sessionControlModalBackdrop" style="display: none;" onclick="if(event.target === this) closeSessionControlModal()">
     <div class="custom-modal-dialog" style="max-width: 580px; max-height: calc(100dvh - 2.5rem); overflow-y: auto; margin: auto;">
@@ -4657,10 +4680,10 @@
     // Initial default database state (Cryptographically Salted Hashes)
     const DEFAULT_DB = {
       users: [
-        { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-sup", username: "executive1", full_name: "Floor Executive", role: "EXECUTIVE", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, created_at: new Date().toISOString() },
-        { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, created_at: new Date().toISOString() }
+        { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
+        { id: "u-sup", username: "executive1", full_name: "Floor Executive", role: "EXECUTIVE", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
+        { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
+        { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() }
       ],
       sessions: [],
       items: [],
@@ -9168,6 +9191,36 @@
           actions.push(`<span style="font-size: 0.74rem; color: var(--text-dim); font-style: italic;">${isRootAdmin ? 'Root Admin (Protected)' : 'Protected Account'}</span>`);
         }
 
+        let botAccessBadge = '';
+        if (isRootAdmin || u.role === 'ADMIN') {
+          botAccessBadge = `
+            <span class="badge" style="background: rgba(14, 165, 233, 0.1); color: var(--accent); border: 1px solid rgba(14, 165, 233, 0.3);" title="Administrator has authoritative chatbot access">
+              <i data-lucide="shield-check" style="width: 11px; height: 11px; margin-right: 3px; vertical-align: middle;"></i>
+              ALWAYS ALLOWED
+            </span>
+          `;
+        } else if (canManage && currentUser && currentUser.role === 'ADMIN') {
+          if (u.chatbot_enabled !== false) {
+            botAccessBadge = `
+              <button type="button" class="btn btn-secondary btn-xs" onclick="toggleUserBotAccess('${u.id}')" title="Click to disable bot access for this user" style="color: #10b981; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); font-weight: 700; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                <i data-lucide="bot" style="width: 12px; height: 12px; color: #10b981;"></i>
+                <span>Enabled</span>
+              </button>
+            `;
+          } else {
+            botAccessBadge = `
+              <button type="button" class="btn btn-secondary btn-xs" onclick="toggleUserBotAccess('${u.id}')" title="Click to enable bot access for this user" style="color: #f87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(239, 68, 68, 0.08); font-weight: 700; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                <i data-lucide="bot-off" style="width: 12px; height: 12px; color: #f87171;"></i>
+                <span>Disabled</span>
+              </button>
+            `;
+          }
+        } else {
+          botAccessBadge = u.chatbot_enabled !== false
+            ? `<span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">Enabled</span>`
+            : `<span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">Disabled</span>`;
+        }
+
         const actionBtnsHtml = `<div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">${actions.join('')}</div>`;
 
         return `
@@ -9182,6 +9235,7 @@
                 ${u.is_active ? 'ACTIVE' : 'DEACTIVATED'}
               </span>
             </td>
+            <td>${botAccessBadge}</td>
             <td style="font-size: 0.78rem; color: var(--text-dim);">${new Date(u.created_at).toLocaleDateString()}</td>
             <td style="text-align: right;">
               ${actionBtnsHtml}
@@ -9253,6 +9307,17 @@
         }
       }
 
+      const botSelect = document.getElementById('editChatbotAccess');
+      if (botSelect) {
+        if (isRootAdmin || user.role === 'ADMIN') {
+          botSelect.value = 'ENABLED';
+          botSelect.disabled = true;
+        } else {
+          botSelect.disabled = false;
+          botSelect.value = (user.chatbot_enabled === false) ? 'DISABLED' : 'ENABLED';
+        }
+      }
+
       document.getElementById('editUserDrawerBackdrop').classList.add('open');
       document.getElementById('editUserDrawer').classList.add('open');
       const editPass = document.getElementById('editPassword'); if (editPass) editPass.value = '';
@@ -9304,6 +9369,10 @@
       }
       if (!isRootAdmin) {
         user.is_active = (statusVal === 'ACTIVE');
+      }
+      const botVal = document.getElementById('editChatbotAccess')?.value;
+      if (!isRootAdmin && user.role !== 'ADMIN' && botVal) {
+        user.chatbot_enabled = (botVal === 'ENABLED');
       }
       user.updated_at = new Date().toISOString();
 
@@ -9465,6 +9534,7 @@
       const salt = generateSalt();
       const hash = await hashPassword(password, salt);
 
+      const botEnabled = document.getElementById('newChatbotAccess') ? document.getElementById('newChatbotAccess').checked : true;
       const newUserObj = {
         id: "u-" + Date.now(),
         username,
@@ -9474,6 +9544,7 @@
         password_hash: hash,
         role,
         is_active: true,
+        chatbot_enabled: botEnabled,
         created_at: new Date().toISOString()
       };
 
@@ -10397,9 +10468,13 @@
     function isUserAllowedChatbot(user = currentUser) {
       if (!user) return false;
       if (user.role === 'ADMIN') return true;
+      // Per-user permission check:
+      if (user.chatbot_enabled === false) return false;
       const settings = getChatbotSettings();
       const roles = settings.enabled_roles || [];
-      return roles.includes(user.role) || (isExecutive(user) && roles.includes('EXECUTIVE'));
+      const roleAllowed = roles.includes(user.role) || (isExecutive(user) && roles.includes('EXECUTIVE'));
+      if (!roleAllowed) return false;
+      return user.chatbot_enabled !== false;
     }
 
     // STRICT LOGICAL VISIBILITY RULE:
@@ -10921,6 +10996,35 @@
     window.handleChatbotSubmit = handleChatbotSubmit;
     window.handleChatbotLiveSearch = handleChatbotLiveSearch;
     window.selectChatbotSuggestion = selectChatbotSuggestion;
+    async function toggleUserBotAccess(userId) {
+      if (!currentUser || currentUser.role !== 'ADMIN') {
+        showToast('Unauthorized: Only Administrators can toggle user chatbot permissions.', 'error');
+        return;
+      }
+      appDb = loadDatabase();
+      const user = appDb.users.find(u => u.id === userId);
+      if (!user) {
+        showToast('User record not found.', 'error');
+        return;
+      }
+      if (user.username === 'admin' || user.id === 'u-admin' || user.role === 'ADMIN') {
+        showToast('Administrator bot access is permanent and cannot be modified.', 'info');
+        return;
+      }
+
+      const nextStatus = (user.chatbot_enabled === false);
+      user.chatbot_enabled = nextStatus;
+      user.updated_at = new Date().toISOString();
+      saveDatabase(appDb);
+
+      await logAuditEvent('USER_BOT_ACCESS_TOGGLED', `Admin ${currentUser.username} set chatbot access to ${nextStatus ? 'ENABLED' : 'DISABLED'} for user ${user.username}`, user.username, 'SECURITY');
+
+      showToast(`Stock Bot access ${nextStatus ? 'ENABLED' : 'DISABLED'} for user "${escapeHtml(user.username)}"`, nextStatus ? 'success' : 'warning');
+      renderUsersTable();
+      updateChatbotAccessUI();
+    }
+    window.toggleUserBotAccess = toggleUserBotAccess;
+
     window.openChatbotAdminConfigModal = openChatbotAdminConfigModal;
     window.closeChatbotAdminConfigModal = closeChatbotAdminConfigModal;
     window.saveChatbotAdminConfig = saveChatbotAdminConfig;
