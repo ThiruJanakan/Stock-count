@@ -245,5 +245,55 @@ describe('Lina Manufacturing · Chatbot RBAC, History Isolation & Blind Count Te
     assert.strictEqual(isUserAllowedChatbot(disabledCounter), false, 'Disabled counter must have bot access blocked');
     assert.strictEqual(isUserAllowedChatbot(adminUser), true, 'Admin always has authoritative access');
   });
+
+  test('TC-BATCH-01: Batch Code Columns & Omni-Search Support', () => {
+    // Assert Batch Code columns in both Counter floor table and Recon table
+    assert.match(indexHtml, /<th>Item Description \/ Name<\/th>\s*<th>Batch Code<\/th>\s*<th>Location \/ Zone<\/th>/, 'Counter checklist table must have Batch Code column');
+    assert.match(indexHtml, /<th>Description<\/th>\s*<th>Batch Code<\/th>\s*<th>Zone<\/th>/, 'Reconciliation table must have Batch Code column');
+
+    // Assert Omni-Search covers batch_no in floor table
+    assert.match(indexHtml, /matchBatch = item\.batch_no && String\(item\.batch_no\)\.toLowerCase\(\)\.includes\(search\)/, 'Counter search must match batch_no');
+    assert.match(indexHtml, /batchKey: findKey\(\[/, 'Spreadsheet import must detect batch/lot column headers');
+
+    // Assert unlisted form contains batch input
+    assert.match(indexHtml, /id="unlistedBatch"/, 'Unlisted item drawer must include batch input');
+  });
+
+  test('TC-BATCH-02: Multi-Batch Chatbot Presentation & Direct Batch Selection', () => {
+    // Assert chatbot groups items and identifies multi-batch items
+    assert.match(indexHtml, /const hasMultipleBatches = group\.occurrences\.length > 1;/, 'Chatbot must detect single SKU with multiple batches');
+    assert.match(indexHtml, /selectChatbotBatch\('\${itm\.id}'\)/, 'Chatbot multi-batch list must render select buttons');
+    assert.match(indexHtml, /function selectChatbotBatch\(itemId\)/, 'selectChatbotBatch function must exist');
+    assert.match(indexHtml, /function renderSingleBatchDetailCard\(/, 'renderSingleBatchDetailCard function must exist');
+  });
+
+  test('TC-SEC-SYSTEM-QTY: Strict System Qty Protection for Counter and Supervisor', () => {
+    // Assert edit record drawer locks system_qty for non-admin
+    assert.match(indexHtml, /const isAdmin = currentUser && currentUser\.role === 'ADMIN';/, 'Drawer checks admin privileges');
+    assert.match(indexHtml, /sysQtyInput\.disabled = true;/, 'System Qty input must be disabled for non-admins');
+    assert.match(indexHtml, /sysQtyInput\.readOnly = true;/, 'System Qty input must be read-only for non-admins');
+
+    // Assert handleSaveRecordEdit guarantees system_qty cannot be changed by non-admins
+    assert.match(indexHtml, /const finalSysQty = isAdmin \? inputSysQty : \(appDb\.items\[itmIdx\]\.system_qty \|\| 0\);/, 'Save handler only updates system_qty if isAdmin');
+  });
+
+  test('TC-LOGIN-FEEDBACK: Login Error Shake Animation & Immediate Loading Reset', () => {
+    // Assert CSS shake animation is defined
+    assert.match(indexHtml, /@keyframes loginCardShake/, 'CSS keyframes for login card shake must be defined');
+    assert.match(indexHtml, /\.login-card-shake/, 'CSS .login-card-shake class must exist');
+    assert.match(indexHtml, /\.login-input-error/, 'CSS .login-input-error class must exist');
+
+    // Assert inline error alert container exists
+    assert.match(indexHtml, /id="loginErrorMessage"/, 'Inline login error message element must exist');
+
+    // Assert triggerLoginErrorFeedback function exists and resets loading
+    assert.match(indexHtml, /function triggerLoginErrorFeedback\(/, 'triggerLoginErrorFeedback function must exist');
+  });
+
+  test('TC-SESSION-WIDTH: Session Switcher Full-Width & Non-Truncating Styles', () => {
+    assert.match(indexHtml, /id="sessionSelector"[^>]*style="[^"]*min-width:\s*280px/, 'Active session select must have min-width 280px');
+    assert.match(indexHtml, /id="dashSessionSelect"[^>]*style="[^"]*min-width:\s*280px/, 'Dashboard session select must have min-width 280px');
+  });
 });
+
 

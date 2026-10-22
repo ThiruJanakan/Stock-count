@@ -3,7 +3,7 @@
  * Progressive Web Application (PWA) Service Worker
  */
 
-const CACHE_NAME = 'lina-stock-cache-v6';
+const CACHE_NAME = 'lina-stock-cache-v7';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
