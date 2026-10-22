@@ -1970,6 +1970,54 @@
       align-items: center;
       gap: 0.85rem;
       animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.3s ease;
+    }
+    .login-loading-card.is-error {
+      border-color: rgba(239, 68, 68, 0.55);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 40px rgba(239, 68, 68, 0.35);
+      animation: modalShakeError 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .login-loading-card.is-error .login-loading-ring {
+      border-top-color: #ef4444 !important;
+      border-right-color: #f87171 !important;
+      border-bottom-color: transparent !important;
+      border-left-color: transparent !important;
+      animation: spinRing 0.75s linear infinite !important;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
+    }
+    .login-loading-card.is-error .login-loading-ring-inner {
+      border-color: rgba(239, 68, 68, 0.45) !important;
+    }
+    .login-loading-card.is-error .login-loading-logo-box {
+      border-color: rgba(239, 68, 68, 0.5) !important;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.45) !important;
+      background: rgba(239, 68, 68, 0.12) !important;
+    }
+    .login-loading-card.is-error .login-loading-title {
+      color: #ef4444 !important;
+    }
+    .login-loading-card.is-error .login-loading-status {
+      color: #fca5a5 !important;
+    }
+    .login-loading-card.is-error .login-loading-progress-fill {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%) !important;
+      box-shadow: 0 0 12px #ef4444 !important;
+      width: 100% !important;
+    }
+    .login-loading-card.is-error .login-loading-badge {
+      border-color: rgba(239, 68, 68, 0.4) !important;
+      background: rgba(239, 68, 68, 0.12) !important;
+      color: #fca5a5 !important;
+    }
+    .login-loading-card.is-error .pulse-dot {
+      background: #ef4444 !important;
+      box-shadow: 0 0 8px #ef4444 !important;
+    }
+    @keyframes modalShakeError {
+      10%, 90% { transform: translate3d(-3px, 0, 0); }
+      20%, 80% { transform: translate3d(5px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
     }
     .login-loading-spinner-wrapper {
       position: relative;
@@ -2738,15 +2786,15 @@
         <div style="width: 42px; height: 42px; background: rgba(14, 165, 233, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
           <i data-lucide="folder-kanban" style="width: 22px; height: 22px;"></i>
         </div>
-        <div style="min-width: 0;">
+        <div style="min-width: 0; flex: 1 1 auto;">
           <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 700;">Active Counting Session</div>
-          <div style="font-size: 1.12rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="activeSessionTitle">Loading Active Session...</div>
+          <div style="font-size: 1.12rem; font-weight: 800; color: var(--text); white-space: normal; word-break: break-word; line-height: 1.3;" id="activeSessionTitle">Loading Active Session...</div>
           <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;" id="activeSessionCode">SES-INITIALIZING</div>
         </div>
       </div>
 
       <div class="session-banner-actions" style="flex: 1 1 380px; justify-content: flex-end;">
-        <select class="form-select" id="sessionSelector" onchange="changeActiveSession(this.value)" style="width: 100%; min-width: 280px; max-width: 100%; font-weight: 700; font-size: 0.85rem; height: 38px; text-overflow: ellipsis;" title="Active Count Session Selector">
+        <select class="form-select" id="sessionSelector" onchange="changeActiveSession(this.value)" style="width: 100%; min-width: 280px; max-width: 100%; font-weight: 700; font-size: 0.85rem; height: 38px;" title="Active Count Session Selector">
           <option value="">Loading Sessions...</option>
         </select>
 
@@ -2793,18 +2841,18 @@
     <section class="view-section" id="view-dashboard">
       <!-- Live Dashboard Session Switcher Banner -->
       <div class="card" style="margin-bottom: 1.25rem; padding: 0.85rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.65rem;">
-          <div style="width: 36px; height: 36px; background: rgba(2, 132, 199, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+        <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1 1 260px;">
+          <div style="width: 36px; height: 36px; background: rgba(2, 132, 199, 0.12); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
             <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
           </div>
-          <div>
-            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text);" id="dashSessionHeaderTitle">Loading Session...</div>
+          <div style="min-width: 0;">
+            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text); word-break: break-word; white-space: normal;" id="dashSessionHeaderTitle">Loading Session...</div>
             <div style="font-size: 0.74rem; color: var(--text-dim);" id="dashSessionHeaderSubtitle">Active verification metrics</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; flex: 1 1 420px; justify-content: flex-end;">
           <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-dim); white-space: nowrap;">Switch Session:</label>
-          <select class="form-select" id="dashSessionSelect" onchange="changeActiveSession(this.value)" style="flex: 1 1 320px; min-width: 280px; max-width: 520px; font-weight: 600; font-size: 0.84rem; height: 38px; text-overflow: ellipsis;" title="Switch Count Session">
+          <select class="form-select" id="dashSessionSelect" onchange="changeActiveSession(this.value)" style="flex: 1 1 320px; min-width: 280px; max-width: 100%; font-weight: 600; font-size: 0.84rem; height: 38px;" title="Switch Count Session">
             <option value="">-- Select Count Session --</option>
           </select>
           <button class="btn btn-secondary btn-sm" onclick="switchView('sessions')" title="View All Count Sessions" style="white-space: nowrap;">
@@ -5324,8 +5372,39 @@
       }
     }
 
+    const _syncedSessionCache = new Set();
+
     async function syncSessionToServer(session, items) {
       if (!session || !session.id) return;
+
+      // 1. Resolve active authenticated user
+      let authUser = currentUser;
+      if (!authUser) {
+        try {
+          const raw = localStorage.getItem("LINA_AUTH_USER");
+          if (raw) authUser = JSON.parse(raw);
+        } catch (_) {}
+      }
+
+      // 2. Strict Role Guard: Floor counters are restricted from creating or updating sessions on cloud server
+      if (!authUser || authUser.role === 'COUNTER') {
+        return;
+      }
+
+      // 3. IDOR / Ownership Guard: Executives / Supervisors can only sync sessions they created
+      if (authUser.role !== 'ADMIN' && authUser.role !== 'MANAGER') {
+        const creator = session.created_by;
+        if (creator && creator !== authUser.id && creator !== authUser.username) {
+          return; // Skip syncing other users' sessions to prevent 403 IDOR rejection
+        }
+      }
+
+      // 4. Duplicate sync suppression to prevent redundant network flooding
+      const cacheKey = `${session.id}_${session.status || ''}_${(items || []).length}`;
+      if (_syncedSessionCache.has(cacheKey)) {
+        return;
+      }
+
       try {
         const token = getAuthToken();
         const res = await fetch('/api/stock/session', {
@@ -5338,7 +5417,10 @@
           body: JSON.stringify({ session: { ...session, title: session.title || session.name || session.session_code || session.id }, items: items || [] })
         });
         if (res.ok) {
+          _syncedSessionCache.add(cacheKey);
           console.log(`[Cloud Sync] Session ${session.session_code || session.id} successfully synced to Cloud.`);
+        } else if (res.status === 403) {
+          console.warn(`[Cloud Sync] Session ${session.session_code || session.id} sync skipped: Server permission restricted (403).`);
         } else {
           console.warn('[Cloud Sync] Failed to sync session to cloud:', res.status);
         }
@@ -5349,6 +5431,14 @@
 
     async function syncSessionUpdateToServer(sessionId, updateFields) {
       if (!sessionId || !updateFields) return;
+      let authUser = currentUser;
+      if (!authUser) {
+        try {
+          const raw = localStorage.getItem("LINA_AUTH_USER");
+          if (raw) authUser = JSON.parse(raw);
+        } catch (_) {}
+      }
+      if (!authUser || authUser.role === 'COUNTER') return;
       try {
         const token = getAuthToken();
         await fetch('/api/stock/session', {
@@ -5365,6 +5455,14 @@
 
     async function syncSessionDeleteToServer(sessionId) {
       if (!sessionId) return;
+      let authUser = currentUser;
+      if (!authUser) {
+        try {
+          const raw = localStorage.getItem("LINA_AUTH_USER");
+          if (raw) authUser = JSON.parse(raw);
+        } catch (_) {}
+      }
+      if (!authUser || authUser.role === 'COUNTER') return;
       try {
         const token = getAuthToken();
         await fetch(`/api/stock/session/${encodeURIComponent(sessionId)}`, {
@@ -5383,14 +5481,25 @@
       if (!Array.isArray(serverDb.sessions)) serverDb.sessions = [];
       if (!Array.isArray(serverDb.items)) serverDb.items = [];
 
+      let authUser = currentUser;
+      if (!authUser) {
+        try {
+          const raw = localStorage.getItem("LINA_AUTH_USER");
+          if (raw) authUser = JSON.parse(raw);
+        } catch (_) {}
+      }
+      const canSyncSessions = authUser && authUser.role !== 'COUNTER';
+
       // 1. If server has no sessions but local storage has valid user sessions, preserve them & push to cloud
       if (serverDb.sessions.length === 0 && (localDb.sessions || []).length > 0) {
         serverDb.sessions = [...localDb.sessions];
         serverDb.items = localDb.items || [];
-        serverDb.sessions.forEach(s => {
-          const sItems = (serverDb.items || []).filter(i => i.session_id === s.id);
-          syncSessionToServer(s, sItems);
-        });
+        if (canSyncSessions) {
+          serverDb.sessions.forEach(s => {
+            const sItems = (serverDb.items || []).filter(i => i.session_id === s.id);
+            syncSessionToServer(s, sItems);
+          });
+        }
       } else if (serverDb.sessions.length > 0) {
         // 2. Server has sessions: Preserve any newly added local sessions not yet on server
         const missingFromCloud = (localDb.sessions || []).filter(ls =>
@@ -5402,10 +5511,12 @@
             missingFromCloud.some(ms => ms.id === li.session_id)
           );
           serverDb.items = [...serverDb.items, ...localMissingItems];
-          missingFromCloud.forEach(ms => {
-            const msItems = localMissingItems.filter(i => i.session_id === ms.id);
-            syncSessionToServer(ms, msItems);
-          });
+          if (canSyncSessions) {
+            missingFromCloud.forEach(ms => {
+              const msItems = localMissingItems.filter(i => i.session_id === ms.id);
+              syncSessionToServer(ms, msItems);
+            });
+          }
         }
       }
 
@@ -5648,8 +5759,10 @@
       // Check persistent brute force lockout
       const remainingSeconds = getClientLockoutRemaining();
       if (remainingSeconds > 0) {
-        showToast(`Account locked due to multiple failed attempts. Please retry in ${remainingSeconds}s.`, 'error');
-        playBeep(false);
+        const errMsg = `Account locked due to multiple failed attempts. Please retry in ${remainingSeconds}s.`;
+        showLoginErrorAnimation(errMsg, () => {
+          triggerLoginErrorFeedback(errMsg);
+        });
         return;
       }
 
@@ -5675,11 +5788,13 @@
         serverLoginAttempted = true;
 
         if (res.status === 429) {
-          hideLoginLoading();
           const errData = await res.json();
           const retrySec = errData.retryAfter || 300;
           localStorage.setItem('LINA_LOGIN_LOCKOUT', Date.now() + retrySec * 1000);
-          triggerLoginErrorFeedback(`Account locked: ${errData.error}`);
+          const errMsg = `Account locked: ${errData.error || 'Too many attempts'}`;
+          showLoginErrorAnimation(errMsg, () => {
+            triggerLoginErrorFeedback(errMsg);
+          });
           return;
         }
 
@@ -5718,12 +5833,13 @@
           }, 350);
           return;
         } else {
-          hideLoginLoading();
           const lockRemaining = recordClientFailedAttempt();
           const errMsg = lockRemaining > 0
             ? `Too many failed attempts. Account locked for ${lockRemaining} seconds.`
             : 'Invalid username or password. Please verify your credentials.';
-          triggerLoginErrorFeedback(errMsg);
+          showLoginErrorAnimation(errMsg, () => {
+            triggerLoginErrorFeedback(errMsg);
+          });
           return;
         }
       } catch (networkErr) {
@@ -5739,20 +5855,23 @@
       );
 
       if (!found) {
-        hideLoginLoading();
         await logAuditEvent('LOGIN_FAILED', `Failed login attempt for unknown user: "${uName}"`, uName, 'AUTH');
         const lockRemaining = recordClientFailedAttempt();
         const errMsg = lockRemaining > 0
           ? `Too many failed attempts. Account locked for ${lockRemaining} seconds.`
           : 'Invalid username or password. Please verify your credentials.';
-        triggerLoginErrorFeedback(errMsg);
+        showLoginErrorAnimation(errMsg, () => {
+          triggerLoginErrorFeedback(errMsg);
+        });
         return;
       }
 
       if (!found.is_active) {
-        hideLoginLoading();
         await logAuditEvent('LOGIN_FAILED', `Attempted login on deactivated account: "${uName}"`, uName, 'AUTH');
-        triggerLoginErrorFeedback('Account is deactivated. Contact Administrator.');
+        const errMsg = 'Account is deactivated. Contact Administrator.';
+        showLoginErrorAnimation(errMsg, () => {
+          triggerLoginErrorFeedback(errMsg);
+        });
         return;
       }
 
@@ -5790,13 +5909,14 @@
           onUserAuthenticated();
         }, 350);
       } else {
-        hideLoginLoading();
         await logAuditEvent('LOGIN_FAILED', `Invalid password entered for user: "${uName}"`, uName, 'AUTH');
         const lockRemaining = recordClientFailedAttempt();
         const errMsg = lockRemaining > 0
           ? `Too many failed attempts. Account locked for ${lockRemaining} seconds.`
           : 'Invalid username or password. Please verify your credentials.';
-        triggerLoginErrorFeedback(errMsg);
+        showLoginErrorAnimation(errMsg, () => {
+          triggerLoginErrorFeedback(errMsg);
+        });
         return;
       }
     }
@@ -11053,6 +11173,18 @@
     function showLoginLoading(status = 'Authenticating credentials...', progress = 20) {
       const overlay = document.getElementById('loginLoadingOverlay');
       if (!overlay) return;
+      const card = overlay.querySelector('.login-loading-card');
+      if (card) card.classList.remove('is-error');
+      const logoBox = overlay.querySelector('.login-loading-logo-box');
+      if (logoBox) {
+        logoBox.innerHTML = '<i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--accent);"></i>';
+        if (window.lucide) lucide.createIcons();
+      }
+      const titleEl = document.getElementById('loginLoadingTitle');
+      if (titleEl) titleEl.textContent = 'Verifying Credentials';
+      const subtextEl = document.getElementById('loginLoadingSubtext');
+      if (subtextEl) subtextEl.textContent = 'Lina Manufacturing · Secure Session Initializer';
+
       overlay.style.display = 'flex';
       void overlay.offsetWidth;
       overlay.classList.add('active');
@@ -11068,6 +11200,44 @@
       }
     }
 
+    function showLoginErrorAnimation(message = 'Invalid username or password. Please verify your credentials.', onFinished) {
+      const overlay = document.getElementById('loginLoadingOverlay');
+      const card = overlay ? overlay.querySelector('.login-loading-card') : null;
+      const titleEl = document.getElementById('loginLoadingTitle');
+      const statusEl = document.getElementById('loginLoadingStatus');
+      const logoBox = overlay ? overlay.querySelector('.login-loading-logo-box') : null;
+      const subtextEl = document.getElementById('loginLoadingSubtext');
+      const fillEl = document.getElementById('loginLoadingProgressFill');
+
+      if (overlay) {
+        overlay.style.display = 'flex';
+        void overlay.offsetWidth;
+        overlay.classList.add('active');
+      }
+      if (card) {
+        card.classList.remove('is-error');
+        void card.offsetWidth;
+        card.classList.add('is-error');
+      }
+      if (titleEl) titleEl.textContent = 'Authentication Failed';
+      if (statusEl) statusEl.textContent = message;
+      if (subtextEl) subtextEl.textContent = 'Access Denied · Invalid Credentials';
+      if (fillEl) fillEl.style.width = '100%';
+      if (logoBox) {
+        logoBox.innerHTML = '<i data-lucide="shield-alert" style="width: 28px; height: 28px; color: #ef4444;"></i>';
+        if (window.lucide) lucide.createIcons();
+      }
+      try { playBeep(false); } catch (_) {}
+
+      setTimeout(() => {
+        hideLoginLoading();
+        if (typeof onFinished === 'function') {
+          onFinished();
+        }
+      }, 1300);
+    }
+    window.showLoginErrorAnimation = showLoginErrorAnimation;
+
     function hideLoginLoading() {
       const overlay = document.getElementById('loginLoadingOverlay');
       if (!overlay) return;
@@ -11075,6 +11245,17 @@
       setTimeout(() => {
         if (!overlay.classList.contains('active')) {
           overlay.style.display = 'none';
+          const card = overlay.querySelector('.login-loading-card');
+          if (card) card.classList.remove('is-error');
+          const logoBox = overlay.querySelector('.login-loading-logo-box');
+          if (logoBox) {
+            logoBox.innerHTML = '<i data-lucide="shield-check" style="width: 28px; height: 28px; color: var(--accent);"></i>';
+            if (window.lucide) lucide.createIcons();
+          }
+          const titleEl = document.getElementById('loginLoadingTitle');
+          if (titleEl) titleEl.textContent = 'Verifying Credentials';
+          const subtextEl = document.getElementById('loginLoadingSubtext');
+          if (subtextEl) subtextEl.textContent = 'Lina Manufacturing · Secure Session Initializer';
           updateLoginLoading('Authenticating security tokens...', 0);
         }
       }, 250);
