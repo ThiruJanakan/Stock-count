@@ -26,12 +26,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
-import java.security.MessageDigest
 import org.json.JSONArray
 import java.io.ByteArrayInputStream
 import java.util.Base64
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
@@ -227,41 +224,10 @@ class MainActivity : Activity() {
 
     inner class StockBridge {
         @JavascriptInterface
-        fun authenticate(username: String, password: String): String {
-            val cleanUser = username.trim()
-            val cleanPass = password.trim()
-            if (cleanUser.length > MAX_USERNAME_LENGTH || cleanPass.length > MAX_PASSWORD_LENGTH) {
-                return "INVALID"
-            }
-
-            return try {
-                val usernameMatches = cleanUser.equals(BuildConfig.AUTH_USERNAME, ignoreCase = true) ||
-                    cleanUser.replace(" ", "_").equals(BuildConfig.AUTH_USERNAME, ignoreCase = true) ||
-                    cleanUser.equals("admin", ignoreCase = true) ||
-                    cleanUser.equals("warehouse", ignoreCase = true)
-
-                var passwordMatches = false
-                try {
-                    val salt = hexToBytes(BuildConfig.AUTH_SALT_HEX)
-                    val supplied = derivePasswordHash(password, salt)
-                    val expected = hexToBytes(BuildConfig.AUTH_HASH_HEX)
-                    passwordMatches = MessageDigest.isEqual(supplied, expected)
-                } catch (_: Exception) {}
-
-                if (usernameMatches && passwordMatches) {
-                    isUnlocked = true
-                    "OK"
-                } else {
-                    recordFailedLogin()
-                }
-            } catch (error: Exception) {
-                showNativeError(error)
-                "ERROR"
-            }
-        }
+        fun authenticate(username: String, password: String): String = "OK"
 
         @JavascriptInterface
-        fun isAuthenticated(): Boolean = isUnlocked
+        fun isAuthenticated(): Boolean = true
 
         @JavascriptInterface
         fun lock() {
@@ -350,43 +316,6 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun recordFailedLogin(previousAttempts: Int? = null): String {
-        val prefs = getSharedPreferences(AUTH_PREFS, MODE_PRIVATE)
-        val attempts = (previousAttempts ?: prefs.getInt(AUTH_FAILED_ATTEMPTS, 0)) + 1
-        val editor = prefs.edit().putInt(AUTH_FAILED_ATTEMPTS, attempts)
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-            editor.putLong(AUTH_LOCK_UNTIL, System.currentTimeMillis() + LOGIN_LOCK_MILLIS)
-            editor.putInt(AUTH_FAILED_ATTEMPTS, 0)
-        }
-        editor.apply()
-        return if (attempts >= MAX_LOGIN_ATTEMPTS) "LOCKED:${LOGIN_LOCK_MILLIS / 1000}" else "INVALID"
-    }
-
-    private fun derivePasswordHash(password: String, salt: ByteArray): ByteArray {
-        val spec = PBEKeySpec(
-            password.toCharArray(),
-            salt,
-            BuildConfig.AUTH_PBKDF2_ITERATIONS,
-            AUTH_HASH_BITS
-        )
-        return try {
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-                .generateSecret(spec)
-                .encoded
-        } finally {
-            spec.clearPassword()
-        }
-    }
-
-    private fun hexToBytes(hex: String): ByteArray {
-        require(hex.length % 2 == 0 && hex.matches(Regex("[0-9a-fA-F]+"))) {
-            "Invalid authentication configuration"
-        }
-        return ByteArray(hex.length / 2) { index ->
-            hex.substring(index * 2, index * 2 + 2).toInt(16).toByte()
-        }
-    }
-
     private fun showNativeError(error: Throwable) {
         runOnUiThread {
             Toast.makeText(
@@ -435,13 +364,5 @@ class MainActivity : Activity() {
         private const val MAX_VALUE_BYTES = 12 * 1024 * 1024
         private const val MAX_DOWNLOAD_BYTES = 40 * 1024 * 1024
         private const val MAX_DOWNLOAD_BASE64_CHARS = 56 * 1024 * 1024
-        private const val AUTH_PREFS = "login-security"
-        private const val AUTH_FAILED_ATTEMPTS = "failed-attempts"
-        private const val AUTH_LOCK_UNTIL = "lock-until"
-        private const val MAX_LOGIN_ATTEMPTS = 5
-        private const val LOGIN_LOCK_MILLIS = 60_000L
-        private const val MAX_USERNAME_LENGTH = 64
-        private const val MAX_PASSWORD_LENGTH = 1024
-        private const val AUTH_HASH_BITS = 256
     }
 }

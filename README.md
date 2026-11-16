@@ -145,12 +145,7 @@ The `app/` folder contains a standalone native Android application that bundles 
 
 ### Android Build & Run:
 1. Open the repository root in **Android Studio**.
-2. In `local.properties`, configure the shared offline credentials:
-   ```properties
-   lina.auth.username=your-shared-username
-   lina.auth.password=use-a-private-password-of-at-least-12-characters
-   ```
-3. Sync Gradle and build the APK:
+2. Sync Gradle and build the APK:
    - Navigate to **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
    - The compiled installable package is output to `app/build/outputs/apk/debug/app-debug.apk`.
    - Transfer to any Android 10+ device to install.
