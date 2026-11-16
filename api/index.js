@@ -149,7 +149,7 @@ const SECURE_SEEDED_USERS = [
   {
     id: 'u-c1',
     username: 'counter1',
-    full_name: 'Operator Alpha',
+    full_name: 'Pawan Munasinghe',
     role: 'COUNTER',
     password_salt: 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
     password_hash: 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', // counter123
@@ -902,6 +902,9 @@ module.exports = async function handler(req, res) {
         targetUser = targetRes.data[0];
       }
     }
+    if (!targetUser) {
+      targetUser = SECURE_SEEDED_USERS.find(s => s.id === userId || s.username === userId || s.username === body.username);
+    }
 
     const accessCheck = verifyUserManagementAccess(authUser, targetUser, body.role, 'MODIFY');
     if (!accessCheck.allowed) {
@@ -926,6 +929,11 @@ module.exports = async function handler(req, res) {
 
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       await supabaseRequest('stock_users?id=eq.' + encodeURIComponent(userId), 'PATCH', updateFields);
+    }
+
+    const seedMatch = SECURE_SEEDED_USERS.find(s => s.id === userId || s.username === userId || (targetUser && s.username === targetUser.username));
+    if (seedMatch) {
+      Object.assign(seedMatch, updateFields);
     }
 
     logSecurityEvent('USER_MODIFIED', `User ${userId} modified by ${authUser.username}`, req, { fields: Object.keys(updateFields) });

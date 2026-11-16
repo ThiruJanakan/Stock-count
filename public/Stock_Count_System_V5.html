@@ -4808,7 +4808,7 @@
       users: [
         { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
         { id: "u-sup", username: "executive1", full_name: "Floor Executive", role: "EXECUTIVE", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
-        { id: "u-c1", username: "counter1", full_name: "Operator Alpha", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
+        { id: "u-c1", username: "counter1", full_name: "Pawan Munasinghe", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
         { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() }
       ],
       sessions: [],
@@ -5520,16 +5520,28 @@
         }
       }
 
-      // Preserve local users credentials if server has minimal users
+      // Preserve local users credentials and newer local edits
       if (localDb.users && localDb.users.length > 0) {
         const mergedUsers = [...(serverDb.users || [])];
         localDb.users.forEach(lu => {
           const existing = mergedUsers.find(su => su.id === lu.id || su.username === lu.username);
           if (!existing) {
             mergedUsers.push(lu);
-          } else if (lu.password_hash && !existing.password_hash) {
-            existing.password_hash = lu.password_hash;
-            existing.password_salt = lu.password_salt;
+          } else {
+            const localUpdated = lu.updated_at ? new Date(lu.updated_at).getTime() : 0;
+            const serverUpdated = existing.updated_at ? new Date(existing.updated_at).getTime() : 0;
+            if (localUpdated > serverUpdated) {
+              if (lu.full_name) existing.full_name = lu.full_name;
+              if (lu.role && lu.username !== 'admin') existing.role = lu.role;
+              if (lu.is_active !== undefined && lu.username !== 'admin') existing.is_active = lu.is_active;
+              if (lu.email !== undefined) existing.email = lu.email;
+              if (lu.chatbot_enabled !== undefined) existing.chatbot_enabled = lu.chatbot_enabled;
+              existing.updated_at = lu.updated_at;
+            }
+            if (lu.password_hash && !existing.password_hash) {
+              existing.password_hash = lu.password_hash;
+              existing.password_salt = lu.password_salt;
+            }
           }
         });
         serverDb.users = mergedUsers;
@@ -10160,6 +10172,28 @@
 
       saveDatabase(appDb);
 
+      // Persist user modification to central server
+      try {
+        const token = getAuthToken();
+        fetch('/api/auth/users', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            id: user.id,
+            username: user.username,
+            full_name: user.full_name,
+            role: user.role,
+            is_active: user.is_active,
+            email: user.email,
+            chatbot_enabled: user.chatbot_enabled
+          })
+        }).catch(() => {});
+      } catch (_) {}
+
       await logAuditEvent('USER_UPDATED', `Updated profile for "${user.username}" (${user.role}, Status: ${user.is_active ? 'ACTIVE' : 'DEACTIVATED'}) by ${currentUser.username}`, user.username, 'USER_MGMT');
 
       showToast(`User "${escapeHtml(user.username)}" updated successfully!`, 'success');
@@ -10213,6 +10247,24 @@
       }
 
       saveDatabase(appDb);
+
+      // Persist status change to central server
+      try {
+        const token = getAuthToken();
+        fetch('/api/auth/users', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            id: user.id,
+            username: user.username,
+            is_active: user.is_active
+          })
+        }).catch(() => {});
+      } catch (_) {}
 
       const actionName = user.is_active ? 'USER_REACTIVATED' : 'USER_DEACTIVATED';
       const actionDesc = user.is_active
@@ -10333,6 +10385,27 @@
       appDb.users.push(newUserObj);
       saveDatabase(appDb);
 
+      // Persist newly provisioned user account to central server
+      try {
+        const token = getAuthToken();
+        fetch('/api/auth/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            id: newUserObj.id,
+            username: newUserObj.username,
+            full_name: newUserObj.full_name,
+            role: newUserObj.role,
+            password: password,
+            is_active: true
+          })
+        }).catch(() => {});
+      } catch (_) {}
+
       logAuditEvent('USER_CREATED', `Provisioned new user account: ${username} (${role}) by ${currentUser.username}`, username, 'USER_MGMT');
 
       showToast(`User "${username}" (${role}) created securely with salted hash!`, 'success');
@@ -10444,6 +10517,23 @@
       targetUser.password_hash = hash;
       delete targetUser.password; // Ensure plaintext is completely eliminated
       saveDatabase(appDb);
+
+      // Persist password reset to central server
+      try {
+        const token = getAuthToken();
+        fetch('/api/auth/users', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            id: targetUser.id,
+            password: newPass
+          })
+        }).catch(() => {});
+      } catch (_) {}
 
       logAuditEvent('PASSWORD_RESET', `Password reset issued for user "${targetUser.username}" (${targetUser.role}) by ${currentUser.username}`, targetUser.username, 'USER_MGMT');
 

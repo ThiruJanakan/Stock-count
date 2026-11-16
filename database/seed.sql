@@ -6,7 +6,7 @@
 INSERT INTO users (id, username, full_name, role, password_salt, password_hash, is_active, created_at, updated_at) VALUES
 ('u-admin', 'admin', 'Central Admin', 'ADMIN', 'a8f5b2c1d0e9478291f038572bcae142', 'pbkdf2$e565cf7400deddb134e20c56b5f8fd27569eb2a6077e022b749fa8f295c9d69c', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('u-sup', 'supervisor1', 'Floor Supervisor', 'SUPERVISOR', 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6', 'pbkdf2$5ea5f9ac90ee3e3054ec99177576012049b4e92f555147ce8e5820d4e0153709', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('u-c1', 'counter1', 'Operator Alpha', 'COUNTER', 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('u-c1', 'counter1', 'Pawan Munasinghe', 'COUNTER', 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8', 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('u-c2', 'counter2', 'Operator Beta', 'COUNTER', 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9', 'pbkdf2$cebe37c591e6e9dc92a53426a023d1abf4eaa000cc80fa19c50e4e6d67d530d2', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (username) DO NOTHING;
 

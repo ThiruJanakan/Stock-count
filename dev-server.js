@@ -1195,7 +1195,7 @@ const server = http.createServer(async (req, res) => {
     // ------------------------------------------------------------------------
     // API: User Management (Protected + IDOR Enforcement & Rate Limiting)
     // ------------------------------------------------------------------------
-    if (reqUrl === '/api/users' && reqMethod === 'POST') {
+    if ((reqUrl === '/api/users' || reqUrl === '/api/auth/users' || reqUrl.startsWith('/api/auth/users/')) && (reqMethod === 'POST' || reqMethod === 'PATCH')) {
       const authUser = getAuthenticatedUser(req);
       if (!authUser) {
         return sendJson(401, { error: 'Authentication required' });
@@ -1209,7 +1209,58 @@ const server = http.createServer(async (req, res) => {
 
         const action = body.action;
 
-        if (action === 'CREATE') {
+        if (reqMethod === 'PATCH' || action === 'UPDATE') {
+          const rawUserId = body.id || body.userId || (reqUrl.split('/api/auth/users/')[1] || '').trim();
+          let targetUser = (rawUserId && sqliteDb) ? sqliteDb.prepare("SELECT * FROM users WHERE id = ?").get(rawUserId) : null;
+          if (!targetUser && body.username) {
+            targetUser = await dbGetUserByUsername(body.username);
+          }
+          if (!targetUser && rawUserId && sqliteDb) {
+            targetUser = sqliteDb.prepare("SELECT * FROM users WHERE username = ?").get(rawUserId);
+          }
+          if (!targetUser) return sendJson(404, { error: 'User not found' });
+
+          const accessCheck = verifyUserManagementAccess(authUser, targetUser, body.role, 'MODIFY');
+          if (!accessCheck.allowed) {
+            logSecurityEvent('IDOR_PREVENTED', `${authUser.username} attempted unauthorized modification of user ${targetUser.username}`, req);
+            return sendJson(accessCheck.statusCode, { error: accessCheck.error });
+          }
+
+          const now = new Date().toISOString();
+          const updateFields = { updated_at: now };
+          if (body.full_name !== undefined) updateFields.full_name = String(body.full_name).trim();
+          if (body.role !== undefined && authUser.role === 'ADMIN') updateFields.role = body.role.toUpperCase();
+          if (body.is_active !== undefined && targetUser.username !== 'admin') updateFields.is_active = Boolean(body.is_active);
+
+          if (body.password) {
+            const passCheck = validatePasswordStrength(body.password);
+            if (!passCheck.valid) return sendJson(400, { error: passCheck.error });
+            const salt = generateSecureSalt(16);
+            updateFields.password_salt = salt;
+            updateFields.password_hash = await hashPasswordPbkdf2(body.password, salt);
+          }
+
+          await supabaseRequest(`stock_users?id=eq.${encodeURIComponent(targetUser.id)}`, 'PATCH', updateFields);
+
+          if (sqliteDb) {
+            const sets = [];
+            const params = [];
+            if (updateFields.full_name !== undefined) { sets.push("full_name = ?"); params.push(updateFields.full_name); }
+            if (updateFields.role !== undefined) { sets.push("role = ?"); params.push(updateFields.role); }
+            if (updateFields.is_active !== undefined) { sets.push("is_active = ?"); params.push(updateFields.is_active ? 1 : 0); }
+            if (updateFields.password_salt) { sets.push("password_salt = ?", "password_hash = ?"); params.push(updateFields.password_salt, updateFields.password_hash); }
+            sets.push("updated_at = ?"); params.push(now);
+            params.push(targetUser.id);
+            sqliteDb.prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+          }
+
+          dbLogAuditEvent(authUser, 'USER_MODIFIED', `Updated details for ${targetUser.username}`, targetUser.username, 'USER');
+          logSecurityEvent('USER_MODIFIED', `User ${targetUser.username} updated by ${authUser.username}`, req);
+
+          return sendJson(200, { success: true, userId: targetUser.id, updated: updateFields });
+        }
+
+        if (action === 'CREATE' || (reqMethod === 'POST' && (reqUrl === '/api/auth/users' || reqUrl.startsWith('/api/auth/users/')) && !action)) {
           // Account creation rate limit
           const creationLimit = accountCreationLimiter.isAllowed(clientIp);
           if (!creationLimit.allowed) {
