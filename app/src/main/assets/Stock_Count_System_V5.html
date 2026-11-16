@@ -4806,10 +4806,11 @@
     // Initial default database state (Cryptographically Salted Hashes)
     const DEFAULT_DB = {
       users: [
-        { id: "u-admin", username: "admin", full_name: "Central Admin", role: "ADMIN", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
-        { id: "u-sup", username: "executive1", full_name: "Floor Executive", role: "EXECUTIVE", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
-        { id: "u-c1", username: "counter1", full_name: "Pawan Munasinghe", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() },
-        { id: "u-c2", username: "counter2", full_name: "Operator Beta", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: new Date().toISOString() }
+        { id: "u-admin", username: "Chinthaka", full_name: "Central Admin", role: "ADMIN", is_active: true, chatbot_enabled: true, created_at: "2026-10-19T17:19:40.955Z" },
+        { id: "u-sup", username: "Ayeshika", full_name: "Ayeshika Kumari", role: "EXECUTIVE", is_active: true, chatbot_enabled: true, created_at: "2026-10-19T17:19:40.955Z" },
+        { id: "u-c1", username: "Navod", full_name: "Navod Sanjana", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: "2026-10-19T17:19:40.955Z" },
+        { id: "u-c2", username: "Pawan", full_name: "Pawan Munasinghe", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: "2026-10-19T17:19:40.955Z" },
+        { id: "u-indunil", username: "Indunil", full_name: "Indunil Buddhika", role: "COUNTER", is_active: true, chatbot_enabled: true, created_at: "2026-10-20T00:00:00.000Z" }
       ],
       sessions: [],
       items: [],
@@ -5016,13 +5017,35 @@
           return DEFAULT_DB;
         }
         const parsed = JSON.parse(raw);
-        // Auto-migrate supervisor role to executive & ensure passwords exist
+        // Auto-migrate supervisor role to executive & ensure updated usernames
         if (parsed.users && Array.isArray(parsed.users)) {
           let updatedUsers = false;
+          const legacyRenameMap = {
+            'admin': 'Chinthaka',
+            'supervisor1': 'Ayeshika',
+            'executive1': 'Ayeshika',
+            'counter1': 'Navod',
+            'counter2': 'Pawan',
+            'indunil': 'Indunil'
+          };
           parsed.users.forEach(u => {
             if (u.role === 'SUPERVISOR') { u.role = 'EXECUTIVE'; updatedUsers = true; }
-            if (u.full_name === 'Floor Supervisor') { u.full_name = 'Floor Executive'; updatedUsers = true; }
-            if (u.username === 'supervisor1') { u.username = 'executive1'; updatedUsers = true; }
+            if (legacyRenameMap[u.username.toLowerCase()] && u.username !== legacyRenameMap[u.username.toLowerCase()]) {
+              u.username = legacyRenameMap[u.username.toLowerCase()];
+              updatedUsers = true;
+            }
+            if (u.id === 'u-sup' && (!u.full_name || u.full_name.includes('Floor'))) {
+              u.full_name = 'Ayeshika Kumari';
+              updatedUsers = true;
+            }
+            if (u.id === 'u-c1' && (!u.full_name || u.full_name.includes('Counter Alpha'))) {
+              u.full_name = 'Navod Sanjana';
+              updatedUsers = true;
+            }
+            if (u.id === 'u-c2' && (!u.full_name || u.full_name.includes('Operator Beta'))) {
+              u.full_name = 'Pawan Munasinghe';
+              updatedUsers = true;
+            }
             const seedMatch = DEFAULT_DB.users.find(d => d.id === u.id || d.username === u.username);
             if (seedMatch && (!u.password_hash || !u.password_salt)) {
               u.password_salt = seedMatch.password_salt;
@@ -5860,11 +5883,18 @@
 
       // 2. Offline / Local Fallback Authentication
       appDb = loadDatabase();
-      const found = appDb.users.find(u => 
-        u.username.toLowerCase() === uName.toLowerCase() || 
-        (uName.toLowerCase() === 'supervisor1' && (u.username.toLowerCase() === 'executive1' || isExecutive(u))) ||
-        (uName.toLowerCase() === 'executive1' && (u.username.toLowerCase() === 'supervisor1' || isExecutive(u)))
-      );
+      const legacyAliases = {
+        'chinthaka': ['admin', 'chinthaka'],
+        'ayeshika': ['ayeshika', 'executive1', 'supervisor1'],
+        'navod': ['navod', 'counter1'],
+        'pawan': ['pawan', 'counter2'],
+        'indunil': ['indunil']
+      };
+      const found = appDb.users.find(u => {
+        const uTarget = (u.username || '').toLowerCase();
+        const allowed = legacyAliases[uTarget] || [uTarget];
+        return allowed.includes(uName.toLowerCase());
+      });
 
       if (!found) {
         await logAuditEvent('LOGIN_FAILED', `Failed login attempt for unknown user: "${uName}"`, uName, 'AUTH');
@@ -9940,7 +9970,7 @@
       const isManager = isManagerOrAdmin(currentUser);
 
       tbody.innerHTML = appDb.users.map(u => {
-        const isRootAdmin = u.username === 'admin' || u.id === 'u-admin';
+        const isRootAdmin = u.username === 'admin' || u.username === 'Chinthaka' || u.id === 'u-admin';
         const isSelf = currentUser && currentUser.id === u.id;
         const canManage = isManager || (isSuper && u.role === 'COUNTER');
 
@@ -10070,7 +10100,7 @@
       const roleHelp = document.getElementById('editRoleHelpText');
       const isExec = Boolean(currentUser && isExecutive(currentUser));
       const isSuper = isExec;
-      const isRootAdmin = user.username === 'admin' || user.id === 'u-admin';
+      const isRootAdmin = user.username === 'admin' || user.username === 'Chinthaka' || user.id === 'u-admin';
 
       if (roleSelect) {
         if (isRootAdmin) {
@@ -10144,7 +10174,7 @@
       }
 
       const user = appDb.users[userIdx];
-      const isRootAdmin = user.username === 'admin' || user.id === 'u-admin';
+      const isRootAdmin = user.username === 'admin' || user.username === 'Chinthaka' || user.id === 'u-admin';
 
       if (isExecutive(currentUser) && user.role !== 'COUNTER') {
         showToast('Unauthorized: Executives can only modify Counter accounts.', 'error');
@@ -10214,7 +10244,7 @@
         return;
       }
 
-      if (user.username === 'admin' || user.id === 'u-admin') {
+      if (user.username === 'admin' || user.username === 'Chinthaka' || user.id === 'u-admin') {
         showToast('Security Policy: Root Administrator cannot be removed or deactivated.', 'error');
         return;
       }
@@ -12172,7 +12202,7 @@
         showToast('User record not found.', 'error');
         return;
       }
-      if (user.username === 'admin' || user.id === 'u-admin' || user.role === 'ADMIN') {
+      if (user.username === 'admin' || user.username === 'Chinthaka' || user.id === 'u-admin' || user.role === 'ADMIN') {
         showToast('Administrator bot access is permanent and cannot be modified.', 'info');
         return;
       }

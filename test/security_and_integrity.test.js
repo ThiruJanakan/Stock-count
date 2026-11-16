@@ -171,7 +171,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
 
     assert.strictEqual(res.statusCode, 200, 'Valid credentials should return HTTP 200');
     assert.ok(res.json.token, 'A cryptographic session token must be issued');
-    assert.strictEqual(res.json.user.username, 'admin');
+    assert.ok(res.json.user.username === 'Chinthaka' || res.json.user.username === 'admin');
     assert.strictEqual(res.json.user.role, 'ADMIN');
 
     // Verify Set-Cookie header contains HttpOnly and SameSite=Strict
@@ -188,7 +188,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     });
     assert.strictEqual(sessionRes.statusCode, 200);
     assert.strictEqual(sessionRes.json.authenticated, true);
-    assert.strictEqual(sessionRes.json.user.username, 'admin');
+    assert.ok(sessionRes.json.user.username === 'Chinthaka' || sessionRes.json.user.username === 'admin');
   });
 
   // TST-05: Server-Side Blind Count Enforcement

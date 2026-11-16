@@ -127,41 +127,63 @@ function supabaseRequest(endpointPath, method = 'GET', data = null) {
 }
 
 // Seed Users with pre-hashed PBKDF2 credentials (Zero plaintext fallback credentials)
+const USERNAME_ALIASES = {
+  admin: 'Chinthaka',
+  chinthaka: 'Chinthaka',
+  supervisor1: 'Ayeshika',
+  executive1: 'Ayeshika',
+  ayeshika: 'Ayeshika',
+  counter1: 'Navod',
+  navod: 'Navod',
+  counter2: 'Pawan',
+  pawan: 'Pawan',
+  indunil: 'Indunil'
+};
+
 const SECURE_SEEDED_USERS = [
   {
     id: 'u-admin',
-    username: 'admin',
+    username: 'Chinthaka',
     full_name: 'Central Admin',
     role: 'ADMIN',
     password_salt: 'a8f5b2c1d0e9478291f038572bcae142',
-    password_hash: 'pbkdf2$e565cf7400deddb134e20c56b5f8fd27569eb2a6077e022b749fa8f295c9d69c', // admin123
+    password_hash: 'pbkdf2$9fd945ec65d80cefc9833968dd6022784fbce26da4771bb218008793f86c16ec', // admin123
     is_active: true
   },
   {
     id: 'u-sup',
-    username: 'executive1',
-    full_name: 'Floor Executive',
+    username: 'Ayeshika',
+    full_name: 'Ayeshika Kumari',
     role: 'EXECUTIVE',
     password_salt: 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6',
-    password_hash: 'pbkdf2$5ea5f9ac90ee3e3054ec99177576012049b4e92f555147ce8e5820d4e0153709', // super123
+    password_hash: 'pbkdf2$956cb185650fba5f8e5f4e594f7e628694d05fe93900a4876039780bc3452132', // super123
     is_active: true
   },
   {
     id: 'u-c1',
-    username: 'counter1',
-    full_name: 'Pawan Munasinghe',
+    username: 'Navod',
+    full_name: 'Navod Sanjana',
     role: 'COUNTER',
     password_salt: 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
-    password_hash: 'pbkdf2$6b89184d3b0b01591868ab9d678f8ec04714e566a69346d57bd97ad99ae04c31', // counter123
+    password_hash: 'pbkdf2$041f65657070c30ebfd7fa94da3557c35cf60ad6e0e5344ac32e9677a0428ad7', // counter123
     is_active: true
   },
   {
     id: 'u-c2',
-    username: 'counter2',
-    full_name: 'Operator Beta',
+    username: 'Pawan',
+    full_name: 'Pawan Munasinghe',
     role: 'COUNTER',
     password_salt: 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9',
-    password_hash: 'pbkdf2$cebe37c591e6e9dc92a53426a023d1abf4eaa000cc80fa19c50e4e6d67d530d2', // counter123
+    password_hash: 'pbkdf2$468d7c9a0745e7d70a9a841f6802d052445964ea34d646db550a489fe5c4ebed', // counter123
+    is_active: true
+  },
+  {
+    id: 'u-indunil',
+    username: 'Indunil',
+    full_name: 'Indunil Buddhika',
+    role: 'COUNTER',
+    password_salt: '88edd4d28e9f26f3548fca564d2e1e47',
+    password_hash: 'pbkdf2$1be8ac2bb0be5b1b1ceb6eec7e3c1923573e55220c772a7842b7534b748106c7', // counter123
     is_active: true
   }
 ];
@@ -478,11 +500,9 @@ module.exports = async function handler(req, res) {
 
     // 1. Query live Supabase database
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
-      let queryUser = username.toLowerCase();
-      let sbRes = await supabaseRequest(`stock_users?username=eq.${encodeURIComponent(queryUser)}&select=*`);
-      if ((!sbRes || !sbRes.data || sbRes.data.length === 0) && queryUser === 'executive1') {
-        sbRes = await supabaseRequest(`stock_users?username=eq.supervisor1&select=*`);
-      }
+      const canonical = username.trim();
+      const alias = USERNAME_ALIASES[canonical.toLowerCase()] || canonical;
+      const sbRes = await supabaseRequest(`stock_users?or=(username.ilike.${encodeURIComponent(canonical)},username.ilike.${encodeURIComponent(alias)})&select=*`);
       if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
         user = sbRes.data[0];
         if (!user.is_active) {
@@ -496,10 +516,11 @@ module.exports = async function handler(req, res) {
     // 2. Cryptographic Offline Seed Fallback (Evaluates pre-hashed PBKDF2 only, NO plaintext comparisons)
     if (!user && !isValid) {
       const uLower = username.toLowerCase();
-      const seedUser = SECURE_SEEDED_USERS.find(s => 
-        s.username === uLower || 
-        (uLower === 'supervisor1' && s.username === 'executive1')
-      );
+      const aliasLower = (USERNAME_ALIASES[uLower] || '').toLowerCase();
+      const seedUser = SECURE_SEEDED_USERS.find(s => {
+        const sLower = s.username.toLowerCase();
+        return sLower === uLower || sLower === aliasLower;
+      });
       if (seedUser) {
         const seedValid = await verifyPasswordPbkdf2(password, seedUser.password_salt, seedUser.password_hash);
         if (seedValid) {
