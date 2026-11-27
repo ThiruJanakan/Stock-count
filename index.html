@@ -5883,18 +5883,7 @@
 
       // 2. Offline / Local Fallback Authentication
       appDb = loadDatabase();
-      const legacyAliases = {
-        'chinthaka': ['admin', 'chinthaka'],
-        'ayeshika': ['ayeshika', 'executive1', 'supervisor1'],
-        'navod': ['navod', 'counter1'],
-        'pawan': ['pawan', 'counter2'],
-        'indunil': ['indunil']
-      };
-      const found = appDb.users.find(u => {
-        const uTarget = (u.username || '').toLowerCase();
-        const allowed = legacyAliases[uTarget] || [uTarget];
-        return allowed.includes(uName.toLowerCase());
-      });
+      const found = appDb.users.find(u => (u.username || '').toLowerCase() === uName.trim().toLowerCase());
 
       if (!found) {
         await logAuditEvent('LOGIN_FAILED', `Failed login attempt for unknown user: "${uName}"`, uName, 'AUTH');

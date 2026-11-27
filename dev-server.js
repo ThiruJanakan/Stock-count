@@ -210,29 +210,15 @@ function fromDbCountType(mode) {
   return mode || 'BLIND_COUNT';
 }
 
-const USERNAME_ALIASES = {
-  admin: 'Chinthaka',
-  chinthaka: 'Chinthaka',
-  supervisor1: 'Ayeshika',
-  executive1: 'Ayeshika',
-  ayeshika: 'Ayeshika',
-  counter1: 'Navod',
-  navod: 'Navod',
-  counter2: 'Pawan',
-  pawan: 'Pawan',
-  indunil: 'Indunil'
-};
-
 // ============================================================================
 // 3. HYBRID SUPABASE + SQLITE DATA ACCESS
 // ============================================================================
 async function dbGetUserByUsername(username) {
   if (!username) return null;
   const canonical = (username || '').trim();
-  const alias = USERNAME_ALIASES[canonical.toLowerCase()] || canonical;
 
   // 1. Try Supabase cloud first
-  const query = `stock_users?or=(username.ilike.${encodeURIComponent(canonical)},username.ilike.${encodeURIComponent(alias)})&select=*`;
+  const query = `stock_users?username=ilike.${encodeURIComponent(canonical)}&select=*`;
   const sbRes = await supabaseRequest(query);
   if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
     return sbRes.data[0];
@@ -241,7 +227,7 @@ async function dbGetUserByUsername(username) {
   // 2. Fallback to local SQLite
   if (sqliteDb) {
     try {
-      return sqliteDb.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(username) = LOWER(?)").get(canonical, alias);
+      return sqliteDb.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?)").get(canonical);
     } catch (_) {}
   }
   return null;

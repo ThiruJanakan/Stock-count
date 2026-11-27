@@ -187,12 +187,20 @@ async function runAllRouteTests() {
     const res = await makeRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
     assert.strictEqual(res.statusCode, 200);
     const data = JSON.parse(res.body);
     assert(data.token);
     assert.strictEqual(data.user.role, 'ADMIN');
     adminToken = data.token;
+  });
+
+  await check('POST /api/auth/login rejects old username admin', async () => {
+    const res = await makeRequest('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, { username: 'admin', password: 'admin123' });
+    assert.strictEqual(res.statusCode, 401);
   });
 
   await check('GET /api/auth/session returns authenticated session', async () => {
@@ -202,7 +210,7 @@ async function runAllRouteTests() {
     assert.strictEqual(res.statusCode, 200);
     const data = JSON.parse(res.body);
     assert(data.user);
-    assert.ok(data.user.username === 'Chinthaka' || data.user.username === 'admin');
+    assert.strictEqual(data.user.username, 'Chinthaka');
   });
 
   await check('GET /api/stock/db returns full database snapshot', async () => {
@@ -255,11 +263,18 @@ async function runAllRouteTests() {
   await check('Vercel: POST /api/auth/login logs in admin with PBKDF2', async () => {
     const res = await simulateVercelRequest('/api/auth/login', 'POST', {
       'content-type': 'application/json'
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
     assert.strictEqual(res.statusCode, 200);
     const data = JSON.parse(res.body);
     assert(data.token);
     assert.strictEqual(data.user.role, 'ADMIN');
+  });
+
+  await check('Vercel: POST /api/auth/login rejects old username admin', async () => {
+    const res = await simulateVercelRequest('/api/auth/login', 'POST', {
+      'content-type': 'application/json'
+    }, { username: 'admin', password: 'admin123' });
+    assert.strictEqual(res.statusCode, 401);
   });
 
   console.log('\n--- 4. Client-Side Tab & Routing Verification in index.html ---');

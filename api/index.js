@@ -127,19 +127,6 @@ function supabaseRequest(endpointPath, method = 'GET', data = null) {
 }
 
 // Seed Users with pre-hashed PBKDF2 credentials (Zero plaintext fallback credentials)
-const USERNAME_ALIASES = {
-  admin: 'Chinthaka',
-  chinthaka: 'Chinthaka',
-  supervisor1: 'Ayeshika',
-  executive1: 'Ayeshika',
-  ayeshika: 'Ayeshika',
-  counter1: 'Navod',
-  navod: 'Navod',
-  counter2: 'Pawan',
-  pawan: 'Pawan',
-  indunil: 'Indunil'
-};
-
 const SECURE_SEEDED_USERS = [
   {
     id: 'u-admin',
@@ -501,8 +488,7 @@ module.exports = async function handler(req, res) {
     // 1. Query live Supabase database
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       const canonical = username.trim();
-      const alias = USERNAME_ALIASES[canonical.toLowerCase()] || canonical;
-      const sbRes = await supabaseRequest(`stock_users?or=(username.ilike.${encodeURIComponent(canonical)},username.ilike.${encodeURIComponent(alias)})&select=*`);
+      const sbRes = await supabaseRequest(`stock_users?username=ilike.${encodeURIComponent(canonical)}&select=*`);
       if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
         user = sbRes.data[0];
         if (!user.is_active) {
@@ -516,11 +502,7 @@ module.exports = async function handler(req, res) {
     // 2. Cryptographic Offline Seed Fallback (Evaluates pre-hashed PBKDF2 only, NO plaintext comparisons)
     if (!user && !isValid) {
       const uLower = username.toLowerCase();
-      const aliasLower = (USERNAME_ALIASES[uLower] || '').toLowerCase();
-      const seedUser = SECURE_SEEDED_USERS.find(s => {
-        const sLower = s.username.toLowerCase();
-        return sLower === uLower || sLower === aliasLower;
-      });
+      const seedUser = SECURE_SEEDED_USERS.find(s => s.username.toLowerCase() === uLower);
       if (seedUser) {
         const seedValid = await verifyPasswordPbkdf2(password, seedUser.password_salt, seedUser.password_hash);
         if (seedValid) {

@@ -167,11 +167,11 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const res = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
 
     assert.strictEqual(res.statusCode, 200, 'Valid credentials should return HTTP 200');
     assert.ok(res.json.token, 'A cryptographic session token must be issued');
-    assert.ok(res.json.user.username === 'Chinthaka' || res.json.user.username === 'admin');
+    assert.strictEqual(res.json.user.username, 'Chinthaka');
     assert.strictEqual(res.json.user.role, 'ADMIN');
 
     // Verify Set-Cookie header contains HttpOnly and SameSite=Strict
@@ -188,7 +188,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     });
     assert.strictEqual(sessionRes.statusCode, 200);
     assert.strictEqual(sessionRes.json.authenticated, true);
-    assert.ok(sessionRes.json.user.username === 'Chinthaka' || sessionRes.json.user.username === 'admin');
+    assert.strictEqual(sessionRes.json.user.username, 'Chinthaka');
   });
 
   // TST-05: Server-Side Blind Count Enforcement
@@ -196,7 +196,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const loginRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'counter1', password: 'counter123' });
+    }, { username: 'Navod', password: 'counter123' });
 
     assert.strictEqual(loginRes.statusCode, 200);
     const counterToken = loginRes.json.token;
@@ -222,7 +222,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const loginRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
 
     const adminToken = loginRes.json.token;
 
@@ -319,7 +319,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const loginRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
 
     const adminToken = loginRes.json.token;
 
@@ -341,7 +341,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const counterLogin = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'counter1', password: 'counter123' });
+    }, { username: 'Navod', password: 'counter123' });
 
     const counterToken = counterLogin.json.token;
 
@@ -367,7 +367,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const supLogin = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'supervisor1', password: 'super123' });
+    }, { username: 'Ayeshika', password: 'super123' });
 
     assert.strictEqual(supLogin.statusCode, 200);
     const supToken = supLogin.json.token;
@@ -400,7 +400,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const loginRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'admin123' });
+    }, { username: 'Chinthaka', password: 'admin123' });
 
     const adminToken = loginRes.json.token;
 
@@ -421,7 +421,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const counterLogin = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'counter1', password: 'counter123' });
+    }, { username: 'Navod', password: 'counter123' });
 
     const counterAiRes = await httpRequest('/api/ai/generate', {
       method: 'POST',
@@ -434,8 +434,8 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     assert.strictEqual(counterAiRes.statusCode, 403, 'Counters must be restricted from AI variance analysis');
   });
 
-  // TST-14: Zero-Plaintext Backdoor Passwords
-  test('TST-14: Elimination of Hardcoded Plaintext Fallback Passwords', async () => {
+  // TST-14: Zero-Plaintext Backdoor Passwords & Legacy Username Rejection
+  test('TST-14: Elimination of Hardcoded Plaintext Fallback Passwords & Legacy Username Rejection', async () => {
     const randomFakeUser = 'non_existent_user_' + Date.now();
     const res = await httpRequest('/api/auth/login', {
       method: 'POST',
@@ -448,9 +448,18 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const wrongPassRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'admin', password: 'WrongPassword999' });
+    }, { username: 'Chinthaka', password: 'WrongPassword999' });
 
     assert.strictEqual(wrongPassRes.statusCode, 401, 'Wrong password on admin must return 401');
+
+    // Strictly verify all old/legacy usernames are rejected
+    for (const legacyUser of ['admin', 'counter1', 'counter2', 'supervisor1', 'executive1']) {
+      const legacyRes = await httpRequest('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }, { username: legacyUser, password: 'admin123' });
+      assert.strictEqual(legacyRes.statusCode, 401, `Legacy username ${legacyUser} must be rejected`);
+    }
   });
 
   // TST-15: Anti-Bot & Automated Scraper Detection

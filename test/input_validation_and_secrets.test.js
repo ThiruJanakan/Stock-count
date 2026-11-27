@@ -93,7 +93,7 @@ describe('Lina Manufacturing · Input Validation, Sanitization & Secrets Audit S
       httpRequest('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
-      }, { username: 'admin', password: 'admin123' }).then(res => {
+      }, { username: 'Chinthaka', password: 'admin123' }).then(res => {
         if (res.json && res.json.token) adminToken = res.json.token;
         done();
       }).catch(done);
