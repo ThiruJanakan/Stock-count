@@ -218,7 +218,7 @@ async function dbGetUserByUsername(username) {
   const canonical = (username || '').trim();
 
   // 1. Try Supabase cloud first
-  const query = `stock_users?username=ilike.${encodeURIComponent(canonical)}&select=*`;
+  const query = `stock_users?or=(username.ilike.${encodeURIComponent(canonical)},full_name.ilike.${encodeURIComponent(canonical)})&select=*`;
   const sbRes = await supabaseRequest(query);
   if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
     return sbRes.data[0];
@@ -227,7 +227,7 @@ async function dbGetUserByUsername(username) {
   // 2. Fallback to local SQLite
   if (sqliteDb) {
     try {
-      return sqliteDb.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?)").get(canonical);
+      return sqliteDb.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(full_name) = LOWER(?)").get(canonical, canonical);
     } catch (_) {}
   }
   return null;

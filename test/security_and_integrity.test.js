@@ -79,14 +79,35 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
 
   before((_, done) => {
     resetAllRateLimits();
+    const setupTestUsers = async () => {
+      try {
+        const adminLogin = await httpRequest('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }, { username: 'Chinthaka', password: 'admin123' });
+        if (adminLogin && adminLogin.json && adminLogin.json.token) {
+          await httpRequest('/api/auth/users', {
+            method: 'PATCH',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminLogin.json.token}` 
+            }
+          }, { id: 'u-c1', username: 'Navod', password: 'NavodS00' });
+        }
+      } catch (_) {}
+    };
+
     if (server && !server.listening) {
       server.once('error', (err) => {
-        if (err.code === 'EADDRINUSE') done();
-        else done(err);
+        if (err.code === 'EADDRINUSE') {
+          setupTestUsers().finally(() => done());
+        } else done(err);
       });
-      server.listen(5173, '127.0.0.1', () => done());
+      server.listen(5173, '127.0.0.1', () => {
+        setupTestUsers().finally(() => done());
+      });
     } else {
-      done();
+      setupTestUsers().finally(() => done());
     }
   });
 
@@ -196,7 +217,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const loginRes = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'Navod', password: 'counter123' });
+    }, { username: 'Navod', password: 'NavodS00' });
 
     assert.strictEqual(loginRes.statusCode, 200);
     const counterToken = loginRes.json.token;
@@ -341,7 +362,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const counterLogin = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'Navod', password: 'counter123' });
+    }, { username: 'Navod', password: 'NavodS00' });
 
     const counterToken = counterLogin.json.token;
 
@@ -421,7 +442,7 @@ describe('Lina Manufacturing · Enterprise Security & Integrity Test Suite', () 
     const counterLogin = await httpRequest('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    }, { username: 'Navod', password: 'counter123' });
+    }, { username: 'Navod', password: 'NavodS00' });
 
     const counterAiRes = await httpRequest('/api/ai/generate', {
       method: 'POST',

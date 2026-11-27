@@ -133,8 +133,8 @@ const SECURE_SEEDED_USERS = [
     username: 'Chinthaka',
     full_name: 'Central Admin',
     role: 'ADMIN',
-    password_salt: 'a8f5b2c1d0e9478291f038572bcae142',
-    password_hash: 'pbkdf2$9fd945ec65d80cefc9833968dd6022784fbce26da4771bb218008793f86c16ec', // admin123
+    password_salt: '62110c36ea51bb8f9c142319e11f5bd9',
+    password_hash: 'pbkdf2$edb40df19185e1bf38de553226cb06460f0c2f4351fec585ff2f7d8c5b43b770', // admin123
     is_active: true
   },
   {
@@ -142,8 +142,8 @@ const SECURE_SEEDED_USERS = [
     username: 'Ayeshika',
     full_name: 'Ayeshika Kumari',
     role: 'EXECUTIVE',
-    password_salt: 'b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6',
-    password_hash: 'pbkdf2$956cb185650fba5f8e5f4e594f7e628694d05fe93900a4876039780bc3452132', // super123
+    password_salt: '2543f414bc50663be86cbc8a185928f6',
+    password_hash: 'pbkdf2$51398bcf3c18e994eb4488e6d1d1500429e168dde0b8d9519ed77f13b941b39f', // super123
     is_active: true
   },
   {
@@ -151,8 +151,8 @@ const SECURE_SEEDED_USERS = [
     username: 'Navod',
     full_name: 'Navod Sanjana',
     role: 'COUNTER',
-    password_salt: 'c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8',
-    password_hash: 'pbkdf2$041f65657070c30ebfd7fa94da3557c35cf60ad6e0e5344ac32e9677a0428ad7', // counter123
+    password_salt: 'd7ebd06977f615f3ab7da90a17d5f6ab',
+    password_hash: 'pbkdf2$a92990a77ffa1b001b0c392f751ec9f79472aca49fe575138763ff7d3d60d82d', // NavodS00
     is_active: true
   },
   {
@@ -160,8 +160,8 @@ const SECURE_SEEDED_USERS = [
     username: 'Pawan',
     full_name: 'Pawan Munasinghe',
     role: 'COUNTER',
-    password_salt: 'd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9',
-    password_hash: 'pbkdf2$468d7c9a0745e7d70a9a841f6802d052445964ea34d646db550a489fe5c4ebed', // counter123
+    password_salt: '2e6edaad57aadd3d5f745ff9e4bc4c16',
+    password_hash: 'pbkdf2$65a2f27042eadb048f8dd0421ee59965b0f34f60fa5af01be0e903a3a707e294', // PawanM12
     is_active: true
   },
   {
@@ -169,8 +169,71 @@ const SECURE_SEEDED_USERS = [
     username: 'Indunil',
     full_name: 'Indunil Buddhika',
     role: 'COUNTER',
-    password_salt: '88edd4d28e9f26f3548fca564d2e1e47',
-    password_hash: 'pbkdf2$1be8ac2bb0be5b1b1ceb6eec7e3c1923573e55220c772a7842b7534b748106c7', // counter123
+    password_salt: '4b2e4da5bb01817af14f3f39d7806127',
+    password_hash: 'pbkdf2$d3e01b882668eae7f9897668bdeb6d4bb04cafb62275ba913cf99575b7ae2c59', // InduB09
+    is_active: true
+  },
+  {
+    id: 'u-nethinu',
+    username: 'nethinu',
+    full_name: 'Methinu',
+    role: 'COUNTER',
+    password_salt: '9893fdbd98261d7312edc79ee52a7915',
+    password_hash: 'pbkdf2$d520e7437f1c7d166f24b63383c645f9e44598e3538b15f837c5bc6692e19f17', // Methinu67
+    is_active: true
+  },
+  {
+    id: 'u-avishka',
+    username: 'avishka',
+    full_name: 'Avishka',
+    role: 'COUNTER',
+    password_salt: 'b2fdf21a811967374a8fc754ef9a69a3',
+    password_hash: 'pbkdf2$9f63174e9fd3a40c80cdb3b4a2c2e69e3e28496810ddde481a70daee97a5a3c9', // Avishka2787
+    is_active: true
+  },
+  {
+    id: 'u-arulraj',
+    username: 'arulraj',
+    full_name: 'Arul',
+    role: 'COUNTER',
+    password_salt: '65e177b1b70b1411d3e5340767dbb873',
+    password_hash: 'pbkdf2$fa2d4965f6121465e17499bbd5f87c644f7704e270817f4bbcd1c65aef77e9e6', // Arul2255
+    is_active: true
+  },
+  {
+    id: 'u-samith',
+    username: 'Samith',
+    full_name: 'Samith Priyakelum',
+    role: 'EXECUTIVE',
+    password_salt: 'af268a4fa011992ad5d18f6562024fc0',
+    password_hash: 'pbkdf2$80679663691a6f351496f5e37c72056a5aaf32a5e4c8acae460eca835f6398ec', // Samith1223
+    is_active: true
+  },
+  {
+    id: 'u-indika',
+    username: 'Indika',
+    full_name: 'Indika Ruwansiri',
+    role: 'EXECUTIVE',
+    password_salt: 'ae9b61d267ac28e818ae132670a9720d',
+    password_hash: 'pbkdf2$22d8ebc020d9fa324059d65bab259a70bf720301212da5a5e8ec26ecf4697a31', // Indika1556
+    is_active: true
+  },
+  {
+    id: 'u-tenith',
+    username: 'Tenith',
+    full_name: 'Tenith',
+    role: 'COUNTER',
+    password_salt: '2e67d415484d4208f463ac101036c8d7',
+    password_hash: 'pbkdf2$afe342886784e0ad0d81e33194c414a6209bfa5e50e2366bdcd098202c053072', // Tenith9911
+    is_active: true
+  },
+  {
+    id: 'u-enosh',
+    username: 'Enosh',
+    full_name: 'Enosh',
+    role: 'COUNTER',
+    password_salt: '6a70c87237585a15b4ea2bc2864c3583',
+    password_hash: 'pbkdf2$a01b3ae23202ba3eefd7ca1e2a4470940b285f4155c6954e12109315e6ed3c8e', // Enosh8998
     is_active: true
   }
 ];
@@ -488,7 +551,7 @@ module.exports = async function handler(req, res) {
     // 1. Query live Supabase database
     if (SUPABASE_HOST && SUPABASE_SECRET_KEY) {
       const canonical = username.trim();
-      const sbRes = await supabaseRequest(`stock_users?username=ilike.${encodeURIComponent(canonical)}&select=*`);
+      const sbRes = await supabaseRequest(`stock_users?or=(username.ilike.${encodeURIComponent(canonical)},full_name.ilike.${encodeURIComponent(canonical)})&select=*`);
       if (sbRes && sbRes.status === 200 && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
         user = sbRes.data[0];
         if (!user.is_active) {
@@ -502,7 +565,7 @@ module.exports = async function handler(req, res) {
     // 2. Cryptographic Offline Seed Fallback (Evaluates pre-hashed PBKDF2 only, NO plaintext comparisons)
     if (!user && !isValid) {
       const uLower = username.toLowerCase();
-      const seedUser = SECURE_SEEDED_USERS.find(s => s.username.toLowerCase() === uLower);
+      const seedUser = SECURE_SEEDED_USERS.find(s => s.username.toLowerCase() === uLower || (s.full_name && s.full_name.toLowerCase() === uLower));
       if (seedUser) {
         const seedValid = await verifyPasswordPbkdf2(password, seedUser.password_salt, seedUser.password_hash);
         if (seedValid) {
