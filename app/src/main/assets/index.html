@@ -778,6 +778,8 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
     }
 
     .badge-matched { background: var(--accent-emerald-subtle); color: var(--accent-emerald); border: 1px solid rgba(5, 150, 105, 0.28); }
@@ -2159,7 +2161,7 @@
       position: fixed;
       bottom: 5.25rem;
       right: 1.5rem;
-      width: 430px;
+      width: 460px;
       max-width: calc(100vw - 2rem);
       height: 620px;
       max-height: calc(100vh - 7rem);
@@ -2192,10 +2194,10 @@
         border-radius: var(--radius-lg);
       }
       .chat-msg {
-        max-width: 96%;
+        max-width: 98%;
       }
       .chat-metrics-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.35rem;
       }
       .chat-metric-box {
@@ -2329,15 +2331,18 @@
     .chat-msg {
       display: flex;
       gap: 0.5rem;
-      max-width: 92%;
+      max-width: 96%;
       animation: fadeIn 0.25s ease;
     }
     .chat-msg.bot {
       align-self: flex-start;
+      width: 100%;
+      max-width: 100%;
     }
     .chat-msg.user {
       align-self: flex-end;
       flex-direction: row-reverse;
+      max-width: 85%;
     }
     .chat-msg-avatar {
       width: 28px;
@@ -2361,13 +2366,18 @@
       color: var(--text);
       line-height: 1.45;
       box-shadow: var(--shadow-sm);
-      word-break: break-word;
+      word-break: normal !important;
+      overflow-wrap: anywhere !important;
+      flex: 1;
+      min-width: 0;
     }
     .chat-msg.user .chat-msg-bubble {
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
       border-bottom-right-radius: 2px;
+      flex: 0 1 auto;
+      max-width: 100%;
     }
     .chat-msg.bot .chat-msg-bubble {
       border-bottom-left-radius: 2px;
@@ -2380,6 +2390,7 @@
       padding: 0.75rem;
       margin-top: 0.45rem;
       font-size: 0.8rem;
+      overflow: hidden;
     }
     .chat-item-header {
       display: flex;
@@ -2389,6 +2400,21 @@
       padding-bottom: 0.45rem;
       margin-bottom: 0.5rem;
       gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .chat-item-header > div:first-child {
+      flex: 1 1 180px;
+      min-width: 0;
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+    .chat-item-header-badges {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin-left: auto;
     }
     .chat-session-row {
       background: var(--bg-card);
@@ -2402,7 +2428,7 @@
     }
     .chat-metrics-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.45rem;
       margin-top: 0.45rem;
     }
@@ -2410,19 +2436,26 @@
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-xs);
-      padding: 4px 6px;
+      padding: 5px 7px;
+      min-width: 0;
+      overflow: hidden;
     }
     .chat-metric-label {
       color: var(--text-dim);
       font-size: 0.66rem;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .chat-metric-val {
       font-weight: 800;
       font-size: 0.84rem;
       color: var(--text);
       margin-top: 1px;
+      word-break: normal;
+      overflow-wrap: break-word;
     }
 
     .chatbot-input-bar {
@@ -11685,22 +11718,103 @@
       lastQueryType: ''
     };
 
+    // Dynamic Query Suggestions extracted from Active Session Inventory
+    function getChatbotSampleSuggestions() {
+      try {
+        const db = (typeof loadDatabase === 'function') ? loadDatabase() : (appDb || {});
+        const items = db.items || [];
+        const curSes = activeSession || (db.sessions && db.sessions[0]);
+        const sessionItems = curSes ? items.filter(i => i.session_id === curSes.id || i.session_id === curSes.session_code) : items;
+        const pool = sessionItems.length > 0 ? sessionItems : items;
+
+        if (pool.length === 0) {
+          return [
+            { label: '🔍 Search by Name', query: 'Search by product name' },
+            { label: '📦 Search by Batch', query: 'Search by batch number' },
+            { label: '📊 Check Stock Count', query: 'what is count?' }
+          ];
+        }
+
+        const suggestions = [];
+
+        // 1. Pick first item partial name
+        const item1 = pool[0];
+        const rawName1 = String(item1.name || item1.item_name || item1.description || item1.sku || '').trim();
+        const words1 = rawName1.split(/[\s*×-]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+        const partialName1 = words1[0] || rawName1.split(/\s+/)[0] || rawName1.slice(0, 8);
+        if (partialName1) {
+          suggestions.push({
+            label: `🔍 Search "${escapeHtml(partialName1)}"`,
+            query: partialName1
+          });
+        }
+
+        // 2. Pick a real batch code from an item with batch_no
+        const batchItem = pool.find(i => i.batch_no && String(i.batch_no).trim().length >= 2) || pool[0];
+        if (batchItem && batchItem.batch_no) {
+          const bCode = String(batchItem.batch_no).trim();
+          suggestions.push({
+            label: `📦 Batch "${escapeHtml(bCode)}"`,
+            query: bCode
+          });
+        }
+
+        // 3. Pick a distinct 2nd item for "Count of ..." query
+        const item2 = pool.find(i => {
+          const n = String(i.name || i.item_name || i.description || '').toLowerCase();
+          return n && !n.includes(partialName1.toLowerCase());
+        }) || pool[Math.min(1, pool.length - 1)];
+
+        if (item2) {
+          const rawName2 = String(item2.name || item2.item_name || item2.description || item2.sku || '').trim();
+          const shortName2 = rawName2.split(/[\s*×-]+/).filter(w => w.length >= 2 && !/^\d+$/.test(w)).slice(0, 2).join(' ') || rawName2.slice(0, 15);
+          suggestions.push({
+            label: `📊 Count of ${escapeHtml(shortName2)}`,
+            query: `what is count of ${shortName2}`
+          });
+        }
+
+        return suggestions;
+      } catch (err) {
+        return [
+          { label: '🔍 Search Items', query: 'Search item' },
+          { label: '📦 Search Batch', query: 'Search batch' },
+          { label: '📊 Check Count', query: 'what is count?' }
+        ];
+      }
+    }
+
     function initChatbotGreeting() {
       const uName = currentUser ? (currentUser.full_name || currentUser.username) : 'Operator';
       chatbotConversationContext = { lastResults: [], lastGroup: null, lastItem: null, lastQuery: '', lastQueryType: '' };
+      const dynSuggestions = getChatbotSampleSuggestions();
+      const s1 = dynSuggestions[0] || { label: 'Search Item', query: 'Search item' };
+      const s2 = dynSuggestions[1] || { label: 'Search Batch', query: 'Search batch' };
+      const s3 = dynSuggestions[2] || { label: 'Check Count', query: 'what is count?' };
+
       chatbotConversationHistory = [
         {
           sender: 'bot',
           html: `
             <div style="font-weight: 800; font-size: 0.9rem; margin-bottom: 0.35rem; color: var(--text);">Hello, ${escapeHtml(uName)}! 👋</div>
             <div style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.45; margin-bottom: 0.5rem;">
-              I am your <strong>Lina Stock Verification Assistant</strong>. You can search inventory using natural English or partial keywords:
+              I am your <strong>Lina Stock Verification Assistant</strong>. You can search inventory using natural English, item codes, or partial keywords:
             </div>
-            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.76rem; color: var(--text); background: var(--bg-surface); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-              <div>🔍 <strong>Partial Name:</strong> type <em>"beclo"</em> to match Beclovent, Beclonase, etc.</div>
-              <div>📦 <strong>Partial Batch:</strong> type <em>"80"</em> or <em>"B4-0080"</em> to find any batch containing that number.</div>
-              <div>📊 <strong>Count Inquiries:</strong> ask <em>"what is count of Beclovent?"</em> (permission-checked).</div>
-              <div>💬 <strong>Follow-ups:</strong> type <em>"1"</em> or <em>"first one"</em> to select from listed items.</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.76rem; color: var(--text); background: var(--bg-surface); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0.55rem;">
+              <div>🔍 <strong>Partial Name:</strong> type any part of an item name (e.g. <em>"${escapeHtml(s1.query)}"</em>).</div>
+              <div>📦 <strong>Partial Batch:</strong> type any part of a batch number (e.g. <em>"${escapeHtml(s2.query)}"</em>).</div>
+              <div>📊 <strong>Count Inquiries:</strong> ask <em>"${escapeHtml(s3.query)}"</em> (permission-checked).</div>
+              <div>💬 <strong>Self-Understanding:</strong> reply with <em>"1"</em> or <em>"first one"</em> to select from listed items.</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Quick Queries from Active Inventory:</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                ${dynSuggestions.map(s => `
+                  <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('${escapeHtml(s.query)}')" style="font-size: 0.72rem; padding: 3px 8px; white-space: nowrap; flex-shrink: 0;">
+                    ${s.label}
+                  </button>
+                `).join('')}
+              </div>
             </div>
           `
         }
@@ -11811,14 +11925,14 @@
       }
     }
 
-    function sendChatbotQuery(queryText) {
+    function sendChatbotQuery(queryText, displayText) {
       const inp = document.getElementById('chatbotSearchInput');
       if (inp) inp.value = queryText;
-      handleChatbotSubmit();
+      handleChatbotSubmit(null, displayText);
     }
     window.sendChatbotQuery = sendChatbotQuery;
 
-    function handleChatbotSubmit(e) {
+    function handleChatbotSubmit(e, customDisplayText) {
       if (e) e.preventDefault();
       const inp = document.getElementById('chatbotSearchInput');
       if (!inp) return;
@@ -11828,10 +11942,27 @@
       hideChatbotSuggestions();
       inp.value = '';
 
+      let bubbleText = customDisplayText;
+      if (!bubbleText) {
+        if (query.startsWith('SELECT_GROUP_INDEX:')) {
+          const idx = parseInt(query.replace('SELECT_GROUP_INDEX:', '').trim(), 10);
+          const grp = chatbotConversationContext.lastResults && chatbotConversationContext.lastResults[idx];
+          bubbleText = grp ? `Select #${idx + 1}: ${grp.name}` : `Select item #${idx + 1}`;
+        } else if (query.startsWith('COMPARE_ITEM_SESSIONS:')) {
+          const s = query.replace('COMPARE_ITEM_SESSIONS:', '').trim();
+          bubbleText = `Compare sessions for ${s}`;
+        } else if (query.startsWith('COMPARE_SESSIONS_PAIR:')) {
+          const parts = query.replace('COMPARE_SESSIONS_PAIR:', '').split(':');
+          bubbleText = `Compare ${parts[1] || 'Old Session'} vs ${parts[2] || 'New Session'}`;
+        } else {
+          bubbleText = query;
+        }
+      }
+
       // User Message
       chatbotConversationHistory.push({
         sender: 'user',
-        html: `<span>${escapeHtml(query)}</span>`
+        html: `<span>${escapeHtml(bubbleText)}</span>`
       });
       saveUserChatHistory();
       renderChatbotMessages();
@@ -11941,6 +12072,8 @@
         else if (qLower.includes('evening')) greetingWord = 'Good evening';
         else if (qLower.includes('hey')) greetingWord = 'Hey';
 
+        const dynSuggestions = getChatbotSampleSuggestions();
+
         return `
           <div style="font-weight: 800; font-size: 0.88rem; color: var(--text); margin-bottom: 0.35rem;">
             ${greetingWord}, ${escapeHtml(uName)}! 👋
@@ -11949,23 +12082,24 @@
             I'm ready to help you with stock counts, batch tracking, and item history. What would you like to check?
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.5rem;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Quick Queries to Try:</div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Quick Queries from Active Inventory:</div>
             <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
-              <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('beclo')" style="font-size: 0.72rem; padding: 3px 8px;">
-                🔍 Search "beclo"
-              </button>
-              <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('80')" style="font-size: 0.72rem; padding: 3px 8px;">
-                📦 Batch "80"
-              </button>
-              <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('what is count of Beclovent 400')" style="font-size: 0.72rem; padding: 3px 8px;">
-                📊 Count of Beclovent
-              </button>
+              ${dynSuggestions.map(s => `
+                <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('${escapeHtml(s.query)}')" style="font-size: 0.72rem; padding: 3px 8px; white-space: nowrap; flex-shrink: 0;">
+                  ${s.label}
+                </button>
+              `).join('')}
             </div>
           </div>
         `;
       }
 
       if (/^(who\s+are\s+you|what\s+can\s+you\s+do|help|how\s+to\s+use|commands)\b/i.test(qLower)) {
+        const dyn = getChatbotSampleSuggestions();
+        const pName = dyn[0] ? dyn[0].query : 'medicine';
+        const pBatch = dyn[1] ? dyn[1].query : 'batch';
+        const pCount = dyn[2] ? dyn[2].query : 'what is count?';
+
         return `
           <div style="font-weight: 800; font-size: 0.88rem; color: var(--text); margin-bottom: 0.35rem;">
             🤖 Lina Stock Verification Assistant
@@ -11974,11 +12108,12 @@
             Here are all the smart capabilities you can use in natural conversation:
           </div>
           <ul style="margin: 0 0 0.5rem 1rem; padding: 0; font-size: 0.76rem; color: var(--text); line-height: 1.5;">
-            <li><strong>Partial Item Name:</strong> type <em>"beclo"</em> to list all matching products (Beclovent, Beclonase, etc.).</li>
-            <li><strong>Partial Batch Search:</strong> type <em>"80"</em> to see all items with batch number containing 80.</li>
-            <li><strong>Count Checking:</strong> ask <em>"what is count of [item]"</em> — verifies permissions & displays physical qty (with system qty if authorized).</li>
+            <li><strong>Partial Item Name:</strong> type <em>"${escapeHtml(pName)}"</em> to list all matching products in the session.</li>
+            <li><strong>Partial Batch Search:</strong> type <em>"${escapeHtml(pBatch)}"</em> to see all items with batch number containing that snippet.</li>
+            <li><strong>Count Checking:</strong> ask <em>"${escapeHtml(pCount)}"</em> — verifies permissions & displays physical qty (with system qty if authorized).</li>
             <li><strong>Multi-Batch Browsing:</strong> items with multiple batches are grouped and presented for easy choice.</li>
             <li><strong>Self-Understanding Follow-up:</strong> after a list appears, simply type <em>"1"</em>, <em>"2"</em>, or <em>"first one"</em> to inspect that item.</li>
+            <li><strong>Cross-Session Comparison:</strong> click <em>"Compare Sessions"</em> or type <em>"compare"</em> to audit counts across different sessions.</li>
           </ul>
         `;
       }
@@ -12073,6 +12208,9 @@
       });
 
       if (matchedItems.length === 0) {
+        const dyn = getChatbotSampleSuggestions();
+        const sample1 = dyn[0] ? dyn[0].query : 'item name';
+        const sample2 = dyn[1] ? dyn[1].query : 'batch code';
         return `
           <div style="color: var(--accent-rose); font-weight: 700; margin-bottom: 0.35rem;">
             <i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
@@ -12081,8 +12219,8 @@
           <div style="font-size: 0.76rem; color: var(--text-dim); line-height: 1.45;">
             We searched ${scopedSessions.length} session(s) across ${allItems.length} inventory records.
             <ul style="margin: 4px 0 0 1rem; padding: 0;">
-              <li>Try searching with a partial name (e.g. <strong>"beclo"</strong>).</li>
-              <li>Try searching with a partial batch number (e.g. <strong>"80"</strong>).</li>
+              <li>Try searching with a partial name (e.g. <strong>"${escapeHtml(sample1)}"</strong>).</li>
+              <li>Try searching with a partial batch number (e.g. <strong>"${escapeHtml(sample2)}"</strong>).</li>
               <li>Check your spelling or search by SKU code.</li>
             </ul>
           </div>
@@ -12131,24 +12269,24 @@
           const batchStr = batches.length > 0 ? batches.join(', ') : 'Standard';
 
           out += `
-            <div class="chat-result-card" style="padding: 0.6rem 0.75rem; border-color: rgba(14, 165, 233, 0.3); background: var(--bg-surface); cursor: pointer; transition: all 0.15s ease;" onclick="sendChatbotQuery('SELECT_GROUP_INDEX:${gIdx}')">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-                <div style="min-width: 0;">
-                  <div style="font-weight: 800; font-size: 0.84rem; color: var(--text); display: flex; align-items: center; gap: 6px;">
-                    <span class="badge" style="background: var(--accent); color: #fff; font-size: 0.68rem; padding: 1px 6px; border-radius: var(--radius-full);">#${gIdx + 1}</span>
-                    <span>${escapeHtml(group.name)}</span>
+            <div class="chat-result-card" style="padding: 0.6rem 0.75rem; border-color: rgba(14, 165, 233, 0.3); background: var(--bg-surface); cursor: pointer; transition: all 0.15s ease;" onclick="sendChatbotQuery('SELECT_GROUP_INDEX:${gIdx}', 'Select #${gIdx + 1}: ${escapeHtml(group.name)}')">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+                <div style="flex: 1 1 180px; min-width: 0;">
+                  <div style="font-weight: 800; font-size: 0.84rem; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span class="badge" style="background: var(--accent); color: #fff; font-size: 0.68rem; padding: 1px 6px; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;">#${gIdx + 1}</span>
+                    <span style="word-break: normal; overflow-wrap: break-word;">${escapeHtml(group.name)}</span>
                   </div>
-                  <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px;">
+                  <div style="font-size: 0.7rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 2px; word-break: normal; overflow-wrap: break-word;">
                     CODE: <strong>${escapeHtml(group.sku)}</strong> · BATCH(ES): <strong>${escapeHtml(batchStr)}</strong>
                   </div>
                 </div>
-                <button type="button" class="btn btn-secondary btn-xs" style="flex-shrink: 0; font-size: 0.72rem; padding: 3px 8px; font-weight: 700; color: var(--accent);">
+                <button type="button" class="btn btn-secondary btn-xs" style="flex-shrink: 0; font-size: 0.72rem; padding: 3px 8px; font-weight: 700; color: var(--accent); white-space: nowrap;">
                   Select [${gIdx + 1}]
                 </button>
               </div>
-              <div style="margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; border-top: 1px dashed var(--border); padding-top: 0.35rem;">
-                <span style="color: var(--text-dim);">${group.occurrences.length} batch record(s)</span>
-                <span style="font-weight: 700; color: var(--text);">Physical Count: <strong style="color: var(--accent);">${totalPhys.toLocaleString()} ${escapeHtml(group.uom)}</strong></span>
+              <div style="margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; border-top: 1px dashed var(--border); padding-top: 0.35rem; flex-wrap: wrap; gap: 4px;">
+                <span style="color: var(--text-dim); white-space: nowrap;">${group.occurrences.length} batch record(s)</span>
+                <span style="font-weight: 700; color: var(--text); white-space: nowrap;">Physical Count: <strong style="color: var(--accent);">${totalPhys.toLocaleString()} ${escapeHtml(group.uom)}</strong></span>
               </div>
             </div>
           `;
@@ -12192,9 +12330,9 @@
 
       let sessionBlindBadge = '';
       if (isStrictBlind) {
-        sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);">🔒 Strict Blind</span>`;
+        sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); white-space: nowrap; flex-shrink: 0;">🔒 Strict Blind</span>`;
       } else if (isBlindCount) {
-        sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25);">🔒 Blind Count</span>`;
+        sessionBlindBadge = `<span class="badge" style="font-size: 0.65rem; padding: 1px 6px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); white-space: nowrap; flex-shrink: 0;">🔒 Blind Count</span>`;
       }
 
       // Quantities Aggregation
@@ -12231,15 +12369,15 @@
       let out = `
         <div class="chat-result-card" style="border-color: rgba(14, 165, 233, 0.4); background: linear-gradient(180deg, rgba(14, 165, 233, 0.05) 0%, transparent 100%);">
           <div class="chat-item-header">
-            <div>
-              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text);">${escapeHtml(group.name)}</div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px;">
+            <div style="flex: 1 1 180px; min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.9rem; color: var(--text); word-break: normal; overflow-wrap: break-word;">${escapeHtml(group.name)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px; word-break: normal; overflow-wrap: break-word;">
                 CODE: <strong>${escapeHtml(group.sku)}</strong> · BARCODE: ${escapeHtml(group.barcode)}
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
+            <div style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; margin-left: auto;">
               ${sessionBlindBadge}
-              <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border: 1px solid rgba(14, 165, 233, 0.3);">
+              <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border: 1px solid rgba(14, 165, 233, 0.3); white-space: nowrap; flex-shrink: 0;">
                 ${group.occurrences.length} BATCH${group.occurrences.length > 1 ? 'ES' : ''}
               </span>
             </div>
@@ -12247,26 +12385,26 @@
 
           <!-- Overall Stock Verification Summary (Strict Permission Check) -->
           <div style="background: var(--bg-surface); padding: 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0.6rem;">
-            <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.35rem; display: flex; justify-content: space-between;">
-              <span>Stock Count Verification Summary</span>
-              <span>${escapeHtml(session.session_code || session.id)}</span>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="white-space: nowrap;">Stock Count Verification Summary</span>
+              <span style="white-space: nowrap; font-family: var(--font-mono); font-weight: 800; background: var(--bg-card); padding: 1px 6px; border-radius: var(--radius-xs); border: 1px solid var(--border); font-size: 0.68rem; color: var(--text); flex-shrink: 0;">${escapeHtml(session.session_code || session.id)}</span>
             </div>
-            <div class="chat-metrics-grid">
-              <div class="chat-metric-box">
-                <div class="chat-metric-label">Physical Counted Qty</div>
-                <div class="chat-metric-val" style="color: var(--accent); font-size: 0.95rem;">${totalPhysQty.toLocaleString()} ${uom}</div>
+            <div class="chat-metrics-grid" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem;">
+              <div class="chat-metric-box" style="padding: 5px 7px; min-width: 0;">
+                <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Physical Counted Qty</div>
+                <div class="chat-metric-val" style="color: var(--accent); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${totalPhysQty.toLocaleString()} ${uom}</div>
               </div>
-              <div class="chat-metric-box">
-                <div class="chat-metric-label">System Book Qty</div>
-                <div class="chat-metric-val" style="font-size: 0.8rem;">${sysQtyDisplay}</div>
+              <div class="chat-metric-box" style="padding: 5px 7px; min-width: 0;">
+                <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">System Book Qty</div>
+                <div class="chat-metric-val" style="font-size: 0.8rem; word-break: normal; overflow-wrap: break-word;">${sysQtyDisplay}</div>
               </div>
-              <div class="chat-metric-box">
-                <div class="chat-metric-label">Count Variance</div>
-                <div class="chat-metric-val" style="font-size: 0.8rem;">${varianceDisplay}</div>
+              <div class="chat-metric-box" style="padding: 5px 7px; min-width: 0;">
+                <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Count Variance</div>
+                <div class="chat-metric-val" style="font-size: 0.8rem; word-break: normal; overflow-wrap: break-word;">${varianceDisplay}</div>
               </div>
-              <div class="chat-metric-box">
-                <div class="chat-metric-label">Batches Verified</div>
-                <div class="chat-metric-val" style="font-size: 0.84rem;">${group.occurrences.length} Batch(es)</div>
+              <div class="chat-metric-box" style="padding: 5px 7px; min-width: 0;">
+                <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Batches Verified</div>
+                <div class="chat-metric-val" style="font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${group.occurrences.length} Batch(es)</div>
               </div>
             </div>
             ${!isSysAllowed ? `
@@ -12278,12 +12416,12 @@
 
           <!-- Cross-Session Count Comparison Option -->
           <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-sm); padding: 0.45rem 0.65rem; margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="git-compare" style="width: 14px; height: 14px; color: var(--accent);"></i>
-              <span style="font-size: 0.74rem; font-weight: 700; color: var(--text);">Session Comparison:</span>
-              <span style="font-size: 0.72rem; color: var(--text-dim);">${sessionIdsInItem.length} session record(s)</span>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <i data-lucide="git-compare" style="width: 14px; height: 14px; color: var(--accent); flex-shrink: 0;"></i>
+              <span style="font-size: 0.74rem; font-weight: 700; color: var(--text); white-space: nowrap;">Session Comparison:</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap;">${sessionIdsInItem.length} session record(s)</span>
             </div>
-            <button type="button" class="btn btn-primary btn-xs" onclick="sendChatbotQuery('COMPARE_ITEM_SESSIONS:${escapeHtml(group.sku)}')" style="font-size: 0.72rem; padding: 3px 9px; font-weight: 700;">
+            <button type="button" class="btn btn-primary btn-xs" onclick="sendChatbotQuery('COMPARE_ITEM_SESSIONS:${escapeHtml(group.sku)}', 'Compare sessions for ${escapeHtml(group.name)}')" style="font-size: 0.72rem; padding: 3px 9px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
               📊 Compare Sessions
             </button>
           </div>
@@ -12397,29 +12535,33 @@
       return `
         <div class="chat-result-card" style="border-color: var(--accent);">
           <div class="chat-item-header">
-            <div>
-              <div style="font-weight: 800; font-size: 0.88rem; color: var(--text);">${escapeHtml(itm.item_name || itm.sku)}</div>
-              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px;">
+            <div style="flex: 1 1 180px; min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: var(--text); word-break: normal; overflow-wrap: break-word;">${escapeHtml(itm.item_name || itm.sku)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px; word-break: normal; overflow-wrap: break-word;">
                 CODE: <strong>${escapeHtml(itm.sku)}</strong> · BARCODE: ${escapeHtml(itm.barcode || itm.sku)}
               </div>
             </div>
-            <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.72rem;">
-              BATCH AUDIT
-            </span>
+            <div style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; margin-left: auto;">
+              ${sessionBlindBadge}
+              <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.72rem; white-space: nowrap; flex-shrink: 0;">
+                BATCH AUDIT
+              </span>
+            </div>
           </div>
 
           <div class="chat-session-block" style="background: rgba(14, 165, 233, 0.04); border-color: rgba(14, 165, 233, 0.25);">
-            <div class="chat-session-meta">
+            <div class="chat-session-meta" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
               <span><strong>Session:</strong> ${escapeHtml(session.session_code || session.title)}</span>
               ${sessionBlindBadge}
             </div>
 
             <!-- Batch Identifier Badge -->
-            <div style="margin: 0.35rem 0 0.5rem 0; padding: 0.35rem 0.6rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text);">
+            <div style="margin: 0.35rem 0 0.5rem 0; padding: 0.35rem 0.6rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text); white-space: nowrap;">
                 📦 Batch / Lot: <strong style="color: var(--accent); font-family: var(--font-mono);">${escapeHtml(itm.batch_no || 'Standard')}</strong>
               </span>
-              <span class="badge badge-uncounted" style="font-size: 0.68rem;">Zone: ${escapeHtml(itm.zone_location || 'General')}</span>
+              <span class="badge badge-uncounted" style="font-size: 0.68rem; white-space: nowrap; flex-shrink: 0;">Zone: ${escapeHtml(itm.zone_location || 'General')}</span>
+            </div>
             </div>
 
             <div class="chat-metrics-grid">
@@ -12741,47 +12883,47 @@
       return `
         <div class="chat-result-card" style="border-color: var(--accent); background: linear-gradient(180deg, rgba(14, 165, 233, 0.04) 0%, transparent 100%);">
           <div class="chat-item-header">
-            <div>
-              <div style="font-weight: 800; font-size: 0.88rem; color: var(--text);">
+            <div style="flex: 1 1 180px; min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.88rem; color: var(--text); word-break: normal; overflow-wrap: break-word;">
                 📊 Session Count Comparison
               </div>
-              <div style="font-size: 0.74rem; color: var(--accent); font-weight: 700; margin-top: 1px;">
+              <div style="font-size: 0.74rem; color: var(--accent); font-weight: 700; margin-top: 1px; word-break: normal; overflow-wrap: break-word;">
                 ${escapeHtml(itemName)} <span style="color: var(--text-dim); font-family: var(--font-mono); font-weight: 400;">(${escapeHtml(sku)})</span>
               </div>
             </div>
-            <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.7rem;">
+            <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent); font-weight: 800; font-size: 0.7rem; white-space: nowrap !important; flex-shrink: 0 !important;">
               CROSS-SESSION AUDIT
             </span>
           </div>
 
           <!-- Session Flow Banner -->
           <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.35rem; align-items: center; background: var(--bg-surface); padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 0.55rem; text-align: center;">
-            <div>
-              <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">OLD SESSION</div>
-              <div style="font-weight: 800; font-size: 0.76rem; color: var(--text);">${escapeHtml(sOld.session_code || sOld.title)}</div>
-              <div style="font-size: 0.66rem; color: var(--text-dim);">${dateOldStr}</div>
+            <div style="min-width: 0;">
+              <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; white-space: nowrap;">OLD SESSION</div>
+              <div style="font-weight: 800; font-size: 0.76rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(sOld.session_code || sOld.title)}</div>
+              <div style="font-size: 0.66rem; color: var(--text-dim); white-space: nowrap;">${dateOldStr}</div>
             </div>
-            <div style="color: var(--accent); font-size: 1rem; font-weight: 800;">➔</div>
-            <div>
-              <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">NEW SESSION</div>
-              <div style="font-weight: 800; font-size: 0.76rem; color: var(--accent);">${escapeHtml(sNew.session_code || sNew.title)}</div>
-              <div style="font-size: 0.66rem; color: var(--text-dim);">${dateNewStr}</div>
+            <div style="color: var(--accent); font-size: 1rem; font-weight: 800; flex-shrink: 0;">➔</div>
+            <div style="min-width: 0;">
+              <div style="font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; white-space: nowrap;">NEW SESSION</div>
+              <div style="font-weight: 800; font-size: 0.76rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(sNew.session_code || sNew.title)}</div>
+              <div style="font-size: 0.66rem; color: var(--text-dim); white-space: nowrap;">${dateNewStr}</div>
             </div>
           </div>
 
           <!-- Physical Count Metrics -->
-          <div class="chat-metrics-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom: 0.55rem;">
-            <div class="chat-metric-box">
-              <div class="chat-metric-label">Old Physical Count</div>
-              <div class="chat-metric-val" style="font-size: 0.84rem;">${physOld.toLocaleString()} ${uom}</div>
+          <div class="chat-metrics-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 0.55rem;">
+            <div class="chat-metric-box" style="padding: 4px 5px; min-width: 0;">
+              <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Old Physical</div>
+              <div class="chat-metric-val" style="font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${physOld.toLocaleString()} ${uom}</div>
             </div>
-            <div class="chat-metric-box">
-              <div class="chat-metric-label">New Physical Count</div>
-              <div class="chat-metric-val" style="font-size: 0.84rem; color: var(--accent);">${physNew.toLocaleString()} ${uom}</div>
+            <div class="chat-metric-box" style="padding: 4px 5px; min-width: 0;">
+              <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">New Physical</div>
+              <div class="chat-metric-val" style="font-size: 0.82rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${physNew.toLocaleString()} ${uom}</div>
             </div>
-            <div class="chat-metric-box">
-              <div class="chat-metric-label">Count Difference</div>
-              <div class="chat-metric-val" style="font-size: 0.84rem;">${deltaPhysDisplay}</div>
+            <div class="chat-metric-box" style="padding: 4px 5px; min-width: 0;">
+              <div class="chat-metric-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Difference</div>
+              <div class="chat-metric-val" style="font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${deltaPhysDisplay}</div>
             </div>
           </div>
 
@@ -12792,11 +12934,11 @@
           ${batchBreakdownHtml}
 
           <!-- Navigation & Quick Action Buttons -->
-          <div style="display: flex; gap: 0.4rem; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px dashed var(--border);">
-            <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('COMPARE_ITEM_SESSIONS:${escapeHtml(sku)}')" style="font-size: 0.7rem; padding: 3px 8px;">
+          <div style="display: flex; gap: 0.4rem; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px dashed var(--border); flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-xs" onclick="sendChatbotQuery('COMPARE_ITEM_SESSIONS:${escapeHtml(sku)}', 'Change comparison sessions for ${escapeHtml(itemName)}')" style="font-size: 0.7rem; padding: 3px 8px; white-space: nowrap; flex-shrink: 0;">
               🔄 Change Sessions
             </button>
-            <button type="button" class="btn btn-primary btn-xs" onclick="sendChatbotQuery('${escapeHtml(sku)}')" style="font-size: 0.7rem; padding: 3px 8px;">
+            <button type="button" class="btn btn-primary btn-xs" onclick="sendChatbotQuery('${escapeHtml(sku)}', 'Show summary for ${escapeHtml(itemName)}')" style="font-size: 0.7rem; padding: 3px 8px; white-space: nowrap; flex-shrink: 0;">
               📋 View Item Summary
             </button>
           </div>
