@@ -5059,6 +5059,16 @@
         if (!Array.isArray(parsed.items)) parsed.items = [];
         if (!Array.isArray(parsed.logs)) parsed.logs = [];
         if (!Array.isArray(parsed.audit_trails)) parsed.audit_trails = [];
+
+        // Handover clean-slate migration: flush stale testing sessions/items/logs from previous test runs
+        if (localStorage.getItem('LINA_DB_VERSION') !== 'HANDOVER_CLEAN_V1') {
+          parsed.sessions = [];
+          parsed.items = [];
+          parsed.logs = [];
+          localStorage.removeItem('LINA_ACTIVE_SESSION_ID');
+          localStorage.setItem('LINA_DB_VERSION', 'HANDOVER_CLEAN_V1');
+          saveDatabase(parsed);
+        }
         if (!parsed.chatbot_settings || typeof parsed.chatbot_settings !== 'object') {
           parsed.chatbot_settings = Object.assign({}, DEFAULT_CHATBOT_SETTINGS);
         } else {
@@ -5513,16 +5523,13 @@
       }
       const canSyncSessions = authUser && authUser.role !== 'COUNTER';
 
-      // 1. If server has no sessions but local storage has valid user sessions, preserve them & push to cloud
-      if (serverDb.sessions.length === 0 && (localDb.sessions || []).length > 0) {
-        serverDb.sessions = [...localDb.sessions];
-        serverDb.items = localDb.items || [];
-        if (canSyncSessions) {
-          serverDb.sessions.forEach(s => {
-            const sItems = (serverDb.items || []).filter(i => i.session_id === s.id);
-            syncSessionToServer(s, sItems);
-          });
-        }
+      // 1. Authoritative Server Synchronization: If server has no sessions, wipe stale local session/item data
+      if (serverDb.sessions.length === 0) {
+        localDb.sessions = [];
+        localDb.items = [];
+        localDb.logs = [];
+        localStorage.removeItem('LINA_ACTIVE_SESSION_ID');
+        activeSession = null;
       } else if (serverDb.sessions.length > 0) {
         // 2. Server has sessions: Preserve any newly added local sessions not yet on server
         const missingFromCloud = (localDb.sessions || []).filter(ls =>
@@ -6156,10 +6163,18 @@
         if (select) {
           select.innerHTML = '<option value="">-- No Active Count Session --</option>';
         }
+        const dashSelect = document.getElementById('dashSessionSelect');
+        if (dashSelect) {
+          dashSelect.innerHTML = '<option value="">-- No Active Count Session --</option>';
+        }
         const titleEl = document.getElementById('activeSessionTitle');
         if (titleEl) titleEl.textContent = 'No Active Session';
         const codeEl = document.getElementById('activeSessionCode');
         if (codeEl) codeEl.innerHTML = '<span class="badge badge-warning">Upload Datasheet to Start</span>';
+        const dTitle = document.getElementById('dashSessionHeaderTitle');
+        if (dTitle) dTitle.textContent = 'No Active Session';
+        const dSub = document.getElementById('dashSessionHeaderSubtitle');
+        if (dSub) dSub.textContent = 'Upload or create a count session to begin live monitoring.';
       } else {
         let target = null;
         if (savedActiveId) {
@@ -6406,6 +6421,63 @@
         if (dDiscrep) dDiscrep.textContent = '0';
         const dUnlisted = document.getElementById('dashUnlistedCount');
         if (dUnlisted) dUnlisted.textContent = '0';
+
+        const elCounted = document.getElementById('dashCountedItemsCount');
+        if (elCounted) elCounted.textContent = '0';
+        const elCountedSub = document.getElementById('dashCountedItemsSub');
+        if (elCountedSub) elCountedSub.textContent = '0 of 0 items counted';
+        const elPending = document.getElementById('dashPendingItemsCount');
+        if (elPending) elPending.textContent = '0';
+        const elPendingSub = document.getElementById('dashPendingItemsSub');
+        if (elPendingSub) elPendingSub.textContent = '0 items awaiting count';
+
+        const dTitle = document.getElementById('dashSessionHeaderTitle');
+        if (dTitle) dTitle.textContent = 'No Active Session';
+        const dSub = document.getElementById('dashSessionHeaderSubtitle');
+        if (dSub) dSub.textContent = 'Upload or create a count session to begin live monitoring.';
+        const dashSelect = document.getElementById('dashSessionSelect');
+        if (dashSelect) dashSelect.innerHTML = '<option value="">-- No Active Count Session --</option>';
+
+        // Expiry stat cards
+        const expEl = document.getElementById('dashExpiredCount');
+        if (expEl) expEl.textContent = '0';
+        const critEl = document.getElementById('dashCriticalExpiryCount');
+        if (critEl) critEl.textContent = '0';
+        const warnEl = document.getElementById('dashWarningExpiryCount');
+        if (warnEl) warnEl.textContent = '0';
+        const safeEl = document.getElementById('dashSafeExpiryCount');
+        if (safeEl) safeEl.textContent = '0';
+
+        // Expiry gauges and legend
+        const gExp = document.getElementById('gaugeSegExpired');
+        if (gExp) { gExp.style.width = '0%'; gExp.title = ''; }
+        const gCrit = document.getElementById('gaugeSegCritical');
+        if (gCrit) { gCrit.style.width = '0%'; gCrit.title = ''; }
+        const gWarn = document.getElementById('gaugeSegWarning');
+        if (gWarn) { gWarn.style.width = '0%'; gWarn.title = ''; }
+        const gSafe = document.getElementById('gaugeSegHealthy');
+        if (gSafe) { gSafe.style.width = '0%'; gSafe.title = ''; }
+        const leg = document.getElementById('expiryDistributionLegend');
+        if (leg) leg.textContent = '0% Expired · 0% Critical · 0% Warning · 0% Safe';
+
+        // Units comparison
+        const sysUnitsEl = document.getElementById('dashTotalSystemUnits');
+        if (sysUnitsEl) sysUnitsEl.textContent = '0';
+        const cntUnitsEl = document.getElementById('dashTotalCountedUnits');
+        if (cntUnitsEl) cntUnitsEl.textContent = '0';
+        const netVarEl = document.getElementById('dashNetVarianceUnits');
+        if (netVarEl) { netVarEl.textContent = '0'; netVarEl.style.color = 'var(--text-main)'; }
+        const netSubEl = document.getElementById('dashVarianceSubtext');
+        if (netSubEl) netSubEl.textContent = 'No Active Session';
+
+        // Expiry Watchlist
+        const expiryTbody = document.getElementById('dashExpiryWatchTableBody');
+        if (expiryTbody) {
+          expiryTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-dim);">No active session. Upload a master sheet to begin.</td></tr>`;
+        }
+        const watchCountEl = document.getElementById('expiryWatchlistCount');
+        if (watchCountEl) watchCountEl.textContent = '0 batch records analyzed';
+
         const zoneContainer = document.getElementById('zoneBreakdownList');
         if (zoneContainer) {
           zoneContainer.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 1.5rem;">No active session. Upload a master sheet to begin.</div>';
@@ -10883,6 +10955,15 @@
       if (!tbody) return;
       appDb = loadDatabase();
       const isManager = isManagerOrAdmin(currentUser);
+
+      if (!appDb.sessions || appDb.sessions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-dim);">
+          <i data-lucide="calendar-x" style="width: 32px; height: 32px; margin: 0 auto 0.5rem; display: block; opacity: 0.4;"></i>
+          No count sessions found. Click &quot;+ Create Session&quot; or upload a datasheet to begin.
+        </td></tr>`;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
 
       tbody.innerHTML = appDb.sessions.map(s => {
         const isClosed = s.status === 'CLOSED';

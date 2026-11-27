@@ -1406,6 +1406,11 @@ const server = http.createServer(async (req, res) => {
         const requestType = String(body.type || 'VARIANCE_ANALYSIS').toUpperCase();
         const sessionId = String(body.session_id || '').trim();
 
+        // RBAC Enforcement: Floor counters are strictly restricted from variance analyses
+        if (authUser.role === 'COUNTER' && requestType === 'VARIANCE_ANALYSIS') {
+          return sendJson(403, { error: 'Counters are restricted from viewing AI variance analyses' });
+        }
+
         // Check session ownership
         const session = await dbGetSessionById(sessionId);
         if (session) {

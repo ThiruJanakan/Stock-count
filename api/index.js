@@ -1154,6 +1154,11 @@ module.exports = async function handler(req, res) {
     const requestType = String(body.type || 'VARIANCE_ANALYSIS').toUpperCase();
     const sessionId = String(body.session_id || '').trim();
 
+    // RBAC Enforcement: Floor counters are strictly restricted from variance analyses
+    if (authUser.role === 'COUNTER' && requestType === 'VARIANCE_ANALYSIS') {
+      return sendJson(403, { error: 'Counters are restricted from viewing AI variance analyses' });
+    }
+
     // Verify session existence and user access
     let session = null;
     let items = [];
